@@ -1,2 +1,8 @@
 (library
  (name endive))
+
+(menhir
+ (modules parser))
+
+(ocamllex
+ (modules lexer))
