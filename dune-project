@@ -12,6 +12,6 @@
 (package
  (name endive)
  (synopsis "A proof assistant for the Integrated Project computer science course at ENS de Lyon")
- (depends ocaml dune))
+ (depends ocaml dune lsp))
 
 (using menhir 2.1)

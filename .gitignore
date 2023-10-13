@@ -1,4 +1,5 @@
 /_build/
+/_opam/
 
 /vscode/node_modules/
 /vscode/out/

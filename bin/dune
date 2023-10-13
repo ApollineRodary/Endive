@@ -1,4 +1,4 @@
 (executable
  (public_name endive)
  (name main)
- (libraries endive))
+ (libraries endive lsp))

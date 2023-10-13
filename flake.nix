@@ -16,6 +16,7 @@
             ocamlformat
             ocamlPackages.dune_3
             ocamlPackages.menhir
+            opam
           ];
         };
 

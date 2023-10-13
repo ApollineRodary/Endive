@@ -8,6 +8,7 @@ bug-reports: "https://github.com/ApollineRodary/Endive/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.11"}
+  "lsp"
   "odoc" {with-doc}
 ]
 build: [
