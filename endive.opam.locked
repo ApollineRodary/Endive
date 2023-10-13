@@ -1,0 +1,43 @@
+opam-version: "2.0"
+name: "endive"
+version: "~dev"
+synopsis:
+  "A proof assistant for the Integrated Project computer science course at ENS de Lyon"
+license: "LICENSE"
+homepage: "https://github.com/ApollineRodary/Endive"
+bug-reports: "https://github.com/ApollineRodary/Endive/issues"
+depends: [
+  "base-bigarray" {= "base"}
+  "base-threads" {= "base"}
+  "base-unix" {= "base"}
+  "cmdliner" {= "1.2.0"}
+  "cppo" {= "1.6.9"}
+  "dune" {= "3.11.1"}
+  "jsonrpc" {= "1.16.2"}
+  "lsp" {= "1.16.2"}
+  "ocaml" {= "4.14.1"}
+  "ocaml-config" {= "2"}
+  "ocaml-system" {= "4.14.1"}
+  "ocamlbuild" {= "0.14.2"}
+  "ocamlfind" {= "1.9.6"}
+  "ppx_yojson_conv_lib" {= "v0.16.0"}
+  "seq" {= "base"}
+  "topkg" {= "1.0.7"}
+  "uutf" {= "1.0.3"}
+  "yojson" {= "2.1.1"}
+]
+build: [
+  ["dune" "subst"] {dev}
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
+dev-repo: "git+https://github.com/ApollineRodary/Endive.git"
