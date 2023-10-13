@@ -19,6 +19,20 @@
         "command": "endive.helloWorld",
         "title": "Hello World"
       }
+    ],
+    "languages": [
+      {
+        "id": "endive",
+        "extensions": [".en"],
+        "configuration": "./endive-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "endive",
+        "scopeName": "source.endive",
+        "path": "./endive.tmLanguage.json"
+      }
     ]
   },
   "scripts": {

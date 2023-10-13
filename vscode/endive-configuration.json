@@ -1,0 +1,20 @@
+{
+    "brackets": [
+        [
+            "(",
+            ")"
+        ]
+    ],
+    "colorizedBracketPairs": [
+        [
+            "(",
+            ")"
+        ]
+    ],
+    "autoClosingPairs": [
+        {
+            "open": "(",
+            "close": ")"
+        }
+    ]
+}

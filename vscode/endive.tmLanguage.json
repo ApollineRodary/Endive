@@ -1,0 +1,24 @@
+{
+    "fileTypes": [
+        "en"
+    ],
+    "name": "Endive",
+    "scopeName": "source.endive",
+    "patterns": [
+        {
+            "match": "\\bforall\\b",
+            "comment": "For all quantifier keyword",
+            "name": "support.type.forall.endive"
+        },
+        {
+            "match": "\\bfun\\b",
+            "comment": "Lambda abstraction keyword",
+            "name": "keyword.control.fun.endive"
+        },
+        {
+            "match": "\\b[a-zA-Z0-9]+\\b",
+            "comment": "Variable",
+            "name": "variable.other.endive"
+        }
+    ]
+}
