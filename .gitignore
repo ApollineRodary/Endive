@@ -1,4 +1,7 @@
-_build/
+/_build/
+
+/vscode/node_modules/
+/vscode/out/
 
 node_modules/
 package-lock.json
