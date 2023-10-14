@@ -1,12 +1,23 @@
 %{
 open Term
 open Stmt
+
+exception UseDiscard
+
+(* The "_" identifier is special and means that the binding will not be used.
+   This function is used to validate variable usages.  *)
+let validate_var = function
+  | "_" -> raise UseDiscard
+  | x -> x
 %}
 
-%token ARROW AT COLON COMMA DOT EXACT FORALL FUN LBRACE LEMMA LET LPAREN QED RBRACE RPAREN TYPE
+%token ARROW AT COLON COMMA DOT EXACT FORALL FUN IMP LBRACE LEMMA LET LPAREN NOT QED RBRACE RPAREN TYPE
 %token <string> ID
 %token <int> INT
 %token EOF
+
+%nonassoc ARROW COMMA
+%right IMP
 
 %start file
 %type <stmt list> file
@@ -14,7 +25,7 @@ open Stmt
 %%
 
 file:
-  stmts EOF { $1 }
+  stmts EOF { List.rev $1 }
 ;
 
 stmts:
@@ -34,14 +45,19 @@ binding:
 ;
 
 arg:
-  ID                        { Var $1 }
-| FUN binding ARROW arg     { Lam ($2, $4) }
-| FORALL binding COMMA arg  { Pi ($2, $4) }
+  ID                        { Var (validate_var $1) }
 | TYPE AT LBRACE INT RBRACE { Univ $4 }
-| LPAREN arg RPAREN         { $2 }
+| LPAREN term RPAREN        { $2 }
+;
+
+app:
+  arg     { $1 }
+| app arg { App ($1, $2) }
 ;
 
 term:
-  arg      { $1 }
-| term arg { App ($1, $2) }
+  app                       { $1 }
+| term IMP term             { Pi (("_", $1), $3) }
+| FUN binding ARROW term    { Lam ($2, $4) }
+| FORALL binding COMMA term { Pi ($2, $4) }
 ;

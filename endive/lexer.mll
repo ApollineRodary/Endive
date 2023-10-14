@@ -13,6 +13,7 @@ rule token = parse
   | "exact"  { EXACT }
   | "forall" { FORALL }
   | "fun"    { FUN }
+  | "->"     { IMP }
   | '{'      { LBRACE }
   | "Lemma"  { LEMMA }
   | "let"    { LET }
