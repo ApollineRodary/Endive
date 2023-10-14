@@ -29,6 +29,52 @@ module Io =
       let write () chunks () = List.iter print_string chunks
     end)
 
+let end_cursor_pos s =
+  let line = ref 0 in
+  let col = ref 0 in
+  String.iter
+    (fun c ->
+      if c = '\n' then (
+        incr line;
+        col := 0)
+      else incr col)
+    s;
+  (!line, !col)
+
+let pubish_diags doc =
+  let text = Lsp.Text_document.text doc in
+  let lexbuf = Lexing.from_string text in
+  let diags =
+    try
+      Endive.Parser.term Endive.Lexer.token lexbuf;
+      []
+    with Endive.Parser.Error ->
+      let pos = lexbuf.lex_start_p in
+      let start_line = pos.pos_lnum - 1 in
+      let start_column = pos.pos_cnum - pos.pos_bol in
+      let end_line, end_column = end_cursor_pos text in
+      [
+        Lsp.Types.Diagnostic.create
+          ~range:
+            (Lsp.Types.Range.create
+               ~start:
+                 (Lsp.Types.Position.create ~line:start_line
+                    ~character:start_column)
+               ~end_:
+                 (Lsp.Types.Position.create ~line:end_line ~character:end_column))
+          ~severity:Lsp.Types.DiagnosticSeverity.Error ?source:(Some "endive")
+          ~message:"syntax error" ();
+      ]
+  in
+  let notif =
+    Lsp.Server_notification.PublishDiagnostics
+      (Lsp.Types.PublishDiagnosticsParams.create ~diagnostics:diags
+         ~uri:(Lsp.Text_document.documentUri doc)
+         ())
+  in
+  let notif = Lsp.Server_notification.to_jsonrpc notif in
+  Io.write () (Jsonrpc.Packet.Notification notif) ()
+
 let main () =
   let arg = Lsp.Cli.Arg.create () in
   let spec = Lsp.Cli.Arg.spec arg in
@@ -52,6 +98,7 @@ let main () =
   if channel != Lsp.Cli.Channel.Stdio then (
     prerr_endline "only stdio is supported";
     exit 1);
+  let docs = Hashtbl.create 2 in
   let rec main_loop () =
     (match Io.read () () with
     | Some (Jsonrpc.Packet.Request req) -> (
@@ -81,25 +128,18 @@ let main () =
         match Lsp.Client_notification.of_jsonrpc notif with
         | Ok Lsp.Client_notification.Initialized -> ()
         | Ok (Lsp.Client_notification.TextDocumentDidOpen params) ->
-            let diags =
-              [
-                Lsp.Types.Diagnostic.create
-                  ~range:
-                    (Lsp.Types.Range.create
-                       ~start:(Lsp.Types.Position.create ~line:0 ~character:0)
-                       ~end_:(Lsp.Types.Position.create ~line:0 ~character:10))
-                  ~severity:Lsp.Types.DiagnosticSeverity.Error
-                  ?source:(Some "endive") ~message:"test" ();
-              ]
+            let doc = Lsp.Text_document.make ~position_encoding:`UTF8 params in
+            Hashtbl.add docs params.textDocument.uri doc;
+            pubish_diags doc
+        | Ok (Lsp.Client_notification.TextDocumentDidClose params) ->
+            Hashtbl.remove docs params.textDocument.uri
+        | Ok (Lsp.Client_notification.TextDocumentDidChange params) ->
+            let doc = Hashtbl.find docs params.textDocument.uri in
+            let doc =
+              Lsp.Text_document.apply_content_changes doc params.contentChanges
             in
-            let notif =
-              Lsp.Server_notification.PublishDiagnostics
-                (Lsp.Types.PublishDiagnosticsParams.create ~diagnostics:diags
-                   ~uri:params.textDocument.uri ())
-            in
-            let notif = Lsp.Server_notification.to_jsonrpc notif in
-            Io.write () (Jsonrpc.Packet.Notification notif) ()
-        | Ok (Lsp.Client_notification.TextDocumentDidClose _params) -> ()
+            Hashtbl.replace docs params.textDocument.uri doc;
+            pubish_diags doc
         | _ -> ())
     | _ -> ());
     main_loop ()
