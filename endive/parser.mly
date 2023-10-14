@@ -29,13 +29,13 @@ file:
 ;
 
 stmts:
-  stmt       { [$1] }
+|            { [] }
 | stmts stmt { $2 :: $1 }
 ;
 
 stmt:
   LET binding DOT                 { Let $2 }
-| LEMMA binding DOT stmts QED DOT { Lemma ($2, $4) }
+| LEMMA binding DOT stmts QED DOT { Lemma ($2, List.rev $4) }
 | EXACT term DOT                  { Exact $2 }
 ;
 
