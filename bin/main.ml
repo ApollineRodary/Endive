@@ -48,7 +48,7 @@ let pubish_diags doc =
     try
       Endive.Parser.term Endive.Lexer.token lexbuf;
       []
-    with Endive.Parser.Error ->
+    with _ ->
       let pos = lexbuf.lex_start_p in
       let start_line = pos.pos_lnum - 1 in
       let start_column = pos.pos_cnum - pos.pos_bol in
