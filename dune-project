@@ -7,7 +7,7 @@
 (source
  (github ApollineRodary/Endive))
 
-(license LICENSE)
+(license MIT)
 
 (package
  (name endive)

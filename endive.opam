@@ -2,12 +2,12 @@
 opam-version: "2.0"
 synopsis:
   "A proof assistant for the Integrated Project computer science course at ENS de Lyon"
-license: "LICENSE"
+license: "MIT"
 homepage: "https://github.com/ApollineRodary/Endive"
 bug-reports: "https://github.com/ApollineRodary/Endive/issues"
 depends: [
   "ocaml"
-  "dune" {>= "3.11"}
+  "dune" {>= "3.6"}
   "lsp"
   "odoc" {with-doc}
 ]
