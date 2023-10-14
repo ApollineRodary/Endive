@@ -79,3 +79,60 @@ and univ_level t env =
   | Some t1 -> (
       match normal_form t1 with Some (Univ n) -> Some n | _ -> None)
   | _ -> None
+
+let to_string t =
+  let rec aux t ~paren_around_app ~paren_around_arrow ~paren_around_lam =
+    match t with
+    | Var x -> x
+    | Lam ((x, t1), t2) ->
+        let l, r = if paren_around_lam then ("(", ")") else ("", "") in
+        let s1 =
+          aux t1 ~paren_around_app:false ~paren_around_arrow:false
+            ~paren_around_lam:false
+        in
+        let s2 =
+          aux t2 ~paren_around_app:false ~paren_around_arrow:false
+            ~paren_around_lam:true
+        in
+        Printf.sprintf "%sfun %s : %s => %s%s" l x s1 s2 r
+    | App (t1, t2) ->
+        let l, r = if paren_around_app then ("(", ")") else ("", "") in
+        let s1 =
+          aux t1 ~paren_around_app:false ~paren_around_arrow:true
+            ~paren_around_lam:true
+        in
+        let s2 =
+          aux t2 ~paren_around_app:true ~paren_around_arrow:true
+            ~paren_around_lam:false
+        in
+        Printf.sprintf "%s%s %s%s" l s1 s2 r
+    | Pi ((_x, t1), Var "False") ->
+        "~"
+        ^ aux t1 ~paren_around_app:true ~paren_around_arrow:true
+            ~paren_around_lam:true
+    | Pi (("_", t1), t2) ->
+        let l, r = if paren_around_arrow then ("(", ")") else ("", "") in
+        let s1 =
+          aux t1 ~paren_around_app:false ~paren_around_arrow:true
+            ~paren_around_lam:true
+        in
+        let s2 =
+          aux t2 ~paren_around_app:false ~paren_around_arrow:false
+            ~paren_around_lam:true
+        in
+        Printf.sprintf "%s%s -> %s%s" l s1 s2 r
+    | Pi ((x, t1), t2) ->
+        let l, r = if paren_around_lam then ("(", ")") else ("", "") in
+        let s1 =
+          aux t1 ~paren_around_app:false ~paren_around_arrow:false
+            ~paren_around_lam:false
+        in
+        let s2 =
+          aux t2 ~paren_around_app:false ~paren_around_arrow:false
+            ~paren_around_lam:false
+        in
+        Printf.sprintf "%sforall %s : %s, %s%s" l x s1 s2 r
+    | Univ n -> Printf.sprintf "Type@{%d}" n
+  in
+  aux t ~paren_around_app:false ~paren_around_arrow:false
+    ~paren_around_lam:false
