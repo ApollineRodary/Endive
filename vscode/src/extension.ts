@@ -1,26 +1,26 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import path = require('path');
+import { ExtensionContext } from 'vscode';
+import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+let client: LanguageClient | undefined = undefined;
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "endive" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('endive.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from Endive!');
-	});
-
-	context.subscriptions.push(disposable);
+export function activate(context: ExtensionContext) {
+	const serverOptions: ServerOptions = {
+		command: context.asAbsolutePath('../_build/default/bin/main.exe'),
+	};
+	const clientOptions: LanguageClientOptions = {
+		documentSelector: [{ scheme: 'file', language: 'endive' }]
+	};
+	client = new LanguageClient(
+		'endive',
+		'Endive Language Server',
+		serverOptions,
+		clientOptions,
+	);
+	client.start();
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+export async function deactivate() {
+	if (client !== undefined)
+		await client.stop();
+}
