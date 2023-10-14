@@ -39,20 +39,15 @@ let rec sub_ty t u map =
 
 let rec normal_form t =
   match t with
-  | Lam ((x, t1), t2) -> (
-      match normal_form t1 with
-      | Some t1' -> (
-          match normal_form t2 with
-          | Some t2' -> Some (Lam ((x, t1'), t2'))
-          | None -> None)
-      | None -> None)
-  | App (Lam ((x, _t1), t2), u) -> normal_form (subst t2 x u)
-  | App _ -> None
-  | Pi ((x, t1), t2) -> (
-      match (normal_form t1, normal_form t2) with
-      | Some t1', Some t2' -> Some (Pi ((x, t1'), t2'))
-      | _ -> None)
-  | _ -> Some t
+  | Lam ((x, t1), t2) -> Lam ((x, normal_form t1), normal_form t2)
+  | App (t1, t2) -> (
+      let t1' = normal_form t1 in
+      let t2' = normal_form t2 in
+      match t1' with
+      | Lam ((x, _t3), t4) -> normal_form (subst t4 x t2')
+      | _ -> t1)
+  | Pi ((x, t1), t2) -> Pi ((x, normal_form t1), normal_form t2)
+  | _ -> t
 
 let rec ty t env =
   match t with
@@ -63,10 +58,11 @@ let rec ty t env =
       | None -> None)
   | App (t1, t2) -> (
       match (ty t1 env, ty t2 env) with
-      | Some (Pi ((x, t3), t4)), Some t5 -> (
-          match (normal_form t3, normal_form t5) with
-          | Some t3', Some t5' when sub_ty t5' t3' [] -> Some (subst t4 x t5')
-          | _ -> None)
+      | Some (Pi ((x, t3), t4)), Some t5 ->
+          let t3' = normal_form t3 in
+          let t5' = normal_form t5 in
+          if sub_ty t5' t3' [] then Some (normal_form (subst t4 x t5'))
+          else None
       | _ -> None)
   | Pi ((x, t1), t2) -> (
       match (univ_level t1 env, univ_level t2 ((x, t1) :: env)) with
@@ -76,8 +72,7 @@ let rec ty t env =
 
 and univ_level t env =
   match ty t env with
-  | Some t1 -> (
-      match normal_form t1 with Some (Univ n) -> Some n | _ -> None)
+  | Some t1 -> ( match normal_form t1 with Univ n -> Some n | _ -> None)
   | _ -> None
 
 let to_string t =
