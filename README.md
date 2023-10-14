@@ -2,7 +2,7 @@
 
 
 # The Interface
-In the directory _GUI_ is a mockup proposition of an interface using CodeMirror for the editable area, HTML, CSS and Javascript for the rest of the interface, and Electron to make it into a standalone software.
+In the directory _endive-gui_ is a mockup proposition of an interface using CodeMirror for the editable area, HTML, CSS and Javascript for the rest of the interface, and Electron to make it into a standalone software.
 
 Ideally, the Interface and the Software should be sufficiently modular so that the interface can be used as is in any web browser (either hiding the menus about saving and loading files, or providing replacements for them).
 
