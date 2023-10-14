@@ -9,17 +9,8 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:endive.helloWorld"
-  ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "endive.helloWorld",
-        "title": "Hello World"
-      }
-    ],
     "languages": [
       {
         "id": "endive",
