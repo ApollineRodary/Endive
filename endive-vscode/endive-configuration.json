@@ -1,28 +1,17 @@
 {
-    "brackets": [
-        [
-            "(",
-            ")"
-        ],
-        [
-            "{",
-            "}"
-        ]
-    ],
-    "colorizedBracketPairs": [
-        [
-            "(",
-            ")"
-        ]
-    ],
-    "autoClosingPairs": [
-        {
-            "open": "(",
-            "close": ")"
-        },
-        {
-            "open": "{",
-            "close": "}"
-        }
-    ]
+  "brackets": [
+    ["(", ")"],
+    ["{", "}"]
+  ],
+  "colorizedBracketPairs": [["(", ")"]],
+  "autoClosingPairs": [
+    {
+      "open": "(",
+      "close": ")"
+    },
+    {
+      "open": "{",
+      "close": "}"
+    }
+  ]
 }

@@ -87,3 +87,16 @@ and press <kbd>F5</kbd>.
 
 The TextMate grammar file is located at `endive-vscode/endive.tmLanguage.json`.
 The `editor.action.inspectTMScopes` command can be useful to debug the grammar.
+
+## Contributing
+
+To format the OCaml code:
+```sh
+$ dune fmt
+```
+
+To format the code for the VS Code extension:
+```sh
+$ cd endive-vscode
+$ npm run format
+```
