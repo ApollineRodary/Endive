@@ -6,6 +6,52 @@
     "scopeName": "source.endive",
     "patterns": [
         {
+            "match": "\\b(Lemma)\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*:",
+            "comment": "Lemma statement",
+            "name": "meta.lemma.endive",
+            "captures": {
+                "1": {
+                    "name": "keyword.control.lemma.endive"
+                },
+                "2": {
+                    "name": "entity.name.lemma.endive"
+                }
+            }
+        },
+        {
+            "match": "\\bLemma\\b",
+            "comment": "Lemma keyword",
+            "name": "keyword.control.lemma.endive"
+        },
+        {
+            "match": "\\bQed\\b",
+            "comment": "Qed keyword",
+            "name": "keyword.control.qed.endive"
+        },
+        {
+            "match": "\\b(let)\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*:",
+            "comment": "Let statement",
+            "name": "meta.let.endive",
+            "captures": {
+                "1": {
+                    "name": "keyword.other.let.endive"
+                },
+                "2": {
+                    "name": "variable.other.endive"
+                }
+            }
+        },
+        {
+            "match": "\\blet\\b",
+            "comment": "Let keyword",
+            "name": "keyword.other.let.endive"
+        },
+        {
+            "match": "\\bexact\\b",
+            "comment": "Exact keyword",
+            "name": "keyword.control.exact.endive"
+        },
+        {
             "match": "\\b(forall)\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*:",
             "comment": "For all quantifier",
             "name": "meta.forall.endive",
@@ -54,7 +100,7 @@
         {
             "match": "\\b[a-zA-Z][a-zA-Z0-9]*\\b",
             "comment": "Variable",
-            "name": "variable.endive"
+            "name": "variable.other.endive"
         },
         {
             "match": "\\b[0-9]+\\b",

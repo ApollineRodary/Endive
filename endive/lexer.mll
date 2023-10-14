@@ -9,10 +9,15 @@ rule token = parse
   | '@'      { AT }
   | ':'      { COLON }
   | ','      { COMMA }
+  | '.'      { DOT }
+  | "exact"  { EXACT }
   | "forall" { FORALL }
   | "fun"    { FUN }
   | '{'      { LBRACE }
+  | "Lemma"  { LEMMA }
+  | "let"    { LET }
   | '('      { LPAREN }
+  | "Qed"    { QED }
   | '}'      { RBRACE }
   | ')'      { RPAREN }
   | "Type"   { TYPE }

@@ -46,7 +46,7 @@ let pubish_diags doc =
   let lexbuf = Lexing.from_string text in
   let diags =
     try
-      Endive.Parser.term Endive.Lexer.token lexbuf;
+      let _ = Endive.Parser.file Endive.Lexer.token lexbuf in
       []
     with _ ->
       let pos = lexbuf.lex_start_p in
