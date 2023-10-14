@@ -76,10 +76,17 @@ Install the required dependencies:
 $ opam install . --deps-only
 ```
 
-Build the LSP server (add tkn `-w` flag to automatically rebuild whenever a
+Build the LSP server (add the `-w` flag to automatically rebuild whenever a
 souce file changes):
 ```sh
 $ dune build
+```
+
+Build the VS Code extension (use `watch` instead of `compile` to rebuild
+automatically when the source code changes):
+```sh
+$ cd endive-vscode
+$ npm run compile
 ```
 
 To use the VS Code extension, open `endive-vscode/src/extension.ts` in VS Code
@@ -95,8 +102,8 @@ To format the OCaml code:
 $ dune fmt
 ```
 
-To format the code for the VS Code extension:
+After modifying the VS Code extension (in `endive-vscode`):
 ```sh
-$ cd endive-vscode
-$ npm run format
+$ npm run format # Format the code.
+$ npm run lint   # Check for linter warnings.
 ```
