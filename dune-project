@@ -1,17 +1,19 @@
 (lang dune 3.6)
+(using menhir 2.1)
 
 (name endive)
 
-(generate_opam_files true)
-
-(source
- (github ApollineRodary/Endive))
-
+(source (github ApollineRodary/Endive))
 (license MIT)
 
 (package
  (name endive)
  (synopsis "A proof assistant for the Integrated Project computer science course at ENS de Lyon")
- (depends ocaml dune lsp))
+ (depends
+   dune
+   lsp
+   menhir
+   ocaml
+   (ocamlformat :with-test)))
 
-(using menhir 2.1)
+(generate_opam_files true)

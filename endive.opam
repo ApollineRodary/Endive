@@ -6,9 +6,11 @@ license: "MIT"
 homepage: "https://github.com/ApollineRodary/Endive"
 bug-reports: "https://github.com/ApollineRodary/Endive/issues"
 depends: [
-  "ocaml"
   "dune" {>= "3.6"}
   "lsp"
+  "menhir"
+  "ocaml"
+  "ocamlformat" {with-test}
   "odoc" {with-doc}
 ]
 build: [

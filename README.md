@@ -1,5 +1,7 @@
 # Endive
 
+[![CI](https://github.com/ApollineRodary/Endive/actions/workflows/ci.yml/badge.svg)](https://github.com/ApollineRodary/Endive/actions/workflows/ci.yml)
+
 Endive is a WIP proof assistant for the Integrated Project (IP) computer science
 course at ENS de Lyon.
 
