@@ -22,7 +22,7 @@ rule token = parse
   | ')'      { RPAREN }
   | "Type"   { TYPE }
 
-  | ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9']* as s { ID s }
-  | ['0'-'9']+ as s                               { INT (int_of_string s) }
+  | ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']* as s { ID s }
+  | ['0'-'9']+ as s                                     { INT (int_of_string s) }
 
   | eof { EOF }
