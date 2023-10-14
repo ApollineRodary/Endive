@@ -6,24 +6,55 @@
     "scopeName": "source.endive",
     "patterns": [
         {
+            "match": "\\b(forall)\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*:",
+            "comment": "For all quantifier",
+            "name": "meta.forall.endive",
+            "captures": {
+                "1": {
+                    "name": "keyword.other.forall.endive"
+                },
+                "2": {
+                    "name": "variable.parameter.forall.endive"
+                }
+            }
+        },
+        {
             "match": "\\bforall\\b",
             "comment": "For all quantifier keyword",
-            "name": "support.type.forall.endive"
+            "name": "keyword.other.forall.endive"
+        },
+        {
+            "match": "\\bType\\s*@\\s*\\{\\s*[0-9]+\\s*\\}",
+            "comment": "Type universe",
+            "name": "support.type.universe.endive"
         },
         {
             "match": "\\bType\\b",
             "comment": "Type universe keyword",
-            "name": "support.type.universe.endive"
+            "name": "keyword.other.universe.endive"
+        },
+        {
+            "match": "\\b(fun)\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*:",
+            "comment": "Lambda abstraction",
+            "name": "meta.function.endive",
+            "captures": {
+                "1": {
+                    "name": "keyword.other.fun.endive"
+                },
+                "2": {
+                    "name": "variable.parameter.fun.endive"
+                }
+            }
         },
         {
             "match": "\\bfun\\b",
             "comment": "Lambda abstraction keyword",
-            "name": "keyword.control.fun.endive"
+            "name": "keyword.other.fun.endive"
         },
         {
-            "match": "\\b[a-zA-Z0-9]+\\b",
+            "match": "\\b[a-zA-Z][a-zA-Z0-9]*\\b",
             "comment": "Variable",
-            "name": "variable.other.endive"
+            "name": "variable.endive"
         },
         {
             "match": "\\b[0-9]+\\b",
