@@ -3,7 +3,9 @@ open Parser
 }
 
 rule token = parse
-  | [' ''\t''\n'] { token lexbuf }
+  | '\n' { Lexing.new_line lexbuf; token lexbuf }
+
+  | [' ''\t'] { token lexbuf }
 
   | "=>"     { ARROW }
   | '@'      { AT }

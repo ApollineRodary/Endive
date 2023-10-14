@@ -41,42 +41,82 @@ let end_cursor_pos s =
     s;
   (!line, !col)
 
+let lsp_pos_from_lexing (p : Lexing.position) : Lsp.Types.Position.t =
+  let line = p.pos_lnum - 1 in
+  let character = p.pos_cnum - p.pos_bol in
+  Lsp.Types.Position.create ~line ~character
+
+let lsp_range_from_lexbuf (lexbuf : Lexing.lexbuf) =
+  let start = lsp_pos_from_lexing lexbuf.lex_start_p in
+  let end_ = lsp_pos_from_lexing lexbuf.lex_curr_p in
+  Lsp.Types.Range.create ~start ~end_
+
+let lsp_pos_from_endive (p : Endive.Span.pos) : Lsp.Types.Position.t =
+  Lsp.Types.Position.create ~line:p.line ~character:p.column
+
+let lsp_range_from_span (span : Endive.Span.span) =
+  let start = lsp_pos_from_endive span.start in
+  let end_ = lsp_pos_from_endive span.end_ in
+  Lsp.Types.Range.create ~start ~end_
+
+module I = Endive.Parser.MenhirInterpreter
+
+let parse text =
+  let lexbuf = Lexing.from_string text in
+  let checkpoint = Endive.Parser.Incremental.file lexbuf.lex_curr_p in
+  let rec aux checkpoint diags =
+    match checkpoint with
+    | I.InputNeeded _env -> (
+        try
+          let token = Endive.Lexer.token lexbuf in
+          let start = lexbuf.lex_start_p in
+          let end_ = lexbuf.lex_curr_p in
+          let checkpoint = I.offer checkpoint (token, start, end_) in
+          aux checkpoint diags
+        with _ ->
+          ( [],
+            Lsp.Types.Diagnostic.create
+              ~range:(lsp_range_from_lexbuf lexbuf)
+              ~severity:Lsp.Types.DiagnosticSeverity.Error
+              ?source:(Some "endive") ~message:"Syntax error." ()
+            :: diags ))
+    | I.Shifting _ | I.AboutToReduce _ ->
+        let checkpoint = I.resume checkpoint in
+        aux checkpoint diags
+    | I.Accepted stmts -> (stmts, diags)
+    | I.HandlingError _ | I.Rejected ->
+        ( [],
+          Lsp.Types.Diagnostic.create
+            ~range:(lsp_range_from_lexbuf lexbuf)
+            ~severity:Lsp.Types.DiagnosticSeverity.Error ?source:(Some "endive")
+            ~message:"Syntax error." ()
+          :: diags )
+  in
+  aux checkpoint []
+
 let publish_diags doc =
   let text = Lsp.Text_document.text doc in
-  let lexbuf = Lexing.from_string text in
-  let end_line, end_column = end_cursor_pos text in
+  let stmts, diags = parse text in
   let diags =
-    try
-      let stmts = Endive.Parser.file Endive.Lexer.token lexbuf in
-      let errs = Endive.Validate.validate stmts in
-      List.map
-        (fun err ->
-          Lsp.Types.Diagnostic.create
-            ~range:
-              (Lsp.Types.Range.create
-                 ~start:(Lsp.Types.Position.create ~line:0 ~character:0)
-                 ~end_:
-                   (Lsp.Types.Position.create ~line:end_line
-                      ~character:end_column))
-            ~severity:Lsp.Types.DiagnosticSeverity.Error ?source:(Some "endive")
-            ~message:err ())
-        errs
-    with _ ->
-      let pos = lexbuf.lex_start_p in
-      let start_line = pos.pos_lnum - 1 in
-      let start_column = pos.pos_cnum - pos.pos_bol in
-      [
-        Lsp.Types.Diagnostic.create
-          ~range:
-            (Lsp.Types.Range.create
-               ~start:
-                 (Lsp.Types.Position.create ~line:start_line
-                    ~character:start_column)
-               ~end_:
-                 (Lsp.Types.Position.create ~line:end_line ~character:end_column))
+    let errs = Endive.Validate.validate stmts in
+    List.map
+      (fun (err : string Endive.Span.annotated) ->
+        let range =
+          match err.span with
+          | Some span -> lsp_range_from_span span
+          | None ->
+              let start = Lsp.Types.Position.create ~line:0 ~character:0 in
+              let end_line, end_column = end_cursor_pos text in
+              let end_ =
+                Lsp.Types.Position.create ~line:end_line ~character:end_column
+              in
+              Lsp.Types.Range.create ~start ~end_
+        in
+        Lsp.Types.Diagnostic.create ~range
           ~severity:Lsp.Types.DiagnosticSeverity.Error ?source:(Some "endive")
-          ~message:"syntax error" ();
-      ]
+          ~message:err.el ())
+      errs
+    @ diags
   in
   let notif =
     Lsp.Server_notification.PublishDiagnostics
