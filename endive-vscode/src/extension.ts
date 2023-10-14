@@ -6,7 +6,7 @@ let client: LanguageClient | undefined = undefined;
 
 export function activate(context: ExtensionContext) {
 	const serverOptions: ServerOptions = {
-		command: context.asAbsolutePath('../_build/default/bin/main.exe'),
+		command: context.asAbsolutePath('../_build/default/endive-lsp-server/main.exe'),
 	};
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [{ scheme: 'file', language: 'endive' }]
