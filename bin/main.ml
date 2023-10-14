@@ -111,7 +111,9 @@ let main () =
             in
             let sync =
               `TextDocumentSyncOptions
-                (Lsp.Types.TextDocumentSyncOptions.create ~openClose:true ())
+                (Lsp.Types.TextDocumentSyncOptions.create
+                   ?change:(Some Lsp.Types.TextDocumentSyncKind.Incremental)
+                   ~openClose:true ())
             in
             let caps =
               Lsp.Types.ServerCapabilities.create ?textDocumentSync:(Some sync)
