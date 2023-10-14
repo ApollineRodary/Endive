@@ -11,6 +11,11 @@
             "name": "support.type.forall.endive"
         },
         {
+            "match": "\\bType\\b",
+            "comment": "Type universe keyword",
+            "name": "support.type.universe.endive"
+        },
+        {
             "match": "\\bfun\\b",
             "comment": "Lambda abstraction keyword",
             "name": "keyword.control.fun.endive"
@@ -19,6 +24,10 @@
             "match": "\\b[a-zA-Z0-9]+\\b",
             "comment": "Variable",
             "name": "variable.other.endive"
+        },
+        {
+            "match": "\\b[0-9]+\\b",
+            "name": "constant.numeric.endive"
         }
     ]
 }
