@@ -47,6 +47,7 @@ binding:
 arg:
   ID                        { Var (validate_var $1) }
 | TYPE AT LBRACE INT RBRACE { Univ $4 }
+| NOT arg                   { Pi (("_", $2), Var "False") }
 | LPAREN term RPAREN        { $2 }
 ;
 

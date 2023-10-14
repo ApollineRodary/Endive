@@ -18,6 +18,7 @@ rule token = parse
   | "Lemma"  { LEMMA }
   | "let"    { LET }
   | '('      { LPAREN }
+  | '~'      { NOT }
   | "Qed"    { QED }
   | '}'      { RBRACE }
   | ')'      { RPAREN }
