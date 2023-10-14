@@ -41,18 +41,30 @@ let end_cursor_pos s =
     s;
   (!line, !col)
 
-let pubish_diags doc =
+let publish_diags doc =
   let text = Lsp.Text_document.text doc in
   let lexbuf = Lexing.from_string text in
+  let end_line, end_column = end_cursor_pos text in
   let diags =
     try
-      let _ = Endive.Parser.file Endive.Lexer.token lexbuf in
-      []
+      let stmts = Endive.Parser.file Endive.Lexer.token lexbuf in
+      let errs = Endive.Validate.validate stmts in
+      List.map
+        (fun err ->
+          Lsp.Types.Diagnostic.create
+            ~range:
+              (Lsp.Types.Range.create
+                 ~start:(Lsp.Types.Position.create ~line:0 ~character:0)
+                 ~end_:
+                   (Lsp.Types.Position.create ~line:end_line
+                      ~character:end_column))
+            ~severity:Lsp.Types.DiagnosticSeverity.Error ?source:(Some "endive")
+            ~message:err ())
+        errs
     with _ ->
       let pos = lexbuf.lex_start_p in
       let start_line = pos.pos_lnum - 1 in
       let start_column = pos.pos_cnum - pos.pos_bol in
-      let end_line, end_column = end_cursor_pos text in
       [
         Lsp.Types.Diagnostic.create
           ~range:
@@ -132,7 +144,7 @@ let main () =
         | Ok (Lsp.Client_notification.TextDocumentDidOpen params) ->
             let doc = Lsp.Text_document.make ~position_encoding:`UTF8 params in
             Hashtbl.add docs params.textDocument.uri doc;
-            pubish_diags doc
+            publish_diags doc
         | Ok (Lsp.Client_notification.TextDocumentDidClose params) ->
             Hashtbl.remove docs params.textDocument.uri
         | Ok (Lsp.Client_notification.TextDocumentDidChange params) ->
@@ -141,7 +153,7 @@ let main () =
               Lsp.Text_document.apply_content_changes doc params.contentChanges
             in
             Hashtbl.replace docs params.textDocument.uri doc;
-            pubish_diags doc
+            publish_diags doc
         | _ -> ())
     | _ -> ());
     main_loop ()
