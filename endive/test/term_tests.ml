@@ -13,9 +13,14 @@ let%test "alpha equivalence" =
   let t' = Pi (("Q", Univ 1), Var "Q") in
   alpha_eq t t' []
 
-let%test "normal form" =
+let%test "normal form: beta reduction" =
   let t = App (Lam (("x", Var "X"), Var "x"), Var "y") in
   let t' = Var "y" in
+  normal_form t = t'
+
+let%test "normal form: beta reduction under application" =
+  let t = App (Var "f", App (Lam (("x", Var "X"), Var "x"), Var "y")) in
+  let t' = App (Var "f", Var "y") in
   normal_form t = t'
 
 let%test "type checking" =

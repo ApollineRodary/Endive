@@ -48,7 +48,7 @@ let rec normal_form t =
       let t2' = normal_form t2 in
       match t1' with
       | Lam ((x, _t3), t4) -> normal_form (subst t4 x t2')
-      | _ -> t1)
+      | _ -> App (t1', t2'))
   | Pi ((x, t1), t2) -> Pi ((x, normal_form t1), normal_form t2)
   | _ -> t
 
