@@ -132,7 +132,7 @@ let main () =
   let spec = Lsp.Cli.Arg.spec arg in
   let usage =
     "endive-lsp-server [ --stdio | --socket PORT | --port PORT | --pipe PIPE ] \
-     [ --clientProcessId pid ]"
+     [ --clientProcessId PID ]"
   in
   let _args =
     Arg.parse spec

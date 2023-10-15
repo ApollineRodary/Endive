@@ -54,3 +54,14 @@ let validate stmts =
     aux rest env proved errs goal
   in
   aux stmts [] [] [] None
+
+let rec print_errors errs =
+  match errs with
+  | [] -> ()
+  | { el; span } :: rest ->
+      (match span with
+      | Some span ->
+          Printf.eprintf "%d:%d: %s\n" (span.start.line + 1)
+            (span.start.column + 1) el
+      | None -> prerr_endline el);
+      print_errors rest

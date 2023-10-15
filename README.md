@@ -23,8 +23,9 @@ Qed.
 
 ## Architecture
 
-The core code of Endive can be found in the `endive` directory. It contains
-OCaml code to parse and validate proofs and is meant to be reusable.
+The core code of Endive can be found in the `endive` directory. It contains an
+OCaml libary to parse and validate proofs which is meant to be reusable. There
+is also an executable that uses this library to parse and validate a proof file.
 
 ### The Interface
 
