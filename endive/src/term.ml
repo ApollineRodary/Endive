@@ -9,6 +9,9 @@ and binding = string * term
 
 type env = binding list
 
+let term_fun t1 t2 = Pi (("_", t1), t2)
+let term_not t = term_fun t (Var "False")
+
 let rec subst t x u =
   match t with
   | Var y when y = x -> u
@@ -25,7 +28,7 @@ let rec alpha_eq t u map =
   | Lam ((x, t1), t2), Lam ((x', t1'), t2') ->
       alpha_eq t1 t1' map && alpha_eq t2 t2' ((x, x') :: map)
   | App (t, u), App (v, w) -> alpha_eq t v map && alpha_eq u w map
-  | Pi ((x, t1), t2), Lam ((x', t1'), t2') ->
+  | Pi ((x, t1), t2), Pi ((x', t1'), t2') ->
       alpha_eq t1 t1' map && alpha_eq t2 t2' ((x, x') :: map)
   | Univ n, Univ m -> n = m
   | _ -> false
@@ -75,7 +78,7 @@ and univ_level t env =
   | Some t1 -> ( match normal_form t1 with Univ n -> Some n | _ -> None)
   | _ -> None
 
-let to_string t =
+let string_of_term t =
   let rec aux t ~paren_around_app ~paren_around_arrow ~paren_around_lam =
     match t with
     | Var x -> x

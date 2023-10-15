@@ -55,7 +55,7 @@ annotated_binding:
 arg:
   ID                        { Var (validate_var $1) }
 | TYPE AT LBRACE INT RBRACE { Univ $4 }
-| NOT arg                   { Pi (("_", $2), Var "False") }
+| NOT arg                   { term_not $2 }
 | LPAREN term RPAREN        { $2 }
 ;
 
@@ -66,7 +66,7 @@ app:
 
 term:
   app                       { $1 }
-| term IMP term             { Pi (("_", $1), $3) }
+| term IMP term             { term_fun $1 $3 }
 | FUN binding ARROW term    { Lam ($2, $4) }
 | FORALL binding COMMA term { Pi ($2, $4) }
 ;

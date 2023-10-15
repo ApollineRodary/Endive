@@ -23,6 +23,8 @@ jobs:
         run: opam exec -- dune build @fmt
       - name: Build OCaml packages
         run: opam exec -- dune build
+      - name: Run OCaml tests
+        run: opam exec -- dune runtest
       - name: Use latest LTS Node.js release
         uses: actions/setup-node@v3
         with:

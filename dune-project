@@ -4,6 +4,8 @@
 (name endive)
 
 (source (github ApollineRodary/Endive))
+(maintainers)
+(authors)
 (license MIT)
 
 (package
@@ -14,6 +16,7 @@
    lsp
    menhir
    ocaml
-   (ocamlformat :with-test)))
+   (ocamlformat :with-test)
+   (ppx_inline_test :with-test)))
 
 (generate_opam_files true)

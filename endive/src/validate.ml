@@ -36,7 +36,7 @@ let validate stmts =
                   {
                     el =
                       "Let type does not match the current goal ("
-                      ^ Term.to_string goal ^ ").";
+                      ^ Term.string_of_term goal ^ ").";
                     span = t1.span;
                   };
                 ]

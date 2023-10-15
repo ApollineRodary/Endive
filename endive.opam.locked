@@ -7,22 +7,12 @@ license: "MIT"
 homepage: "https://github.com/ApollineRodary/Endive"
 bug-reports: "https://github.com/ApollineRodary/Endive/issues"
 depends: [
-  "astring" {= "0.8.5" & with-test}
-  "base" {= "v0.16.3" & with-test}
   "base-bigarray" {= "base"}
-  "base-bytes" {= "base" & with-test}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
-  "camlp-streams" {= "5.0.1" & with-test}
   "cmdliner" {= "1.2.0"}
   "cppo" {= "1.6.9"}
-  "csexp" {= "1.5.2" & with-test}
   "dune" {= "3.11.1"}
-  "dune-build-info" {= "3.11.1" & with-test}
-  "dune-configurator" {= "3.11.1" & with-test}
-  "either" {= "1.0.0" & with-test}
-  "fix" {= "20230505" & with-test}
-  "fpath" {= "0.7.3" & with-test}
   "jsonrpc" {= "1.16.2"}
   "lsp" {= "1.16.2"}
   "menhir" {= "20230608"}
@@ -31,21 +21,11 @@ depends: [
   "ocaml" {= "4.14.1"}
   "ocaml-config" {= "2"}
   "ocaml-system" {= "4.14.1"}
-  "ocaml-version" {= "3.6.2" & with-test}
   "ocamlbuild" {= "0.14.2"}
   "ocamlfind" {= "1.9.6"}
-  "ocamlformat" {= "0.26.1" & with-test}
-  "ocamlformat-lib" {= "0.26.1" & with-test}
-  "ocp-indent" {= "1.8.1" & with-test}
   "ppx_yojson_conv_lib" {= "v0.16.0"}
-  "re" {= "1.11.0" & with-test}
-  "result" {= "1.5" & with-test}
   "seq" {= "base"}
-  "sexplib0" {= "v0.16.0" & with-test}
-  "stdio" {= "v0.16.0" & with-test}
   "topkg" {= "1.0.7"}
-  "uucp" {= "15.1.0" & with-test}
-  "uuseg" {= "15.1.0" & with-test}
   "uutf" {= "1.0.3"}
   "yojson" {= "2.1.1"}
 ]
