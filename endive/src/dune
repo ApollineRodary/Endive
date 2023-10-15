@@ -1,0 +1,10 @@
+(library
+ (name endive)
+ (libraries menhirLib))
+
+(menhir
+ (modules parser)
+ (flags --table))
+
+(ocamllex
+ (modules lexer))

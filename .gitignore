@@ -1,3 +1,2 @@
-node_modules/
-package-lock.json
-GUI/Software/out
+/_build/
+/_opam/

@@ -1,0 +1,4 @@
+(executable
+ (public_name endive-lsp-server)
+ (name main)
+ (libraries endive lsp))
