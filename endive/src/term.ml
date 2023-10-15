@@ -73,10 +73,7 @@ let rec ty t env =
       | _ -> None)
   | Univ n -> Some (Univ (n + 1))
 
-and univ_level t env =
-  match ty t env with
-  | Some t1 -> ( match normal_form t1 with Univ n -> Some n | _ -> None)
-  | _ -> None
+and univ_level t env = match ty t env with Some (Univ n) -> Some n | _ -> None
 
 let string_of_term t =
   let rec aux t ~paren_around_app ~paren_around_arrow ~paren_around_lam =
