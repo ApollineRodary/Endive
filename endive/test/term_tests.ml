@@ -21,6 +21,4 @@ let%test "normal form" =
 let%test "type checking" =
   let t1 = Lam (("x", Var "X"), Var "x") in
   let t2 = term_fun (Var "X") (Var "X") in
-  match ty t1 [] with
-  | Some t2' -> alpha_eq t2' t2 []
-  | None -> false
+  match ty t1 [] with Some t2' -> alpha_eq t2' t2 [] | None -> false
