@@ -19,7 +19,7 @@ let annotate (start, end_) el =
   { el; span }
 %}
 
-%token ARROW AT COLON COMMA DOT EXACT FORALL FUN IMP LBRACE LEMMA LET LPAREN NOT QED RBRACE RPAREN TYPE
+%token ARROW AT COLON COMMA DOT EXACT FORALL FUN IMP LBRACE LEMMA LET LPAREN NOT QED RBRACE RPAREN TYPE WSUP WTYPE WREC
 %token <string> ID
 %token <int> INT
 %token EOF
@@ -53,10 +53,12 @@ annotated_binding:
 ;
 
 arg:
-  ID                        { Var (validate_var $1) }
-| TYPE AT LBRACE INT RBRACE { Univ $4 }
-| NOT arg                   { term_not $2 }
-| LPAREN term RPAREN        { $2 }
+  ID                                            { Var (validate_var $1) }
+| TYPE AT LBRACE INT RBRACE                     { Univ $4 }
+| NOT arg                                       { term_not $2 }
+| WREC LPAREN term COMMA term COMMA term RPAREN { WRec ($3, $5, $7) }
+| WSUP LPAREN term COMMA term RPAREN            { Sup ($3, $5) }
+| LPAREN term RPAREN                            { $2 }
 ;
 
 app:
@@ -69,6 +71,7 @@ term:
 | term IMP term             { term_fun $1 $3 }
 | FUN binding ARROW term    { Lam ($2, $4) }
 | FORALL binding COMMA term { Pi ($2, $4) }
+| WTYPE binding COMMA term  { W ($2, $4) }
 ;
 
 binding:
