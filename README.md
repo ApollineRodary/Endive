@@ -66,7 +66,7 @@ environments, but for OCaml.
 
 Create a switch for the project if you haven't already:
 ```sh
-$ opam switch create .
+$ opam switch create . --deps-only --with-test --locked
 ```
 
 From now on, you need to enable it whenever you want to use OCaml tools:
@@ -74,13 +74,8 @@ From now on, you need to enable it whenever you want to use OCaml tools:
 $ eval $(opam env)
 ```
 
-Install the required dependencies:
-```sh
-$ opam install . --deps-only
-```
-
 Build the LSP server (add the `-w` flag to automatically rebuild whenever a
-souce file changes):
+source file changes):
 ```sh
 $ dune build
 ```
