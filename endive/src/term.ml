@@ -12,6 +12,9 @@ and annotated_binding = string annotated * term annotated
 let term_fun t1 t2 = Pi ((fresh "_", t1), t2)
 let term_not t = term_fun t (fresh (Var "False"))
 
+let rec term_int n =
+  if n = 0 then Var "Z" else App (fresh (Var "S"), fresh (term_int (n - 1)))
+
 let rec subst t x u =
   match t with
   | Var y when y = x -> u

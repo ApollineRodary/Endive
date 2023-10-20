@@ -69,6 +69,7 @@ annotated_id:
 
 arg:
   ID                                  { annotate $sloc (Var (validate_var $1)) }
+| INT                                 { annotate $sloc (term_int $1) }
 | SET                                 { annotate $sloc (Univ (fresh 0)) }
 | TYPE AT LBRACE annotated_int RBRACE { annotate $sloc (Univ $4) }
 | PROP                                { annotate $sloc (Univ (fresh 1)) }
