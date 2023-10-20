@@ -12,6 +12,8 @@ rule token = parse
   | ':'      { COLON }
   | ','      { COMMA }
   | '.'      { DOT }
+  | "def"    { DEF }
+  | '='      { EQ }
   | "exact"  { EXACT }
   | "forall" { FORALL }
   | "fun"    { FUN }
