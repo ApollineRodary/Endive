@@ -119,6 +119,21 @@
       "name": "support.type.universe.endive"
     },
     {
+      "match": "\\bleft\\b",
+      "comment": "Left keyword",
+      "name": "support.function.left.endive"
+    },
+    {
+      "match": "\\bright\\b",
+      "comment": "Right keyword",
+      "name": "support.function.right.endive"
+    },
+    {
+      "match": "\\bcase\\b",
+      "comment": "Case keyword",
+      "name": "support.function.case.endive"
+    },
+    {
       "match": "\\bType\\b",
       "comment": "Type universe keyword",
       "name": "keyword.other.universe.endive"

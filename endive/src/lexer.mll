@@ -9,6 +9,7 @@ rule token = parse
 
   | "=>"     { ARROW }
   | '@'      { AT }
+  | "case"   { CASE }
   | ':'      { COLON }
   | ','      { COMMA }
   | '.'      { DOT }
@@ -19,14 +20,17 @@ rule token = parse
   | "fun"    { FUN }
   | "->"     { IMP }
   | '{'      { LBRACE }
+  | "left"   { LEFT }
   | "Lemma"  { LEMMA }
   | "let"    { LET }
   | '('      { LPAREN }
   | '~'      { NOT }
   | "Qed"    { QED }
   | '}'      { RBRACE }
+  | "right"  { RIGHT }
   | ')'      { RPAREN }
   | "Type"   { TYPE }
+  | "\\/"    { VEL }
   | "wrec"   { WREC }
   | "wsup"   { WSUP }
   | "wtype"  { WTYPE }
