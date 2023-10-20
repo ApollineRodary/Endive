@@ -56,6 +56,7 @@ annotated_binding:
 
 arg:
   ID                                                       { Var (validate_var $1) }
+| INT                                                      { term_int $1 }
 | TYPE AT LBRACE INT RBRACE                                { Univ $4 }
 | NOT arg                                                  { term_not $2 }
 | CASE LPAREN term COMMA term COMMA term COMMA term RPAREN { Case ($3, $5, $7, $9) }

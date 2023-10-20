@@ -18,6 +18,7 @@ type env = binding list
 
 let term_fun t1 t2 = Pi (("_", t1), t2)
 let term_not t = term_fun t (Var "False")
+let rec term_int n = if n = 0 then Var "Z" else App (Var "S", term_int (n - 1))
 
 let rec unsafe_subst t x u =
   match t with
