@@ -13,11 +13,18 @@ let rec find_map_term f env stmts =
           | None -> (
               match find_map_term f env stmts with
               | Some res -> Some res
-              | None -> find_map_term f ((x.el, t.el) :: env) rest))
+              | None -> find_map_term f ((x.el, t) :: env) rest))
       | Let (x, t) -> (
           match f t env with
           | Some res -> Some res
-          | None -> find_map_term f ((x.el, t.el) :: env) rest)
+          | None -> find_map_term f ((x.el, t) :: env) rest)
+      | Def (x, t) -> (
+          match f t env with
+          | Some res -> Some res
+          | None -> (
+              match ty t env with
+              | Ok t1 -> find_map_term f ((x.el, t1) :: env) rest
+              | Error _ -> find_map_term f ((x.el, t) :: env) rest))
       | Exact t -> (
           match f t env with
           | Some res -> Some res
@@ -37,7 +44,7 @@ let complete env x =
     | [] -> acc
     | (y, t) :: rest ->
         if String.starts_with ~prefix:x y then
-          let detail = string_of_term t in
+          let detail = string_of_term t.el in
           let completion =
             Lsp.Types.CompletionItem.create ?detail:(Some detail) ~label:y ()
           in
@@ -47,7 +54,7 @@ let complete env x =
   aux env []
 
 let complete_in_term (pos : Lsp.Types.Position.t) (t : term annotated)
-    (env : (string * term) list) =
+    (env : (string * term annotated) list) =
   let rec aux t env =
     if inside_term pos t then
       match t.el with
@@ -55,7 +62,7 @@ let complete_in_term (pos : Lsp.Types.Position.t) (t : term annotated)
       | Lam ((x, t1), t2) | Pi ((x, t1), t2) -> (
           match aux t1 env with
           | Some res -> Some res
-          | None -> aux t2 ((x.el, t1.el) :: env))
+          | None -> aux t2 ((x.el, t1) :: env))
       | App (t1, t2) -> (
           match aux t1 env with Some res -> Some res | None -> aux t2 env)
       | Univ _ -> None

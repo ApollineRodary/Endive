@@ -19,7 +19,7 @@ let annotate (start, end_) el =
   { el; span }
 %}
 
-%token ARROW AT COLON COMMA DOT EXACT FORALL FUN IMP LBRACE LEMMA LET LPAREN NOT PROP QED RBRACE RPAREN SET TYPE COMMENT
+%token ARROW AT COLON COMMA DEF DOT EQ EXACT FORALL FUN IMP LBRACE LEMMA LET LPAREN NOT PROP QED RBRACE RPAREN SET TYPE COMMENT
 %token <string> ID
 %token <int> INT
 %token EOF
@@ -50,6 +50,7 @@ stmts:
 
 stmt:
   LET binding DOT                 { Let $2 }
+| DEF annotated_id EQ term DOT    { Def ($2, $4) }
 | LEMMA binding DOT stmts QED DOT { Lemma ($2, List.rev $4) }
 | EXACT term DOT                  { Exact $2 }
 ;
