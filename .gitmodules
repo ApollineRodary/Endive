@@ -1,0 +1,3 @@
+[submodule "endive-lsp-server/lsp-ws-proxy"]
+	path = endive-lsp-server/lsp-ws-proxy
+	url = https://github.com/qualified/lsp-ws-proxy.git
