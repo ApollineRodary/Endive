@@ -9,22 +9,31 @@ rule token = parse
 
   | "=>"     { ARROW }
   | '@'      { AT }
+  | "case"   { CASE }
   | ':'      { COLON }
   | ','      { COMMA }
   | '.'      { DOT }
+  | "def"    { DEF }
+  | '='      { EQ }
   | "exact"  { EXACT }
   | "forall" { FORALL }
   | "fun"    { FUN }
   | "->"     { IMP }
   | '{'      { LBRACE }
+  | "left"   { LEFT }
   | "Lemma"  { LEMMA }
   | "let"    { LET }
   | '('      { LPAREN }
   | '~'      { NOT }
   | "Qed"    { QED }
   | '}'      { RBRACE }
+  | "right"  { RIGHT }
   | ')'      { RPAREN }
   | "Type"   { TYPE }
+  | "\\/"    { VEL }
+  | "wrec"   { WREC }
+  | "wsup"   { WSUP }
+  | "wtype"  { WTYPE }
 
   | ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']* as s { ID s }
   | ['0'-'9']+ as s                                     { INT (int_of_string s) }
