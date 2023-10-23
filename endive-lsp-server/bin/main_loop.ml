@@ -1,4 +1,6 @@
+open Complete
 open Diag
+open Endive.Stmt
 
 module Fun = struct
   type 'a t = unit -> 'a
@@ -31,15 +33,19 @@ module Std_io =
       let write () chunks () = List.iter print_string chunks
     end)
 
-let publish_diags doc =
-  let diags = compute_diags doc in
+type doc = { mutable text : Lsp.Text_document.t; mutable stmts : stmt list }
+
+let parse_and_publish_diags doc =
+  let text = Lsp.Text_document.text doc.text in
+  let stmts, diags = parse_and_compute_diags text in
   let notif =
     Lsp.Server_notification.PublishDiagnostics
       (Lsp.Types.PublishDiagnosticsParams.create ~diagnostics:diags
-         ~uri:(Lsp.Text_document.documentUri doc)
+         ~uri:(Lsp.Text_document.documentUri doc.text)
          ())
   in
   let notif = Lsp.Server_notification.to_jsonrpc notif in
+  doc.stmts <- stmts;
   Std_io.write () (Jsonrpc.Packet.Notification notif) ()
 
 let main_loop () =
@@ -60,9 +66,11 @@ let main_loop () =
                    ?change:(Some Lsp.Types.TextDocumentSyncKind.Incremental)
                    ~openClose:true ())
             in
+            let completion = Lsp.Types.CompletionOptions.create () in
             let caps =
               Lsp.Types.ServerCapabilities.create ?textDocumentSync:(Some sync)
-                ?diagnosticProvider:(Some diag) ()
+                ?diagnosticProvider:(Some diag)
+                ?completionProvider:(Some completion) ()
             in
             let res = Lsp.Types.InitializeResult.create ~capabilities:caps () in
             let resp =
@@ -70,23 +78,36 @@ let main_loop () =
                 (Lsp.Types.InitializeResult.yojson_of_t res)
             in
             Std_io.write () (Jsonrpc.Packet.Response resp) ()
+        | Ok (E (Lsp.Client_request.TextDocumentCompletion params)) ->
+            let doc = Hashtbl.find docs params.textDocument.uri in
+            let completions = compute_completions params.position doc.stmts in
+            let resp =
+              Jsonrpc.Response.ok req.id
+                (Lsp.Types.CompletionList.yojson_of_t completions)
+            in
+            Std_io.write () (Jsonrpc.Packet.Response resp) ()
         | _ -> ())
     | Some (Jsonrpc.Packet.Notification notif) -> (
         match Lsp.Client_notification.of_jsonrpc notif with
         | Ok Lsp.Client_notification.Initialized -> ()
         | Ok (Lsp.Client_notification.TextDocumentDidOpen params) ->
-            let doc = Lsp.Text_document.make ~position_encoding:`UTF8 params in
+            let doc =
+              {
+                text = Lsp.Text_document.make ~position_encoding:`UTF8 params;
+                stmts = [];
+              }
+            in
             Hashtbl.add docs params.textDocument.uri doc;
-            publish_diags doc
+            parse_and_publish_diags doc
         | Ok (Lsp.Client_notification.TextDocumentDidClose params) ->
             Hashtbl.remove docs params.textDocument.uri
         | Ok (Lsp.Client_notification.TextDocumentDidChange params) ->
             let doc = Hashtbl.find docs params.textDocument.uri in
-            let doc =
-              Lsp.Text_document.apply_content_changes doc params.contentChanges
-            in
+            doc.text <-
+              Lsp.Text_document.apply_content_changes doc.text
+                params.contentChanges;
             Hashtbl.replace docs params.textDocument.uri doc;
-            publish_diags doc
+            parse_and_publish_diags doc
         | _ -> ())
     | _ -> ()
   done
