@@ -11,9 +11,27 @@ let%test "parse let" =
   = Some
       [
         Let
-          ( "x",
+          ( {
+              el = "x";
+              span =
+                Some
+                  {
+                    start = { line = 0; column = 4 };
+                    end_ = { line = 0; column = 5 };
+                  };
+            },
             {
-              el = Univ 0;
+              el =
+                Univ
+                  {
+                    el = 0;
+                    span =
+                      Some
+                        {
+                          start = { line = 0; column = 14 };
+                          end_ = { line = 0; column = 15 };
+                        };
+                  };
               span =
                 Some
                   {
@@ -29,7 +47,26 @@ let%test "parse exact" =
       [
         Exact
           {
-            el = App (Var "x", Var "y");
+            el =
+              App
+                ( {
+                    el = Var "x";
+                    span =
+                      Some
+                        {
+                          start = { line = 0; column = 6 };
+                          end_ = { line = 0; column = 7 };
+                        };
+                  },
+                  {
+                    el = Var "y";
+                    span =
+                      Some
+                        {
+                          start = { line = 0; column = 8 };
+                          end_ = { line = 0; column = 9 };
+                        };
+                  } );
             span =
               Some
                 {
@@ -44,7 +81,15 @@ let%test "parse lemma" =
   = Some
       [
         Lemma
-          ( ( "lemma",
+          ( ( {
+                el = "lemma";
+                span =
+                  Some
+                    {
+                      start = { line = 0; column = 6 };
+                      end_ = { line = 0; column = 11 };
+                    };
+              },
               {
                 el = Var "P";
                 span =
