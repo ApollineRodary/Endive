@@ -44,42 +44,45 @@ stmts:
 
 
 stmt:
-  LET annotated_binding DOT                 { Let $2 }
-| LEMMA annotated_binding DOT stmts QED DOT { Lemma ($2, List.rev $4) }
-| EXACT annotated_term DOT                  { Exact $2 }
+  LET binding DOT                 { Let $2 }
+| LEMMA binding DOT stmts QED DOT { Lemma ($2, List.rev $4) }
+| EXACT term DOT                  { Exact $2 }
 ;
 
-annotated_binding:
-  ID COLON annotated_term               { ($1, $3) }
-| LPAREN ID COLON annotated_term RPAREN { ($2, $4) }
+binding_:
+  annotated_id COLON term { ($1, $3) }
+;
+
+binding:
+  binding_               { $1 }
+| LPAREN binding_ RPAREN { $2 }
+;
+
+annotated_id:
+  ID { annotate $sloc $1 }
 ;
 
 arg:
-  ID                        { Var (validate_var $1) }
-| SET                       { Univ 0 }
-| TYPE AT LBRACE INT RBRACE { Univ $4 }
-| PROP                      { Univ 1 }
-| NOT arg                   { term_not $2 }
-| LPAREN term RPAREN        { $2 }
+  ID                                  { annotate $sloc (Var (validate_var $1)) }
+| SET                                 { annotate $sloc (Univ (fresh 0)) }
+| TYPE AT LBRACE annotated_int RBRACE { annotate $sloc (Univ $4) }
+| PROP                                { annotate $sloc (Univ (fresh 1)) }
+| NOT arg                             { annotate $sloc (term_not $2) }
+| LPAREN term RPAREN                  { $2 }
+;
+
+annotated_int:
+  INT { annotate $sloc $1 }
 ;
 
 app:
   arg     { $1 }
-| app arg { App ($1, $2) }
+| app arg { annotate $sloc (App ($1, $2)) }
 ;
 
 term:
   app                       { $1 }
-| term IMP term             { term_fun $1 $3 }
-| FUN binding ARROW term    { Lam ($2, $4) }
-| FORALL binding COMMA term { Pi ($2, $4) }
-;
-
-binding:
-  ID COLON term               { ($1, $3) }
-| LPAREN ID COLON term RPAREN { ($2, $4) }
-;
-
-annotated_term:
-  term { annotate $sloc $1 }
+| term IMP term             { annotate $sloc (term_fun $1 $3) }
+| FUN binding ARROW term    { annotate $sloc (Lam ($2, $4)) }
+| FORALL binding COMMA term { annotate $sloc (Pi ($2, $4)) }
 ;
