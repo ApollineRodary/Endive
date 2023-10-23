@@ -11,19 +11,19 @@ let validate stmts =
             { el = "The goal is not proven."; span = goal.span } :: errs
         | _ -> errs)
     | Stmt.Lemma ((x, t), stmts) :: rest -> (
-        match Term.ty t.el env with
-        | Some _ ->
+        match Term.ty t env with
+        | Ok _ ->
             let t' = map Term.normal_form t in
             let errs = aux stmts env proven errs (Some t') in
             let env = (x.el, t') :: env in
             aux rest env proven errs goal
-        | None ->
+        | Error span ->
             aux rest env proven
-              ({ el = "The lemma goal is invalid."; span = t.span } :: errs)
+              ({ el = "The lemma goal is invalid."; span } :: errs)
               goal)
     | Stmt.Let (x, t1) :: rest -> (
-        match Term.ty t1.el env with
-        | Some _ -> (
+        match Term.ty t1 env with
+        | Ok _ -> (
             let t1' = map Term.normal_form t1 in
             match goal with
             | Some { el = Term.Pi ((_x', t2), goal'); span = _ }
@@ -39,13 +39,13 @@ let validate stmts =
                   };
                 ]
             | None -> let_ rest env proven errs None x.el t1')
-        | None -> [ { el = "Invalid type in let."; span = t1.span } ])
+        | Error span -> [ { el = "Invalid type in let."; span } ])
     | Stmt.Exact t :: rest -> (
-        match Term.ty t.el env with
-        | Some t1 -> aux rest env (t1.el :: proven) errs goal
-        | None ->
+        match Term.ty t env with
+        | Ok t1 -> aux rest env (t1.el :: proven) errs goal
+        | Error span ->
             aux rest env proven
-              ({ el = "Invalid term in exact."; span = t.span } :: errs)
+              ({ el = "Invalid term in exact."; span } :: errs)
               goal)
   and let_ rest env proven errs goal x t =
     let env = (x, t) :: env in

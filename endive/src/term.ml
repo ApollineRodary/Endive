@@ -56,31 +56,37 @@ let rec normal_form t =
   | _ -> t
 
 let rec ty t env =
-  match t with
-  | Var x -> List.assoc_opt x env
+  match t.el with
+  | Var x -> (
+      match List.assoc_opt x env with Some t1 -> Ok t1 | None -> Error t.span)
   | Lam ((x, t1), t2) -> (
-      match ty t2.el ((x.el, t1) :: env) with
-      | Some t3 -> Some (fresh (Pi ((x, t1), t3)))
-      | None -> None)
+      match ty t2 ((x.el, t1) :: env) with
+      | Ok t3 -> Ok (fresh (Pi ((x, t1), t3)))
+      | Error e -> Error e)
   | App (t1, t2) -> (
-      match (ty t1.el env, ty t2.el env) with
-      | Some { el = Pi ((x, t3), t4); span = _ }, Some t5 ->
+      match (ty t1 env, ty t2 env) with
+      | Error e, _ -> Error e
+      | _, Error e -> Error e
+      | Ok { el = Pi ((x, t3), t4); span = _ }, Ok t5 ->
           let t3' = normal_form t3.el in
           let t5' = normal_form t5.el in
           if sub_ty t5' t3' [] then
-            Some (fresh (normal_form (subst t4.el x.el t5')))
-          else None
-      | _ -> None)
+            Ok (fresh (normal_form (subst t4.el x.el t5')))
+          else Error t5.span
+      | Ok { el = _; span }, _ -> Error span)
   | Pi ((x, t1), t2) -> (
-      match (univ_level t1.el env, univ_level t2.el ((x.el, t1) :: env)) with
-      | Some t3, Some t4 ->
-          if t3.el >= t4.el then Some (fresh (Univ t3))
-          else Some (fresh (Univ t4))
-      | _ -> None)
-  | Univ n -> Some (fresh (Univ (fresh (n.el + 1))))
+      match (univ_level t1 env, univ_level t2 ((x.el, t1) :: env)) with
+      | Ok t3, Ok t4 ->
+          if t3.el >= t4.el then Ok (fresh (Univ t3)) else Ok (fresh (Univ t4))
+      | Error e, _ -> Error e
+      | _, Error e -> Error e)
+  | Univ n -> Ok (fresh (Univ (fresh (n.el + 1))))
 
 and univ_level t env =
-  match ty t env with Some { el = Univ n; span = _ } -> Some n | _ -> None
+  match ty t env with
+  | Ok { el = Univ n; span = _ } -> Ok n
+  | Ok _ -> Error t.span
+  | Error e -> Error e
 
 let string_of_term t =
   let rec aux t ~paren_around_app ~paren_around_arrow ~paren_around_lam =
