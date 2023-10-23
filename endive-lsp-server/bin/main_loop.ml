@@ -50,7 +50,8 @@ let parse_and_publish_diags doc =
 
 let main_loop () =
   let docs = Hashtbl.create 2 in
-  while true do
+  let continue = ref true in
+  while !continue do
     match Std_io.read () () with
     | Some (Jsonrpc.Packet.Request req) -> (
         match Lsp.Client_request.of_jsonrpc req with
@@ -109,5 +110,5 @@ let main_loop () =
             Hashtbl.replace docs params.textDocument.uri doc;
             parse_and_publish_diags doc
         | _ -> ())
-    | _ -> ()
+    | _ -> continue := false
   done
