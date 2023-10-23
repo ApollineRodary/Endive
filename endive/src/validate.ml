@@ -17,10 +17,7 @@ let validate stmts =
             let errs = aux stmts env proven errs (Some t') in
             let env = (x.el, t') :: env in
             aux rest env proven errs goal
-        | Error span ->
-            aux rest env proven
-              ({ el = "The lemma goal is invalid."; span } :: errs)
-              goal)
+        | Error e -> aux rest env proven (e :: errs) goal)
     | Stmt.Let (x, t1) :: rest -> (
         match Term.ty t1 env with
         | Ok _ -> (
@@ -39,14 +36,11 @@ let validate stmts =
                   };
                 ]
             | None -> let_ rest env proven errs None x.el t1')
-        | Error span -> [ { el = "Invalid type in let."; span } ])
+        | Error e -> [ e ])
     | Stmt.Exact t :: rest -> (
         match Term.ty t env with
         | Ok t1 -> aux rest env (t1.el :: proven) errs goal
-        | Error span ->
-            aux rest env proven
-              ({ el = "Invalid term in exact."; span } :: errs)
-              goal)
+        | Error e -> aux rest env proven (e :: errs) goal)
   and let_ rest env proven errs goal x t =
     let env = (x, t) :: env in
     aux rest env proven errs goal

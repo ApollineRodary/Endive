@@ -54,4 +54,5 @@ let%test "type universe" =
   = Ok (fresh 0)
   && univ_level t2 [] = Ok (fresh 2)
   && univ_level t3 [] = Ok (fresh 2)
-  && univ_level t4 [] = Error None
+  && univ_level t4 []
+     = Error { el = "This term is expected to be type."; span = None }

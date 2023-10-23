@@ -55,39 +55,6 @@ let rec normal_form t =
   | Pi ((x, t1), t2) -> Pi ((x, map normal_form t1), map normal_form t2)
   | _ -> t
 
-let rec ty t env =
-  match t.el with
-  | Var x -> (
-      match List.assoc_opt x env with Some t1 -> Ok t1 | None -> Error t.span)
-  | Lam ((x, t1), t2) -> (
-      match ty t2 ((x.el, t1) :: env) with
-      | Ok t3 -> Ok (fresh (Pi ((x, t1), t3)))
-      | Error e -> Error e)
-  | App (t1, t2) -> (
-      match (ty t1 env, ty t2 env) with
-      | Error e, _ -> Error e
-      | _, Error e -> Error e
-      | Ok { el = Pi ((x, t3), t4); span = _ }, Ok t5 ->
-          let t3' = normal_form t3.el in
-          let t5' = normal_form t5.el in
-          if sub_ty t5' t3' [] then
-            Ok (fresh (normal_form (subst t4.el x.el t5')))
-          else Error t5.span
-      | Ok { el = _; span }, _ -> Error span)
-  | Pi ((x, t1), t2) -> (
-      match (univ_level t1 env, univ_level t2 ((x.el, t1) :: env)) with
-      | Ok t3, Ok t4 ->
-          if t3.el >= t4.el then Ok (fresh (Univ t3)) else Ok (fresh (Univ t4))
-      | Error e, _ -> Error e
-      | _, Error e -> Error e)
-  | Univ n -> Ok (fresh (Univ (fresh (n.el + 1))))
-
-and univ_level t env =
-  match ty t env with
-  | Ok { el = Univ n; span = _ } -> Ok n
-  | Ok _ -> Error t.span
-  | Error e -> Error e
-
 let string_of_term t =
   let rec aux t ~paren_around_app ~paren_around_arrow ~paren_around_lam =
     match t with
@@ -144,3 +111,51 @@ let string_of_term t =
   in
   aux t ~paren_around_app:false ~paren_around_arrow:false
     ~paren_around_lam:false
+
+let rec ty t env =
+  match t.el with
+  | Var x -> (
+      match List.assoc_opt x env with
+      | Some t1 -> Ok t1
+      | None -> Error { el = "Unbound variable " ^ x ^ "."; span = t.span })
+  | Lam ((x, t1), t2) -> (
+      match ty t2 ((x.el, t1) :: env) with
+      | Ok t3 -> Ok (fresh (Pi ((x, t1), t3)))
+      | Error e -> Error e)
+  | App (t1, t2) -> (
+      match (ty t1 env, ty t2 env) with
+      | Error e, _ -> Error e
+      | _, Error e -> Error e
+      | Ok { el = Pi ((x, t3), t4); span = _ }, Ok t5 ->
+          let t3' = normal_form t3.el in
+          let t5' = normal_form t5.el in
+          if sub_ty t5' t3' [] then
+            Ok (fresh (normal_form (subst t4.el x.el t5')))
+          else
+            Error
+              {
+                el =
+                  "This argument has type " ^ string_of_term t5.el
+                  ^ ", but the function expects it to have type "
+                  ^ string_of_term t3.el ^ ".";
+                span = t2.span;
+              }
+      | Ok _, _ ->
+          Error
+            {
+              el = "The left-hand side of an application must be a function.";
+              span = t1.span;
+            })
+  | Pi ((x, t1), t2) -> (
+      match (univ_level t1 env, univ_level t2 ((x.el, t1) :: env)) with
+      | Ok t3, Ok t4 ->
+          if t3.el >= t4.el then Ok (fresh (Univ t3)) else Ok (fresh (Univ t4))
+      | Error e, _ -> Error e
+      | _, Error e -> Error e)
+  | Univ n -> Ok (fresh (Univ (fresh (n.el + 1))))
+
+and univ_level t env =
+  match ty t env with
+  | Ok { el = Univ n; span = _ } -> Ok n
+  | Ok _ -> Error { el = "This term is expected to be type."; span = t.span }
+  | Error e -> Error e
