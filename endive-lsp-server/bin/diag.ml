@@ -63,25 +63,27 @@ let parse text =
   in
   aux checkpoint []
 
-let compute_diags doc =
-  let text = Lsp.Text_document.text doc in
+let parse_and_compute_diags text =
   let stmts, diags = parse text in
   let errs = Endive.Validate.validate stmts in
-  List.map
-    (fun (err : string Endive.Span.annotated) ->
-      let range =
-        match err.span with
-        | Some span -> lsp_range_of_span span
-        | None ->
-            let start = Lsp.Types.Position.create ~line:0 ~character:0 in
-            let end_line, end_column = end_cursor_pos text in
-            let end_ =
-              Lsp.Types.Position.create ~line:end_line ~character:end_column
-            in
-            Lsp.Types.Range.create ~start ~end_
-      in
-      Lsp.Types.Diagnostic.create ~range
-        ~severity:Lsp.Types.DiagnosticSeverity.Error ?source:(Some "endive")
-        ~message:err.el ())
-    errs
-  @ diags
+  let diags =
+    List.map
+      (fun (err : string Endive.Span.annotated) ->
+        let range =
+          match err.span with
+          | Some span -> lsp_range_of_span span
+          | None ->
+              let start = Lsp.Types.Position.create ~line:0 ~character:0 in
+              let end_line, end_column = end_cursor_pos text in
+              let end_ =
+                Lsp.Types.Position.create ~line:end_line ~character:end_column
+              in
+              Lsp.Types.Range.create ~start ~end_
+        in
+        Lsp.Types.Diagnostic.create ~range
+          ~severity:Lsp.Types.DiagnosticSeverity.Error ?source:(Some "endive")
+          ~message:err.el ())
+      errs
+    @ diags
+  in
+  (stmts, diags)
