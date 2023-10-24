@@ -7,28 +7,29 @@ rule token = parse
 
   | [' ''\t'] { token lexbuf }
 
-  | "=>"     { ARROW }
-  | '@'      { AT }
-  | ':'      { COLON }
-  | ','      { COMMA }
-  | '.'      { DOT }
-  | "def"    { DEF }
-  | '='      { EQ }
-  | "exact"  { EXACT }
-  | "forall" { FORALL }
-  | "fun"    { FUN }
-  | "->"     { IMP }
-  | '{'      { LBRACE }
-  | "Lemma"  { LEMMA }
-  | "let"    { LET }
-  | '('      { LPAREN }
-  | '~'      { NOT }
-  | "Prop"   { PROP }
-  | "Qed"    { QED }
-  | '}'      { RBRACE }
-  | ')'      { RPAREN }
-  | "Set"    { SET }
-  | "Type"   { TYPE }
+  | "=>"        { ARROW }
+  | '@'         { AT }
+  | ':'         { COLON }
+  | ":="        { COLONEQ }
+  | ','         { COMMA }
+  | '.'         { DOT }
+  | "def"       { DEF }
+  | "exact"     { EXACT }
+  | "forall"    { FORALL }
+  | "fun"       { FUN }
+  | "->"        { IMP }
+  | "Inductive" { INDUCTIVE }
+  | '{'         { LBRACE }
+  | "Lemma"     { LEMMA }
+  | "let"       { LET }
+  | '('         { LPAREN }
+  | '~'         { NOT }
+  | "Prop"      { PROP }
+  | "Qed"       { QED }
+  | '}'         { RBRACE }
+  | ')'         { RPAREN }
+  | "Set"       { SET }
+  | "Type"      { TYPE }
   | "/" [^ '\n' ]*      { COMMENT }
 
   | ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']* as s { ID s }

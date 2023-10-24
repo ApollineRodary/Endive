@@ -7,17 +7,6 @@ let rec find_map_term f env stmts =
   | [] -> None
   | stmt :: rest -> (
       match stmt with
-      | Lemma ((x, t), stmts) -> (
-          match f t env with
-          | Some res -> Some res
-          | None -> (
-              match find_map_term f env stmts with
-              | Some res -> Some res
-              | None -> find_map_term f ((x.el, t) :: env) rest))
-      | Let (x, t) -> (
-          match f t env with
-          | Some res -> Some res
-          | None -> find_map_term f ((x.el, t) :: env) rest)
       | Def (x, t) -> (
           match f t env with
           | Some res -> Some res
@@ -28,7 +17,30 @@ let rec find_map_term f env stmts =
       | Exact t -> (
           match f t env with
           | Some res -> Some res
-          | None -> find_map_term f env rest))
+          | None -> find_map_term f env rest)
+      | Inductive (s, constructors) -> (
+          match f s.ty env with
+          | Some res -> Some res
+          | None -> (
+              match List.find_map (fun (_x, t1) -> f t1 env) s.params with
+              | Some res -> Some res
+              | None -> (
+                  match
+                    List.find_map (fun (_x, t1) -> f t1 env) constructors
+                  with
+                  | Some res -> Some res
+                  | None -> find_map_term f env rest)))
+      | Lemma ((x, t), stmts) -> (
+          match f t env with
+          | Some res -> Some res
+          | None -> (
+              match find_map_term f env stmts with
+              | Some res -> Some res
+              | None -> find_map_term f ((x.el, t) :: env) rest))
+      | Let (x, t) -> (
+          match f t env with
+          | Some res -> Some res
+          | None -> find_map_term f ((x.el, t) :: env) rest))
 
 let inside_term (pos : Lsp.Types.Position.t) (t : term annotated) =
   match t.span with

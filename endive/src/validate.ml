@@ -11,6 +11,17 @@ let validate stmts =
           ->
             { el = "The goal is not proven."; span = goal.span } :: errs
         | _ -> errs)
+    | Def (x, t) :: rest -> (
+        let unannotated_defs = List.map (fun (x, t) -> (x, t.el)) defs in
+        let t' = subst_many unannotated_defs t in
+        match ty t' env with
+        | Ok _ -> aux rest env proven ((x.el, t') :: defs) errs goal
+        | Error e -> aux rest env proven defs (e :: errs) goal)
+    | Exact t :: rest -> (
+        match ty t env with
+        | Ok t1 -> aux rest env (t1.el :: proven) defs errs goal
+        | Error e -> aux rest env proven defs (e :: errs) goal)
+    | Inductive _ :: rest -> aux rest env proven defs errs goal
     | Lemma ((x, t), stmts) :: rest -> (
         match ty t env with
         | Ok _ ->
@@ -38,16 +49,6 @@ let validate stmts =
                 ]
             | None -> let_ rest env proven defs errs None x.el t1')
         | Error e -> [ e ])
-    | Exact t :: rest -> (
-        match ty t env with
-        | Ok t1 -> aux rest env (t1.el :: proven) defs errs goal
-        | Error e -> aux rest env proven defs (e :: errs) goal)
-    | Def (x, t) :: rest -> (
-        let unannotated_defs = List.map (fun (x, t) -> (x, t.el)) defs in
-        let t' = subst_many unannotated_defs t in
-        match ty t' env with
-        | Ok _ -> aux rest env proven ((x.el, t') :: defs) errs goal
-        | Error e -> aux rest env proven defs (e :: errs) goal)
   and let_ rest env proven defs errs goal x t =
     let env = (x, t) :: env in
     aux rest env proven defs errs goal
