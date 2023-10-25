@@ -21,6 +21,7 @@ rule token = parse
   | "let"    { LET }
   | '('      { LPAREN }
   | '~'      { NOT }
+  | "Prop"   { PROP }
   | "Qed"    { QED }
   | '}'      { RBRACE }
   | ')'      { RPAREN }
