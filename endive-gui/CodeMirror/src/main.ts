@@ -2,10 +2,6 @@ import {EditorView, minimalSetup} from "codemirror"
 import { languageServer } from 'codemirror-languageserver'
 import {placeholder} from "@codemirror/view"
 import {codeFolding, foldGutter} from "@codemirror/language"
-//import {autocompletion} from "@codemirror/autocomplete"
-
-//import {EXAMPLE} from "../../../../testLezer/lang-example/dist/index.js"
-
 
 var ls = languageServer({
 	// WebSocket server uri and other client options.
@@ -30,6 +26,8 @@ const targetElement = document.querySelector('#editor')!
 declare global {
   var editor: any;
 }
+
+alert("Heyyy");
 
 globalThis.editor = new EditorView({
   doc: initialText,
