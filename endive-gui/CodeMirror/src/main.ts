@@ -5,7 +5,7 @@ import {codeFolding, foldGutter} from "@codemirror/language"
 
 var ls = languageServer({
 	// WebSocket server uri and other client options.
-	serverUri: 'ws://0.0.0.0:9999',
+	serverUri: 'ws://13.51.51.237:9999',
 	rootUri: 'file:///',
 	workspaceFolders : null,
 /*
@@ -26,8 +26,6 @@ const targetElement = document.querySelector('#editor')!
 declare global {
   var editor: any;
 }
-
-alert("Heyyy");
 
 globalThis.editor = new EditorView({
   doc: initialText,
