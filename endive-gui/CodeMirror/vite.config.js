@@ -5,7 +5,7 @@ export default {
   root: path.resolve(__dirname, 'src'),
 
   build: {
-    outDir: path.resolve(__dirname, 'dist'),
+    outDir: path.resolve(__dirname, '../Interface/assets/scripts/'),
     rollupOptions: {
       input: {
         index: path.resolve(__dirname, 'src/main.ts')
