@@ -1,6 +1,12 @@
 html, body{
-height:90%;
+height:100%;
+margin:0;
+padding:0;
+overflow:auto;
+
 }
+
+.cm-editor {margin:40px; height:100%; margin-right : 60px;}
 
 em{
 text-decoration: underline;

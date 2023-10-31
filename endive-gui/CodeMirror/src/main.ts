@@ -31,7 +31,7 @@ declare global {
 globalThis.editor = new EditorView({
   doc: initialText,
   extensions: [
-    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls
+    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping
   ], 
   parent: targetElement,
 })
