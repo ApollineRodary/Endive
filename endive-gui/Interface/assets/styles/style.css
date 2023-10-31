@@ -94,7 +94,7 @@ font-style: normal;
 
 
 .hb {
-  /*display:None;*/
+  display:None;
   background-color: white;
   color: white;
   border: none;
@@ -105,7 +105,7 @@ font-style: normal;
 }
 
 #suggest_box {
-  width: 30%;
+  max-width: 30%;
   min-height: 26px;
   position:fixed;
   bottom: 80px;

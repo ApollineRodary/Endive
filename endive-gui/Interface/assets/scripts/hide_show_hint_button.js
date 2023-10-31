@@ -7,11 +7,15 @@ function hide_hb(){
 }
 
 function in_hb(){
-	$('#suggest_box').fadeIn(200);
+   $('#suggest_box').fadeIn(200);
 }
 
 function out_hb(){
-	$('#suggest_box').fadeOut(200);
+   $('#suggest_box').fadeOut(200);
+}
+
+function set_suggestion(text) {
+   $("#suggestion_text").replaceWith("<div id="+'"suggestion_text">'+text+"</div>");
 }
 
 $("#hb_suggest").hover(in_hb,out_hb)
