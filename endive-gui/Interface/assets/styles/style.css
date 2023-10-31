@@ -85,3 +85,21 @@ font-style: normal;
             /*background-color: #555;*/
             font-weight: bold;
         }
+        
+.hint-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+
+.hb {
+  display:None;
+  background-color: white;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
