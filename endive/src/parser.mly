@@ -19,7 +19,7 @@ let annotate (start, end_) el =
   { el; span }
 %}
 
-%token ARROW AT COLON COMMA DOT EXACT FORALL FUN IMP LBRACE LEMMA LET LPAREN NOT PROP QED RBRACE RPAREN SET TYPE
+%token ARROW AT COLON COMMA DOT EXACT FORALL FUN IMP LBRACE LEMMA LET LPAREN NOT PROP QED RBRACE RPAREN SET TYPE COMMENT
 %token <string> ID
 %token <int> INT
 %token EOF
@@ -39,7 +39,9 @@ file:
 stmts:
 |            { [] }
 | stmts stmt { $2 :: $1 }
+| stmts COMMENT { $1 }
 ;
+
 
 stmt:
   LET annotated_binding DOT                 { Let $2 }

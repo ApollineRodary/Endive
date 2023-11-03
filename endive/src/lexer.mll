@@ -27,6 +27,7 @@ rule token = parse
   | ')'      { RPAREN }
   | "Set"    { SET }
   | "Type"   { TYPE }
+  | "/" [^ '\n' ]*      { COMMENT }
 
   | ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']* as s { ID s }
   | ['0'-'9']+ as s                                     { INT (int_of_string s) }
