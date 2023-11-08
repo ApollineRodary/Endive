@@ -1,5 +1,9 @@
+# Dune and opam
 /_build/
 /_opam/
+
+# nix build output
+/result
 
 node_modules/
 package-lock.json
