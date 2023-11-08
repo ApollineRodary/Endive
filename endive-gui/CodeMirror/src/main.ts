@@ -2,6 +2,9 @@ import {EditorView, minimalSetup} from "codemirror"
 import { languageServer } from 'codemirror-languageserver'
 import {placeholder} from "@codemirror/view"
 import {codeFolding, foldGutter} from "@codemirror/language"
+import {keymap} from "@codemirror/view"
+import {insertTab,indentLess} from "@codemirror/commands"
+
 
 
 var ls = languageServer({
@@ -21,8 +24,11 @@ var ls = languageServer({
 });
 
 
+
 const initialText = ''
 const targetElement = document.querySelector('#editor')!
+
+const tabHandling=keymap.of([{key:'Tab',preventDefault:true,run: insertTab}, {key:'Shift-Tab',preventDefault :true,run:indentLess}])
 
 declare global {
   var editor: any;
@@ -31,7 +37,8 @@ declare global {
 globalThis.editor = new EditorView({
   doc: initialText,
   extensions: [
-    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping
+    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping, tabHandling
   ], 
   parent: targetElement,
 })
+
