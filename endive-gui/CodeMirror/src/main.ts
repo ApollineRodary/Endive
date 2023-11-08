@@ -9,7 +9,7 @@ import {insertTab,indentLess} from "@codemirror/commands"
 
 var ls = languageServer({
 	// WebSocket server uri and other client options.
-	serverUri: window.location.href.includes("endiveonline.fr") ? 'ws://13.51.51.237:9999' : 'ws://0.0.0.0:9999',// if local, use local server
+	serverUri: window.location.href.includes("endiveonline.fr") ? 'wss://endiveonline.fr/lsp' : 'ws://0.0.0.0:9999',// if local, use local server
 	rootUri: 'file:///',
 	workspaceFolders : null,
 /*
