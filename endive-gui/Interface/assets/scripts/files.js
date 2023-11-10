@@ -1,26 +1,66 @@
+function saveFile(content) {
+            // Create a Blob with the content
+            const blob = new Blob([content], { type: 'text/plain' });
 
-//Those three functions handle the communication with the Electron-side concerning all file-related matter.
-//They are asynchronous, and use asynchronous functions (hence the "await" keyword)
-//globalThis is a nice way to put variable in the global scope without polluting it.
+            // Create a temporary URL to the Blob
+            const url = URL.createObjectURL(blob);
 
-async function save(){
-alert("Hmm");
+            // Create an anchor element to trigger the download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'session.end';
+
+            // Trigger a click event to open the download dialog
+            a.click();
+
+            // Clean up resources
+            URL.revokeObjectURL(url);
+        }
+function loadFile() {
+  return new Promise((resolve, reject) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+
+    input.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) {
+        reject(new Error('No file selected'));
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const content = e.target.result;
+        resolve(content);
+      };
+
+      reader.onerror = (error) => {
+        reject(error);
+      };
+
+      reader.readAsText(file);
+    });
+
+    input.click();
+  });
 }
 
-async function save_as(){
-const content = globalThis.editor.state.doc.toString()//Get the text from the editor
+function save(){
 
-const file_path = await window.electronAPI.fileSaveAs(content);//Send it to electron
-console.log("Saved successfully as"+file_path.toString());//Get the name of the file it was saved it if successful
+saveFile(globalThis.editor.state.doc.toString());
 }
-
-async function load(){
-const data = await window.electronAPI.fileOpen(); //Ask for a file opening
-
-  const transaction = globalThis.editor.state.update({changes: {from: 0, to: globalThis.editor.state.doc.length, insert: data}})// Put the received text in the editor
-  const update = globalThis.editor.state.update(transaction);
+function load(){
+ loadFile()
+  .then((content) => {
+    const transaction = globalThis.editor.state.update({changes: {from: 0, to: globalThis.editor.state.doc.length, insert: content}})
+    const update = globalThis.editor.state.update(transaction);
     globalThis.editor.update([update]);
+    if (globalThis.menu_open){
+    toggleMenu();
+    }
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
 }
-
-
-
