@@ -1,47 +1,108 @@
+import { languageServer } from "codemirror-languageserver";
 import {
-  EditorView,
+  keymap,
   drawSelection,
   highlightSpecialChars,
+  placeholder,
+  Decoration,
+  EditorView,
+  WidgetType,
+  DecorationSet,
 } from "@codemirror/view";
-import { languageServer } from "codemirror-languageserver";
-import { placeholder } from "@codemirror/view";
 import {
   codeFolding,
-  defaultHighlightStyle,
   foldGutter,
-} from "@codemirror/language";
-
-import { keymap } from "@codemirror/view";
-import {
-  insertTab,
-  indentLess,
-  history,
-  historyKeymap,
-  defaultKeymap,
-} from "@codemirror/commands";
-
-import { foldNodeProp, foldInside } from "@codemirror/language";
-
-import { styleTags, tags } from "@lezer/highlight";
-
-import {
+  foldNodeProp,
+  foldInside,
+  defaultHighlightStyle,
   LRLanguage,
   LanguageSupport,
   HighlightStyle,
   syntaxHighlighting,
 } from "@codemirror/language";
 import {
-  parser,
-  LineComment,
-  Lemma,
-  Keyword,
-  Number,
-  Tactic,
-  Type,
-  Block,
-} from "../endive.grammar";
+  insertTab,
+  indentLess,
+  history,
+  defaultKeymap,
+  historyKeymap,
+} from "@codemirror/commands";
+import { forEachDiagnostic } from "@codemirror/lint";
+import { RangeSet, StateField, EditorState, Range } from "@codemirror/state";
+import { styleTags, tags } from "@lezer/highlight";
 
-var endive_syntax = new LanguageSupport(
+import { parser } from "../endive.grammar";
+
+interface SideLintParams {
+  content: string;
+  position: number;
+}
+
+class SideLintWidget extends WidgetType {
+  readonly content;
+  readonly position;
+
+  constructor({ content, position }: SideLintParams) {
+    super();
+
+    this.content = content;
+    this.position = position;
+  }
+
+  eq(sideLint: SideLintWidget) {
+    return sideLint.content === this.content;
+  }
+
+  toDOM(view: EditorView) {
+    const container = document.createElement("span");
+
+    container.setAttribute("aria-hidden", "true");
+    container.classList.add("cm-sideLint");
+    let pos = this.position;
+    container.onclick = function () {
+      view.dispatch({ selection: { anchor: pos, head: pos } });
+    };
+
+    container.textContent = "     /" + this.content;
+
+    return container;
+  }
+}
+
+const decorate = (state: EditorState) => {
+  const widgets: Range<Decoration>[] = [];
+  forEachDiagnostic(
+    state,
+    (
+      d,
+      _from,
+      to, //not state because we want to update even for old diags
+    ) => {
+      let pos = state.doc.lineAt(to).to;
+      widgets.push(
+        SideLintingDecoration({ content: d.message, position: pos }).range(
+          state.doc.lineAt(to).to,
+        ),
+      );
+    },
+  );
+
+  return widgets.length > 0 ? RangeSet.of(widgets) : Decoration.none;
+};
+
+const sideLinter = StateField.define<DecorationSet>({
+  create(state) {
+    return decorate(state);
+  },
+  update(_lints, transaction) {
+    return decorate(transaction.state);
+  },
+  provide(field) {
+    return EditorView.decorations.from(field);
+  },
+});
+
+var endiveSyntax = new LanguageSupport(
   LRLanguage.define({
     parser: parser.configure({
       props: [
@@ -74,6 +135,13 @@ var highlighting = syntaxHighlighting(
     { tag: tags.number, color: "#00c5d9" },
   ]),
 );
+
+const SideLintingDecoration = (params: SideLintParams) =>
+  Decoration.widget({
+    widget: new SideLintWidget(params),
+    side: 1,
+    block: false,
+  });
 
 var ls = languageServer({
   // WebSocket server uri and other client options.
@@ -119,8 +187,10 @@ globalThis.editor = new EditorView({
     ls,
     EditorView.lineWrapping,
     tabHandling,
-    endive_syntax,
+    endiveSyntax,
     highlighting,
+    sideLinter,
   ],
+
   parent: targetElement,
 });

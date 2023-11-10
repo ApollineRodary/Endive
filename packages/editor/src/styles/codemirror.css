@@ -11,3 +11,9 @@
 .cm-editor .cm-gutterElement {
   font-size: 20px;
 }
+
+.cm-editor .cm-sideLint {
+  color: #6c6c6c;
+  font-style: italic;
+  width: fit-content;
+}
