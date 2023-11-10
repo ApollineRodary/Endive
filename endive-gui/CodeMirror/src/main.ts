@@ -8,6 +8,75 @@ import {insertTab,indentLess} from "@codemirror/commands"
 
 import {foldNodeProp, foldInside} from "@codemirror/language"
 
+import type { EditorState, Range } from '@codemirror/state'
+import { RangeSet, StateField } from '@codemirror/state'
+import type { DecorationSet } from '@codemirror/view'
+import { Decoration, WidgetType } from '@codemirror/view'
+
+
+interface ImageWidgetParams {
+  url: string,
+}
+
+class ImageWidget extends WidgetType {
+  readonly url
+
+  constructor({ url }: ImageWidgetParams) {
+    super()
+
+    this.url = url
+  }
+
+  eq(imageWidget: ImageWidget) {
+    return imageWidget.url === this.url
+  }
+
+  toDOM() {
+    const container = document.createElement('span')
+    
+    container.setAttribute('aria-hidden', 'true')
+    container.style.width = 'fit-content'
+
+    container.innerHTML = "     /"+this.url
+
+    return container
+  }
+}
+
+  const imageRegex = /!\[.*?\]\((?<url>.*?)\)/
+
+  const imageDecoration = (imageWidgetParams: ImageWidgetParams) => Decoration.widget({
+    widget: new ImageWidget(imageWidgetParams),
+    side: 10,
+    block: false,
+  })
+
+  const decorate = (state: EditorState) => {
+    const widgets: Range<Decoration>[] = []
+
+    const result = imageRegex.exec(state.doc.toString())
+
+    if (result && result.groups && result.groups.url)
+    widgets.push(imageDecoration({ url: result.groups.url }).range(state.doc.line(3).to))
+
+    return widgets.length > 0 ? RangeSet.of(widgets) : Decoration.none
+  }
+
+  const imagesField = StateField.define<DecorationSet>({
+    create(state) {
+      return decorate(state)
+    },
+    update(images, transaction) {
+      if (transaction.docChanged)
+        return decorate(transaction.state)
+
+      return images.map(transaction.changes)
+    },
+    provide(field) {
+      return EditorView.decorations.from(field)
+    },
+  })
+
 import { styleTags, tags } from '@lezer/highlight'
 
 import {LRLanguage, LanguageSupport, HighlightStyle, syntaxHighlighting} from "@codemirror/language"
@@ -77,7 +146,8 @@ declare global {
 globalThis.editor = new EditorView({
   doc: initialText,
   extensions: [
-    minimalSetup, codeFolding(), foldGutter(), placeholder("Hi ! Start typing, or press Esc if you're lost :)"), ls,EditorView.lineWrapping, tabHandling, endive_syntax, highlighting
+    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping, tabHandling, endive_syntax, highlighting, imagesField
+
   ], 
   parent: targetElement,
 })
