@@ -34,9 +34,9 @@ document.onkeydown = function(evt) { //Handle key events,
     if (evt.key === "l"){
     load();
     }
-    if (evt.key === "a"){
+    /*if (evt.key === "a"){
     save_as();
-    }
+    }*/
     }
 };
 
