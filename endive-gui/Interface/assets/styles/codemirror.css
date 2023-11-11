@@ -2,4 +2,6 @@
 .cm-content{font-size:25px;}
 .cm-editor .cm-gutters{background-color:#FFFFFF; border-right: 0px;}
 .cm-editor .cm-gutterElement{font-size:20px;}
-
+.cm-editor .cm-lintRange-error{background-image:none; background-color:#D3FFF7}
+.cm-editor .cm-lintPoint {visibility : hidden}
+.cm-editor .cm-sideLint {color : #6C6C6C; font-style : italic; width:fit-content}

@@ -15,31 +15,31 @@ import type { DecorationSet } from '@codemirror/view'
 import { Decoration, WidgetType } from '@codemirror/view'
 
 
-interface ImageWidgetParams {
-  url: string,
+interface SideLintParams {
+  content: string,
 }
 
 
-class ImageWidget extends WidgetType {
-  readonly url
+class SideLintWidget extends WidgetType {
+  readonly content
 
-  constructor({ url }: ImageWidgetParams) {
+  constructor({ content }: SideLintParams) {
     super()
 
-    this.url = url
+    this.content = content
   }
 
-  eq(imageWidget: ImageWidget) {
-    return imageWidget.url === this.url
+  eq(sideLint: SideLintWidget) {
+    return sideLint.content === this.content
   }
 
   toDOM() {
     const container = document.createElement('span')
     
     container.setAttribute('aria-hidden', 'true')
-    container.style.width = 'fit-content'
+    container.classList.add("cm-sideLint")
 
-    container.innerHTML = "     /"+this.url
+    container.innerHTML = "     /"+this.content
 
     return container
   }
@@ -49,17 +49,17 @@ class ImageWidget extends WidgetType {
   
    const widgets: Range<Decoration>[] = []
                 forEachDiagnostic(state, (d, _from, to) => //not state because we want to update even for old diags
-                widgets.push(imageDecoration({url : d.message}).range(state.doc.lineAt(to).to)
+                widgets.push(SideLintingDecoration({content : d.message}).range(state.doc.lineAt(to).to)
                 ));
 
     return widgets.length > 0 ? RangeSet.of(widgets) : Decoration.none
   }
 
- const comment_linter = StateField.define<DecorationSet>({
+ const side_linter = StateField.define<DecorationSet>({
     create(state) {
       return decorate(state)
     },
-    update(images, transaction) {
+    update(_lints, transaction) {
       //if (transaction.docChanged)
         return decorate(transaction.state)
 
@@ -109,8 +109,8 @@ var highlighting = syntaxHighlighting(HighlightStyle.define([
         {tag: tags.number, color: "#00c5d9"}
     ]))
 
-  const imageDecoration = (imageWidgetParams: ImageWidgetParams) => Decoration.widget({
-    widget: new ImageWidget(imageWidgetParams),
+  const SideLintingDecoration = (params: SideLintParams) => Decoration.widget({
+    widget: new SideLintWidget(params),
     side: 10,
     block: false,
   })
@@ -151,7 +151,7 @@ declare global {
 globalThis.editor = new EditorView({
   doc: initialText,
   extensions: [
-    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping, tabHandling, endive_syntax, highlighting, comment_linter
+    codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping, tabHandling, endive_syntax, highlighting, side_linter
 
   ], 
   parent: targetElement,
