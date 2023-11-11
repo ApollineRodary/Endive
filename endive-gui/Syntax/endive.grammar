@@ -1,0 +1,49 @@
+@top Source { Block* }
+
+@skip { space | LineComment }
+
+@precedence {Action Block}
+
+Block {
+  Declaration
+  (Action | Block)*
+  @specialize<Identifier, "Qed"> 
+  Final {"."}
+}
+
+Action {
+  Tactic (Identifier (":" (Identifier|Type))?)* "."
+}
+
+
+
+Declaration {Lemma Identifier? ":" Expression "."}
+
+
+Expression { Value Binop Expression | Keyword Identifier(":" (Type | Identifier))? "," Expression | Value}
+
+Value { Keyword | Identifier | Number}
+
+Tactic { @specialize<Identifier, "exact"> | @specialize<Identifier, "intro"> | @specialize<Identifier, "let"> }
+
+Lemma { @specialize<Identifier, "Lemma"> | @specialize<Identifier, "Exercise"> | @specialize<Identifier, "Qed">}
+
+Keyword { @specialize<Identifier, "forall"> | @specialize<Identifier, "exists"> | @specialize<Identifier, "pouet"> }
+
+Type { @specialize<Identifier, "Prop"> | @specialize<Identifier, "Set"> }
+
+@tokens {
+
+  Identifier {$[a-zA-Z] $[a-zA-Z0-9]*}
+  
+  Number { $[0-9]+ | $[0-9]* "." $[0-9]+}
+
+  Binop { "->" }
+  
+  LineComment { "/" ![\n]* }
+  space { $[ \t\r\n]+ }
+  "(" ")"
+}
+
+@detectDelim
+

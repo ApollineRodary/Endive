@@ -2,10 +2,50 @@ import {EditorView, minimalSetup} from "codemirror"
 import { languageServer } from 'codemirror-languageserver'
 import {placeholder} from "@codemirror/view"
 import {codeFolding, foldGutter} from "@codemirror/language"
+
 import {keymap} from "@codemirror/view"
 import {insertTab,indentLess} from "@codemirror/commands"
 
+import {foldNodeProp, foldInside} from "@codemirror/language"
 
+import { styleTags, tags } from '@lezer/highlight'
+
+import {LRLanguage, LanguageSupport, HighlightStyle, syntaxHighlighting} from "@codemirror/language"
+// @ts-ignore
+import {parser} from "./parser.js"
+// @ts-ignore
+import { LineComment, Lemma, Keyword, Number, Tactic, Type, Block } from './parser.terms.js'
+
+var endive_syntax = new LanguageSupport(LRLanguage.define({
+  parser: parser.configure({
+    props: [
+      styleTags({
+        Tactic: tags.name,
+        Number : tags.number,
+        Lemma: tags.controlKeyword,
+        Keyword: tags.keyword,
+        Type : tags.typeName,
+        LineComment: tags.lineComment,
+      }),
+      foldNodeProp.add({
+      Block: foldInside
+    })
+    ]
+  }),
+  languageData: {
+    commentTokens: {line: "/"}
+  }
+  
+}))
+
+var highlighting = syntaxHighlighting(HighlightStyle.define([
+        {tag: tags.name, color: "#B54300"},
+        {tag: tags.lineComment, color: "#6C6C6C", fontStyle: "italic"},
+        {tag: tags.controlKeyword, color:"#7E00D5", fontWeight: "bold"},
+        {tag: tags.keyword, color: "#008A1C"},
+        {tag: tags.typeName, color: "#2000FF"},
+        {tag: tags.number, color: "#00c5d9"}
+    ]))
 
 var ls = languageServer({
 	// WebSocket server uri and other client options.
@@ -37,7 +77,7 @@ declare global {
 globalThis.editor = new EditorView({
   doc: initialText,
   extensions: [
-    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping, tabHandling
+    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping, tabHandling, endive_syntax, highlighting
   ], 
   parent: targetElement,
 })

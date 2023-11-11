@@ -8,3 +8,4 @@
 node_modules/
 package-lock.json
 endive-gui/Software/out
+endive-gui/Interface/assets/scripts/editor.js

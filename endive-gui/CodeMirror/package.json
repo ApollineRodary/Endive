@@ -12,8 +12,10 @@
     "vite": "^4.0.0"
   },
   "dependencies": {
+    "@codemirror/highlight": "^0.19.8",
     "codemirror": "^6.0.1",
     "codemirror-languageserver": "^1.11.0",
-    "events": "^3.3.0"
+    "events": "^3.3.0",
+    "lezer-generator": "^0.13.4"
   }
 }
