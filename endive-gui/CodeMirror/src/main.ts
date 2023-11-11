@@ -60,10 +60,10 @@ class ImageWidget extends WidgetType {
       return decorate(state)
     },
     update(images, transaction) {
-      if (transaction.docChanged)
+      //if (transaction.docChanged)
         return decorate(transaction.state)
 
-      return images.map(transaction.changes)
+      //return images.map(transaction.changes)
     },
     provide(field) {
       return EditorView.decorations.from(field)
