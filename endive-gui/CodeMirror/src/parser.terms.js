@@ -9,8 +9,7 @@ export const
   Expression = 7,
   Value = 8,
   Keyword = 9,
-  Number = 10,
-  Binop = 11,
-  Type = 12,
-  Action = 13,
-  Tactic = 14
+  Binop = 10,
+  Type = 11,
+  Action = 12,
+  Tactic = 13
