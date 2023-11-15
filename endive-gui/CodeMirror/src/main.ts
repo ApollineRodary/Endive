@@ -77,7 +77,7 @@ declare global {
 globalThis.editor = new EditorView({
   doc: initialText,
   extensions: [
-    minimalSetup, codeFolding(), foldGutter(), placeholder("Welcome, feel free to type something :)"), ls,EditorView.lineWrapping, tabHandling, endive_syntax, highlighting
+    minimalSetup, codeFolding(), foldGutter(), placeholder("Hi ! Start typing, or press Esc if you're lost :)"), ls,EditorView.lineWrapping, tabHandling, endive_syntax, highlighting
   ], 
   parent: targetElement,
 })
