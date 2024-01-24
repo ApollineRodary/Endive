@@ -1,0 +1,55 @@
+Lemma id : forall P, P->P.      (point à la fin non obligatoire, saut à la ligne suffisant, Majuscule pas obligatore)
+
+Let P.
+Suppose P.
+
+Quand on tape "Goal?", ça donne :       (on a aussi envie d'avoir un environnement comme Coq avec hyp et goal quand on fait la preuve)
+We want to prove : P.
+
+Quand on tape "Hyp?", ça donne :
+We have : P.
+(Cette phrase reste plus tard si on ne supprime pas "Hyp?", comme ça si on enregistre le fichier, si qqun d'autre veut comprendre la preuve, il c'est où on en est dans la preuve. Hyp? n'apparaît pas dans le fichier produit)
+
+(So)? we have P.   
+(So est optionnel, l'utilisateur peut l'utiliser pour rendre la preuve plus "littéraire"/ lisible mais ça n'a pas d'importance pour le côté math. On aura dans le même style : Then, Thus, Moreover...)
+
+(Qed.)? option
+
+Lemma id2 : forall P, forall Q, (on peut faire aussi forall P,Q) (P->Q)->(P->Q).
+
+Let P.
+Let Q.
+Suppose P->Q.
+
+By id with P->Q (we have P->Q)?.   we have P->Q optionnel ou s'écrit automatiquement ?
+
+Qed.
+
+Lemma pouet : forall P,Q,R, (P->Q)->(Q->R)->P->R.
+
+Let P,Q,R.   (déclarations en une fois ok)
+
+Suppose H1:(P->Q).   (H1 optional)
+
+Suppose (Q->R).
+
+Suppose P.
+
+By (P->Q) (or H1) we have Q.  (possible côté maths P->Q?)
+
+By (Q->R) we have R.
+
+Qed.
+
+Idée : fonctionnement par "bloc" avec des accolades (ou autre) qui séparent les blocs, ou indentation selon ce que préfère l'utilisateur. Comme ça dans un bloc, on a nos propres hyp / variables qui ne se retrouvent pas dans les autres (exemple de l'induction)
+
+Lemma and : forall P,Q, P/\Q -> P.
+Let P.
+Let Q.
+Suppose H:P/\Q. 
+Thus we have P.
+OU
+We have P/\Q so P
+OU
+By H we have P.      (est ce que ça peut le faire automatiquement du côté mathématiques ou faut un mot clé style split?)
+Qed.
