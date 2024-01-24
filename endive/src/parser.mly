@@ -33,7 +33,12 @@ let annotate (start, end_) el =
 %%
 
 file:
-  stmts EOF { List.rev $1 }
+  unfinished_stmts EOF { List.rev $1 }
+;
+
+unfinished_stmts:
+  stmts                                    { $1 }
+| stmts LEMMA binding DOT unfinished_stmts { Lemma($3, List.rev $5) :: $1 }
 ;
 
 stmts:
