@@ -1,3 +1,8 @@
+Ce ne sont que des suggestions/idées, il faut encore voir si c'est possible en pratique et si ça marche bien :) ! Si vous avez des modifications / suggestions, n'hésitez pas !
+
+
+Idée générale :
+
 Lemma id : forall P, P->P.      (point à la fin non obligatoire, saut à la ligne suffisant, Majuscule pas obligatoire)
 
 Let P.
@@ -14,6 +19,8 @@ We have : P.
 (So est optionnel, l'utilisateur peut l'utiliser pour rendre la preuve plus "littéraire"/ lisible mais ça n'a pas d'importance pour le côté math. On aura dans le même style : Then, Thus, Moreover...)
 
 (Qed.)? option
+
+Application d'un lemme :
 
 Lemma id2 : forall P, forall Q, (on peut faire aussi forall P,Q) (P->Q)->(P->Q).
 
@@ -42,6 +49,8 @@ By (Q->R) we have R.
 Qed.
 
 Idée : fonctionnement par "bloc" avec des accolades (ou autre) qui séparent les blocs, ou indentation selon ce que préfère l'utilisateur. Comme ça dans un bloc, on a nos propres hyp / variables qui ne se retrouvent pas dans les autres (exemple de l'induction)
+
+Constructeur and :
 
 Lemma and : forall P,Q, P/\Q -> P.
 Let P.
@@ -75,5 +84,37 @@ Suppose B.
 
 (Thus, we have ((A->B)->(B->C)->A->C)/\(B->B).)   proposer autocomplétion
 
+Qed.
+
+
+Constructeur or :
+
+Lemma or1 : forall A,B, A->A\/B.  (se lit A->(A\/B))
+
+Let A.
+Suppose A.
+We have A (so we have A\/B)?.    autocompletion ?
+
+Lemma or2 : forall P,Q,R, P\/Q->(P->R)->(Q->R)->R.
+
+Let P,Q,R. 
+Suppose H1:P\/Q.     (si on donne pas des noms à nos hyp, le fait tout seul et affichage si on fait Hyps?)
+Suppose H2: P->R.
+Suppose H3:Q->R.
+(Let us prove)? by exhaustion with H1.
+
+{Case 1: Suppose P.  (Cette ligne et la ligne Case 2 se sont écrites automatiquement et délimitent deux zones avec des hyps différentes (accolade??)
+By H2 we have R.                      Je sais pas si c'est le mieux les accolades, à discuter...
+}
+
+{Case 2: Suppose Q.
+By H3 we have R.
+}
+Thus we have R.    (autocomplétion)
+
+Ce qu'on va avoir du côté maths:
+
+
+demander à Greg pour la négation !!!
 forall -> /\ \/ il existe
 (entier naturel, si on écrit ça renvoie S S S 0)
