@@ -138,10 +138,11 @@ let rec ty t env =
       | Error e, _ -> Error e
       | _, Error e -> Error e
       | Ok { el = Pi ((x, t3), t4); span = _ }, Ok t5 ->
+          let t2' = normal_form t2 in
           let t3' = normal_form t3 in
           let t5' = normal_form t5 in
           if sub_ty t5'.el t3'.el [] then
-            Ok (fresh (normal_form (subst t4 x.el t5'.el)).el)
+            Ok (fresh (normal_form (subst t4 x.el t2'.el)).el)
           else
             Error
               {
