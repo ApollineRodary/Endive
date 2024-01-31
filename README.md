@@ -49,6 +49,7 @@ The `endive-lsp-server` directory contains an implementation of a Language
 Server Protocol server for Endive.
 
 Currently implemented:
+
 - Error diagnostics for syntax, grammar and logic errors
 
 ### VS Code extension
@@ -65,23 +66,27 @@ dependencies from the global environment. It is similar to Python's virtual
 environments, but for OCaml.
 
 Create a switch for the project if you haven't already:
+
 ```sh
 $ opam switch create . --deps-only --with-test --with-doc --locked
 ```
 
 From now on, you need to enable it whenever you want to use OCaml tools:
+
 ```sh
 $ eval $(opam env)
 ```
 
 Build the LSP server (add the `-w` flag to automatically rebuild whenever a
 source file changes):
+
 ```sh
 $ dune build
 ```
 
 Build the VS Code extension (use `watch` instead of `compile` to rebuild
 automatically when the source code changes):
+
 ```sh
 $ cd endive-vscode
 $ npm run compile
@@ -96,11 +101,13 @@ The `editor.action.inspectTMScopes` command can be useful to debug the grammar.
 ## Contributing
 
 To format the OCaml code:
+
 ```sh
 $ dune fmt
 ```
 
 After modifying the VS Code extension (in `endive-vscode`):
+
 ```sh
 $ npm run format # Format the code.
 $ npm run lint   # Check for linter warnings.

@@ -1,5 +1,5 @@
 {
-  "name": "endive",
+  "name": "endive-electron",
   "version": "1.0.0",
   "description": "A proof assistant",
   "main": "index.js",
