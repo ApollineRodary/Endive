@@ -3,31 +3,31 @@ open Stmt
 open Term
 
 let validate stmts =
-  let rec currify args body =
-    match args with tl :: hd -> fresh (Pi (tl, currify hd body)) | [] -> body
+  let rec currify params body env =
+    match params with
+    | (x, t) :: tl -> (
+        match ty t env with
+        | Ok _ -> (
+            let t' = normal_form t in
+            let env = (x.el, t') :: env in
+            match currify tl body env with
+            | Ok body' -> Ok (fresh (Pi ((x, t'), body')))
+            | Error e -> Error e)
+        | Error e -> Error e)
+    | [] -> (
+        match ty body env with
+        | Ok _ -> Ok (normal_form body)
+        | Error e -> Error e)
   in
-  let bind bindings env =
-    let rec aux bindings normal_forms env =
-      match bindings with
-      | [] -> Ok (env, normal_forms)
-      | (x, t) :: rest -> (
-          match ty t env with
-          | Ok _ ->
-              let t' = normal_form t in
-              aux rest ((x, t') :: normal_forms) ((x.el, t') :: env)
-          | Error e -> Error e)
-    in
-    aux bindings [] env
-  in
-  let rec decl_constructors env params constructors constructors_env =
+  let rec decl_constructors env env' constructors =
     match constructors with
     | [] -> Ok env
     | (x, t) :: rest -> (
-        match ty t constructors_env with
+        match ty t env' with
         | Ok _ ->
-            let t' = currify params (normal_form t) in
+            let t' = normal_form t in
             let env = (x.el, t') :: env in
-            decl_constructors env params rest constructors_env
+            decl_constructors env env' rest
         | Error e -> Error e)
   in
   let rec aux stmts env proven defs errs goal =
@@ -49,18 +49,11 @@ let validate stmts =
         | Ok t1 -> aux rest env (t1.el :: proven) defs errs goal
         | Error e -> aux rest env proven defs (e :: errs) goal)
     | Inductive (signature, constructors) :: rest -> (
-        match bind signature.params env with
-        | Ok (t_env, params) -> (
-            match ty signature.ty t_env with
-            | Ok _ -> (
-                let t = normal_form signature.ty in
-                let env = (signature.name.el, currify params t) :: env in
-                let constructors_env = (signature.name.el, t) :: t_env in
-                match
-                  decl_constructors env params constructors constructors_env
-                with
-                | Ok env -> aux rest env proven defs errs goal
-                | Error e -> aux rest env proven defs (e :: errs) goal)
+        match currify signature.params signature.ty env with
+        | Ok t -> (
+            let env = (signature.name.el, t) :: env in
+            match decl_constructors env env constructors with
+            | Ok env -> aux rest env proven defs errs goal
             | Error e -> aux rest env proven defs (e :: errs) goal)
         | Error e -> aux rest env proven defs (e :: errs) goal)
     | Lemma ((x, t), stmts) :: rest -> (
