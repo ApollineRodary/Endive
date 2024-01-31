@@ -91,7 +91,7 @@ binding:
 ;
 
 inductive_sig:
-  id inductive_params COLON term { { name = $1; params = $2; ty = $4 } }
+  id inductive_params COLON term { { name = $1; params = List.rev $2; ty = $4 } }
 ;
 
 inductive_params:
