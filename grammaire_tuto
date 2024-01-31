@@ -1,4 +1,4 @@
-Lemma id : forall P, P->P.      (point à la fin non obligatoire, saut à la ligne suffisant, Majuscule pas obligatore)
+Lemma id : forall P, P->P.      (point à la fin non obligatoire, saut à la ligne suffisant, Majuscule pas obligatoire)
 
 Let P.
 Suppose P.
@@ -8,7 +8,7 @@ We want to prove : P.
 
 Quand on tape "Hyp?", ça donne :
 We have : P.
-(Cette phrase reste plus tard si on ne supprime pas "Hyp?", comme ça si on enregistre le fichier, si qqun d'autre veut comprendre la preuve, il c'est où on en est dans la preuve. Hyp? n'apparaît pas dans le fichier produit)
+(Cette phrase reste plus tard si on ne supprime pas "Hyp?", comme ça si on enregistre le fichier, si qqun d'autre veut comprendre la preuve, il sait où on en est dans la preuve. Hyp? n'apparaît pas dans le fichier produit)
 
 (So)? we have P.   
 (So est optionnel, l'utilisateur peut l'utiliser pour rendre la preuve plus "littéraire"/ lisible mais ça n'a pas d'importance pour le côté math. On aura dans le même style : Then, Thus, Moreover...)
@@ -53,3 +53,27 @@ We have P/\Q so P
 OU
 By H we have P.      (est ce que ça peut le faire automatiquement du côté mathématiques ou faut un mot clé style split?)
 Qed.
+
+Lemma and2 : forall P,Q, P->Q->P/\Q.
+Let P,Q.
+Suppose P.
+Suppose Q.
+We have P.
+We have Q.
+We have P/\Q.   (last 3 lines optional)
+Qed.
+
+Lemma and3 : forall A,B,C, ((A->B)->(B->C)->A->C)/\(B->B).
+
+Let A,B,C.
+Let us (first)? prove (A->B)->(B->C)->A->C.    ((A->B)->(B->C)->A->C proposé en autocompletion, ça devient le goal a montré tant qu'on a pas fini de le montrer)
+By pouet with A B C (we have (A->B)->(B->C)->A->C).
+
+Let us (now)? prove B->B.
+Suppose B.
+(Then, we have B.)?
+
+(Thus, we have ((A->B)->(B->C)->A->C)/\(B->B).)   proposer autocomplétion
+
+forall -> /\ \/ il existe
+(entier naturel, si on écrit ça renvoie S S S 0)
