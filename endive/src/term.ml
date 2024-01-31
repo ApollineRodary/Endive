@@ -147,9 +147,9 @@ let rec ty t env =
             Error
               {
                 el =
-                  "This argument has type " ^ string_of_term t5.el
+                  "This argument has type " ^ string_of_term t5'.el
                   ^ ", but the function expects it to have type "
-                  ^ string_of_term t3.el ^ ".";
+                  ^ string_of_term t3'.el ^ ".";
                 span = t2.span;
               }
       | Ok _, _ ->
@@ -169,5 +169,5 @@ let rec ty t env =
 and univ_level t env =
   match ty t env with
   | Ok { el = Univ n; span = _ } -> Ok n
-  | Ok _ -> Error { el = "This term is expected to be type."; span = t.span }
+  | Ok _ -> Error { el = "This term is expected to be a type."; span = t.span }
   | Error e -> Error e
