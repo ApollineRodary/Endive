@@ -12,16 +12,21 @@ and annotated_binding = string annotated * term annotated
 let term_fun t1 t2 = Pi ((fresh "_", t1), t2)
 let term_not t = term_fun t (fresh (Var "False"))
 
+let rec term_int n =
+  if n = 0 then Var "Z" else App (fresh (Var "S"), fresh (term_int (n - 1)))
+
 let rec subst t x u =
-  match t with
-  | Var y when y = x -> u
+  match t.el with
+  | Var y when y = x -> fresh u
   | Lam ((y, t1), t2) when y.el != x ->
-      Lam ((y, t1), map (fun t2 -> subst t2 x u) t2)
-  | App (t1, t2) ->
-      App (map (fun t1 -> subst t1 x u) t1, map (fun t2 -> subst t2 x u) t2)
+      { el = Lam ((y, t1), subst t2 x u); span = t.span }
+  | App (t1, t2) -> { el = App (subst t1 x u, subst t2 x u); span = t.span }
   | Pi ((y, t1), t2) when y.el != x ->
-      Pi ((y, t1), map (fun t2 -> subst t2 x u) t2)
+      { el = Pi ((y, t1), subst t2 x u); span = t.span }
   | _ -> t
+
+let rec subst_many defs t =
+  match defs with [] -> t | (x, u) :: defs' -> subst_many defs' (subst t x u)
 
 let rec alpha_eq t u map =
   match (t, u) with
@@ -44,15 +49,17 @@ let rec sub_ty t u map =
   | _ -> alpha_eq t u map
 
 let rec normal_form t =
-  match t with
-  | Lam ((x, t1), t2) -> Lam ((x, map normal_form t1), map normal_form t2)
+  match t.el with
+  | Lam ((x, t1), t2) ->
+      { el = Lam ((x, normal_form t1), normal_form t2); span = t.span }
   | App (t1, t2) -> (
-      let t1' = map normal_form t1 in
-      let t2' = map normal_form t2 in
+      let t1' = normal_form t1 in
+      let t2' = normal_form t2 in
       match t1'.el with
-      | Lam ((x, _), t3) -> normal_form (subst t3.el x.el t2'.el)
-      | _ -> App (t1', t2'))
-  | Pi ((x, t1), t2) -> Pi ((x, map normal_form t1), map normal_form t2)
+      | Lam ((x, _), t3) -> normal_form (subst t3 x.el t2'.el)
+      | _ -> { el = App (t1', t2'); span = t.span })
+  | Pi ((x, t1), t2) ->
+      { el = Pi ((x, normal_form t1), normal_form t2); span = t.span }
   | _ -> t
 
 let string_of_term t =
@@ -127,10 +134,10 @@ let rec ty t env =
       | Error e, _ -> Error e
       | _, Error e -> Error e
       | Ok { el = Pi ((x, t3), t4); span = _ }, Ok t5 ->
-          let t3' = normal_form t3.el in
-          let t5' = normal_form t5.el in
-          if sub_ty t5' t3' [] then
-            Ok (fresh (normal_form (subst t4.el x.el t5')))
+          let t3' = normal_form t3 in
+          let t5' = normal_form t5 in
+          if sub_ty t5'.el t3'.el [] then
+            Ok (fresh (normal_form (subst t4 x.el t5'.el)).el)
           else
             Error
               {

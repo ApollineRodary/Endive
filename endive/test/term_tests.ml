@@ -21,23 +21,25 @@ let%test "alpha equivalence" =
 
 let%test "normal form: beta reduction" =
   let t =
-    App
-      ( fresh (Lam ((fresh "x", fresh (Var "X")), fresh (Var "x"))),
-        fresh (Var "y") )
+    fresh
+      (App
+         ( fresh (Lam ((fresh "x", fresh (Var "X")), fresh (Var "x"))),
+           fresh (Var "y") ))
   in
-  let t' = Var "y" in
+  let t' = fresh (Var "y") in
   normal_form t = t'
 
 let%test "normal form: beta reduction under application" =
   let t =
-    App
-      ( fresh (Var "f"),
-        fresh
-          (App
-             ( fresh (Lam ((fresh "x", fresh (Var "X")), fresh (Var "x"))),
-               fresh (Var "y") )) )
+    fresh
+      (App
+         ( fresh (Var "f"),
+           fresh
+             (App
+                ( fresh (Lam ((fresh "x", fresh (Var "X")), fresh (Var "x"))),
+                  fresh (Var "y") )) ))
   in
-  let t' = App (fresh (Var "f"), fresh (Var "y")) in
+  let t' = fresh (App (fresh (Var "f"), fresh (Var "y"))) in
   normal_form t = t'
 
 let%test "type checking" =

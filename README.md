@@ -66,7 +66,7 @@ environments, but for OCaml.
 
 Create a switch for the project if you haven't already:
 ```sh
-$ opam switch create . --deps-only --with-test --locked
+$ opam switch create . --deps-only --with-test --with-doc --locked
 ```
 
 From now on, you need to enable it whenever you want to use OCaml tools:
