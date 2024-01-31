@@ -18,11 +18,15 @@ let rec term_int n =
 let rec subst t x u =
   match t.el with
   | Var y when y = x -> fresh u
-  | Lam ((y, t1), t2) when y.el != x ->
-      { el = Lam ((y, t1), subst t2 x u); span = t.span }
+  | Lam ((y, t1), t2) ->
+      let t1' = subst t1 x u in
+      let t2' = if y.el = x then t2 else subst t2 x u in
+      { el = Lam ((y, t1'), t2'); span = t.span }
   | App (t1, t2) -> { el = App (subst t1 x u, subst t2 x u); span = t.span }
-  | Pi ((y, t1), t2) when y.el != x ->
-      { el = Pi ((y, t1), subst t2 x u); span = t.span }
+  | Pi ((y, t1), t2) ->
+      let t1' = subst t1 x u in
+      let t2' = if y.el = x then t2 else subst t2 x u in
+      { el = Pi ((y, t1'), t2'); span = t.span }
   | _ -> t
 
 let rec subst_many defs t =
