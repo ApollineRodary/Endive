@@ -3,6 +3,17 @@ open Stmt
 open Term
 
 let validate stmts =
+  let rec add_constructors env signature constructors =
+    match constructors with
+    | [] -> Ok env
+    | (x, t) :: rest -> (
+        match ty t env with
+        | Ok _ ->
+            let t' = normal_form t in
+            let env = (x.el, t') :: env in
+            add_constructors env signature rest
+        | Error e -> Error e)
+  in
   let rec aux stmts env proven defs errs goal =
     match stmts with
     | [] -> (
@@ -21,7 +32,17 @@ let validate stmts =
         match ty t env with
         | Ok t1 -> aux rest env (t1.el :: proven) defs errs goal
         | Error e -> aux rest env proven defs (e :: errs) goal)
-    | Inductive _ :: rest -> aux rest env proven defs errs goal
+    | Inductive (signature, constructors) :: rest -> (
+        match ty signature.ty env with
+        | Ok t -> (
+            match
+              add_constructors
+                ((signature.name.el, t) :: env)
+                signature constructors
+            with
+            | Ok env -> aux rest env proven defs errs goal
+            | Error e -> aux rest env proven defs (e :: errs) goal)
+        | Error e -> aux rest env proven defs (e :: errs) goal)
     | Lemma ((x, t), stmts) :: rest -> (
         match ty t env with
         | Ok _ ->
