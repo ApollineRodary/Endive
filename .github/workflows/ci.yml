@@ -31,12 +31,13 @@ jobs:
           node-version: 18.x
       - name: Install npm dependencies
         run: npm ci
+      - name: Check formatting with prettier
+        run: npm run format:check
+      - name: Install VS Code extension dependencies
+        run: npm ci
         working-directory: endive-vscode
       - name: Check VS Code extension linting
         run: npm run lint
-        working-directory: endive-vscode
-      - name: Check VS Code extension formatting
-        run: npm run format:check
         working-directory: endive-vscode
       - name: Compile VS Code extension
         run: npm run compile

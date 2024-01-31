@@ -106,9 +106,13 @@ To format the OCaml code:
 $ dune fmt
 ```
 
+To format the rest of the code:
+```sh
+$ npm run format
+```
+
 After modifying the VS Code extension (in `endive-vscode`):
 
 ```sh
-$ npm run format # Format the code.
 $ npm run lint   # Check for linter warnings.
 ```
