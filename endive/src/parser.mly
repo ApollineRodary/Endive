@@ -42,9 +42,8 @@ unfinished_stmts:
 ;
 
 stmts:
-|               { [] }
-| stmts stmt    { $2 :: $1 }
-| stmts COMMENT { $1 }
+|            { [] }
+| stmts stmt { $2 :: $1 }
 ;
 
 stmt:
