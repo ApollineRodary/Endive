@@ -19,7 +19,7 @@ let annotate (start, end_) el =
   { el; span }
 %}
 
-%token ARROW AT COLON COLONEQ COMMA DEF DOT EXACT FORALL FUN IMP INDUCTIVE LBRACE LEMMA LET LPAREN NOT PROP QED RBRACE PIPE RPAREN SET TYPE
+%token ARROW AT COLON COLONEQ COMMA DEF DOT END EXACT FORALL FUN IMP INDUCTIVE LBRACE LEMMA LET LPAREN MATCH NOT PROP QED RBRACE PIPE RPAREN SET TYPE WITH
 %token <string> ID
 %token <int> INT
 %token EOF
@@ -75,6 +75,7 @@ arg:
 | TYPE AT LBRACE int RBRACE { annotate $sloc (Univ $4) }
 | PROP                      { annotate $sloc (Univ (fresh 1)) }
 | NOT arg                   { annotate $sloc (term_not $2) }
+| MATCH term WITH cases END { annotate $sloc (Match ($2, $4)) }
 | LPAREN term RPAREN        { $2 }
 ;
 
@@ -88,6 +89,16 @@ id:
 
 binding:
   id COLON term { ($1, $3) }
+;
+
+cases:
+  ids ARROW term            { [(List.rev $1, $3)] }
+| cases PIPE ids ARROW term { (List.rev $3, $5) :: $1 }
+;
+
+ids:
+  id { [$1] }
+| ids id { $2 :: $1 }
 ;
 
 inductive_sig:
