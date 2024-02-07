@@ -1,0 +1,85 @@
+html, body{
+height:100%;
+margin:0;
+padding:0;
+overflow:auto;
+font-family:monospace;
+}
+body {
+--menu-height : 12vh;
+}
+
+
+.top_menu{
+position:fixed; 
+width:100vw;
+height:var(--menu-height);
+display:flex;
+flex-direction:row;
+justify-content : space-between;
+align-items : center;
+background:linear-gradient(45deg, #4FC0D6, #5AD64F);
+background-size : 200% 200%;
+animation : gradientAnimation 20s ease infinite;
+padding-right:4em;
+box-sizing: border-box;
+box-shadow:0px 0px 20px grey;
+}
+
+@keyframes gradientAnimation{
+0% {
+background-position : 0% 50%;
+}
+50%{
+background-position : 100% 50%;
+}
+100%{
+background-position : 0% 50%;
+}
+}
+
+h1{
+margin : 20px; 	
+color:white;
+
+font-size:40px;
+}
+
+.Button{
+background-color:white;
+color:black;
+border:2px solid black;
+text-decoration:none;
+padding:20px;
+padding-top:12px;
+padding-bottom:12px;
+border-radius:10px;
+font-size:18px;
+font-weight:bold;
+}
+
+.Menu{
+background-color:#9bff9b; 
+height:100vh; 
+width:20vw;
+padding-top:calc(var(--menu-height) + 2vh);
+box-sizing: border-box;
+}
+
+.Submenu{
+font-size:20px;
+text-align:center;
+font-family:monospace;
+margin-top:25px;
+background-color:#9bff9b;
+border:2px solid white;
+text-decoration:none;
+border-radius:10px;
+margin-left:10px;
+margin-right:10px;
+padding-top:4px;
+padding-bottom:4px;
+cursor:pointer;
+}
+
+
