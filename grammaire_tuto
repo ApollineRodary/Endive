@@ -8,6 +8,9 @@ Lemma id : forall P, P->P.      (point à la fin non obligatoire, saut à la lig
 Let P.
 Suppose P.
 
+"Suppose P." peut-être naturellement implémenté en étant un raccourci pour "let H:P." avec H une variable fraîche. Il faut alors indiquer à l'utilisateur le nom choisi pour l'hypothèse (et du coup où ?)
+Il faudrait qu'Endive devine si "let P." doit s'interpréter en "let P:Prop.", "let P:int.", etc... Ce ne devrait pas être trop compliqué si il n'y a qu'une seule façon de réduire a preuve à un instant donné.
+
 Quand on tape "Goal?", ça donne :       (on a aussi envie d'avoir un environnement comme Coq avec hyp et goal quand on fait la preuve)
 We want to prove : P.
 
