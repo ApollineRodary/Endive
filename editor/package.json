@@ -43,6 +43,7 @@
     "@codemirror/view": "^6.23.1",
     "@lezer/highlight": "^1.2.0",
     "@lezer/lr": "^1.4.0",
-    "codemirror-languageserver": "^1.11.0"
+    "codemirror-languageserver": "^1.11.0",
+    "events": "^3.3.0"
   }
 }
