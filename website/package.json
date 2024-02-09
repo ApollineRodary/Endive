@@ -1,0 +1,22 @@
+{
+  "name": "@endive/website",
+  "version": "0.1.0",
+  "description": "The Endive website",
+  "scripts": {
+    "build": "parcel build",
+    "serve": "parcel serve"
+  },
+  "source": "src/index.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ApollineRodary/Endive.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ApollineRodary/Endive/issues"
+  },
+  "homepage": "https://github.com/ApollineRodary/Endive#readme",
+  "devDependencies": {
+    "parcel": "^2.11.0"
+  }
+}

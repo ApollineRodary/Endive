@@ -1,0 +1,16 @@
+{
+  "name": "endive",
+  "workspaces": [
+    "app",
+    "editor",
+    "vscode-plugin",
+    "website"
+  ],
+  "devDependencies": {
+    "prettier": "^3.2.4"
+  },
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  }
+}

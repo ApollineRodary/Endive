@@ -1,0 +1,48 @@
+{
+  "name": "@endive/editor",
+  "version": "0.1.0",
+  "description": "A web-based editor for Endive",
+  "scripts": {
+    "build": "parcel build",
+    "serve": "parcel serve"
+  },
+  "targets": {
+    "app": {
+      "context": "electron-renderer",
+      "distDir": "dist/app",
+      "publicUrl": ".",
+      "includeNodeModules": true
+    },
+    "browser": {
+      "context": "browser",
+      "distDir": "dist/browser",
+      "publicUrl": ".",
+      "includeNodeModules": true
+    }
+  },
+  "source": "src/index.html",
+  "browser": {
+    "scripts/files.js": "scripts/files_browser.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ApollineRodary/Endive.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ApollineRodary/Endive/issues"
+  },
+  "homepage": "https://github.com/ApollineRodary/Endive#readme",
+  "devDependencies": {
+    "parcel": "^2.11.0",
+    "parcel-transformer-lezer": "^0.2.1"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.3.3",
+    "@codemirror/language": "^6.10.0",
+    "@codemirror/view": "^6.23.1",
+    "@lezer/highlight": "^1.2.0",
+    "@lezer/lr": "^1.4.0",
+    "codemirror-languageserver": "^1.11.0"
+  }
+}

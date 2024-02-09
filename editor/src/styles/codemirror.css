@@ -1,0 +1,13 @@
+.cm-editor.cm-focused {
+  outline: None;
+}
+.cm-content {
+  font-size: 25px;
+}
+.cm-editor .cm-gutters {
+  background-color: #ffffff;
+  border-right: 0px;
+}
+.cm-editor .cm-gutterElement {
+  font-size: 20px;
+}
