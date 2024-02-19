@@ -14,7 +14,6 @@ rule token = parse
   | ','         { COMMA }
   | '.'         { DOT }
   | "def"       { DEF }
-  | "end"       { END }
   | "exact"     { EXACT }
   | "forall"    { FORALL }
   | "fun"       { FUN }
@@ -24,7 +23,6 @@ rule token = parse
   | "Lemma"     { LEMMA }
   | "let"       { LET }
   | '('         { LPAREN }
-  | "match"     { MATCH }
   | '~'         { NOT }
   | "Prop"      { PROP }
   | "Qed"       { QED }
@@ -32,7 +30,6 @@ rule token = parse
   | ')'         { RPAREN }
   | "Set"       { SET }
   | "Type"      { TYPE }
-  | "with"      { WITH }
 
   | ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']* as s { ID s }
   | ['0'-'9']+ as s                                     { INT (int_of_string s) }

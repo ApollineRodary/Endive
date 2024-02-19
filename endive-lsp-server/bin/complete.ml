@@ -78,7 +78,6 @@ let complete_in_term (pos : Lsp.Types.Position.t) (t : term annotated)
       | App (t1, t2) -> (
           match aux t1 env with Some res -> Some res | None -> aux t2 env)
       | Univ _ -> None
-      | Match (_t, _cases) -> failwith "TODO"
     else None
   in
   aux t env

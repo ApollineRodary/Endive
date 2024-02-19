@@ -6,10 +6,8 @@ type term =
   | App of term annotated * term annotated
   | Pi of annotated_binding * term annotated
   | Univ of int annotated
-  | Match of term annotated * case list
 
 and annotated_binding = string annotated * term annotated
-and case = string annotated list * term annotated
 
 let term_fun t1 t2 = Pi ((fresh "_", t1), t2)
 let term_not t = term_fun t (fresh (Var "False"))
@@ -29,7 +27,6 @@ let rec subst t x u =
       let t1' = subst t1 x u in
       let t2' = if y.el = x then t2 else subst t2 x u in
       { el = Pi ((y, t1'), t2'); span = t.span }
-  | Match (_t, _cases) -> failwith "TODO"
   | _ -> t
 
 let rec subst_many defs t =
@@ -46,7 +43,6 @@ let rec alpha_eq t u map =
   | Pi ((x, t1), t2), Pi ((x', t1'), t2') ->
       alpha_eq t1.el t1'.el map && alpha_eq t2.el t2'.el ((x.el, x'.el) :: map)
   | Univ n, Univ m -> n = m
-  | Match (_t, _cases), Match (_t', _cases') -> failwith "TODO"
   | _ -> false
 
 let rec sub_ty t u map =
@@ -54,7 +50,6 @@ let rec sub_ty t u map =
   | Pi ((x, t1), t2), Pi ((x', t1'), t2') ->
       sub_ty t1'.el t1.el map && sub_ty t2.el t2'.el ((x.el, x'.el) :: map)
   | Univ n, Univ m -> n <= m
-  | Match (_t, _cases), Match (_t', _cases') -> failwith "TODO"
   | _ -> alpha_eq t u map
 
 let rec normal_form t =
@@ -69,7 +64,6 @@ let rec normal_form t =
       | _ -> { el = App (t1', t2'); span = t.span })
   | Pi ((x, t1), t2) ->
       { el = Pi ((x, normal_form t1), normal_form t2); span = t.span }
-  | Match (_t, _cases) -> failwith "TODO"
   | _ -> t
 
 let string_of_term t =
@@ -125,25 +119,6 @@ let string_of_term t =
         in
         Printf.sprintf "%sforall %s : %s, %s%s" l x.el s1 s2 r
     | Univ n -> Printf.sprintf "Type@{%d}" n.el
-    | Match (t, cases) ->
-        let s =
-          aux t.el ~paren_around_app:false ~paren_around_arrow:false
-            ~paren_around_lam:false
-        in
-        let cases =
-          List.map
-            (fun (pattern, t) ->
-              let pattern = List.map (fun x -> x.el) pattern in
-              let pattern = String.concat " " pattern in
-              let t =
-                aux t.el ~paren_around_app:false ~paren_around_arrow:false
-                  ~paren_around_lam:false
-              in
-              Printf.sprintf "| %s => %s " pattern t)
-            cases
-        in
-        let cases = String.concat "" cases in
-        Printf.sprintf "match %s with %send" s cases
   in
   aux t ~paren_around_app:false ~paren_around_arrow:false
     ~paren_around_lam:false
@@ -190,7 +165,6 @@ let rec ty t env =
       | Error e, _ -> Error e
       | _, Error e -> Error e)
   | Univ n -> Ok (fresh (Univ (fresh (n.el + 1))))
-  | Match (_t, _cases) -> failwith "TODO"
 
 and univ_level t env =
   match ty t env with
