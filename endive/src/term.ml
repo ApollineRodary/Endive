@@ -1,4 +1,6 @@
 open Span
+open Sexplib.Std
+open Ppx_compare_lib.Builtin
 
 type term =
   | Var of string
@@ -6,8 +8,10 @@ type term =
   | App of term annotated * term annotated
   | Pi of annotated_binding * term annotated
   | Univ of int annotated
+[@@deriving compare, sexp]
 
 and annotated_binding = string annotated * term annotated
+[@@deriving compare, sexp]
 
 let term_fun t1 t2 = Pi ((fresh "_", t1), t2)
 let term_not t = term_fun t (fresh (Var "False"))

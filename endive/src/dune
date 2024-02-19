@@ -1,6 +1,8 @@
 (library
  (name endive)
- (libraries menhirLib))
+ (libraries menhirLib sexplib)
+ (preprocess
+  (pps ppx_compare ppx_sexp_conv)))
 
 (menhir
  (modules parser)

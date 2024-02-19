@@ -1,6 +1,6 @@
 (library
  (name endive_tests)
  (inline_tests)
- (libraries endive)
+ (libraries endive sexplib)
  (preprocess
-  (pps ppx_inline_test)))
+  (pps ppx_inline_test ppx_assert)))
