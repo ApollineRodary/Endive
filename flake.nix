@@ -10,7 +10,6 @@
   };
 
   outputs = { self, nixpkgs, flake-utils, gitignore }:
-
     {
       nixosModules.default = { config, lib, pkgs, ... }:
         let
@@ -110,12 +109,18 @@
 
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
+            cargo
             ocaml
             ocamlformat
             ocamlPackages.dune_3
             ocamlPackages.menhir
             opam
+            rust-analyzer
+            rustc
+            rustfmt
           ];
+
+          RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
         };
 
         formatter = pkgs.nixpkgs-fmt;
