@@ -1,13 +1,13 @@
 /// de Bruijn index.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Ix(pub usize);
 
 /// de Bruijn level.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Lvl(usize);
 
 /// Lambda abstraction or dependent product type.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Abs {
     /// Type of the bound variable.
     pub ty: Tm,
@@ -28,7 +28,7 @@ impl Abs {
 }
 
 /// Lambda term.
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Tm {
     /// Variable.
     Var(Ix),
@@ -52,11 +52,18 @@ pub enum Tm {
 /// list, which is the closest variable in the scope chain.
 pub type Env = Vec<Val>;
 
+/// Typing environment.
+///
+/// The environment is a list of values. The last element in the vector is the head of the
+/// list, which is the type of closest variable in the scope chain.
+pub type TyEnv = Vec<Val>;
+
 /// Error type.
 #[derive(PartialEq, Eq, Debug)]
 pub enum Error {
     IxOverflow,
     LvlUnderflow,
+    TyMismatch,
 }
 
 impl Tm {
@@ -81,17 +88,91 @@ impl Tm {
     /// Beta normalizes the lambda term.
     pub fn normalize(&self, env: &Env) -> Result<Tm, Error> {
         // Normalization by Evaluation
-        self.eval(env)?.reify(Lvl(0))
+        self.eval(env)?.reify(Lvl(env.len()))
     }
 
     /// Beta equivalence.
     pub fn beta_eq(&self, other: &Tm, env: &Env) -> Result<bool, Error> {
         Ok(self.normalize(env)? == other.normalize(env)?)
     }
+
+    /// Infers the type of the lambda term using rules from Pure Type Systems.
+    pub fn ty(&self, env: &mut Env, ty_env: &mut TyEnv) -> Result<Val, Error> {
+        let l = Lvl(env.len());
+
+        match self {
+            Tm::Var(i) => ty_env
+                .iter()
+                .rev()
+                .nth(i.0)
+                .ok_or(Error::IxOverflow)
+                .cloned(),
+            Tm::Abs(abs) => {
+                // Check that the type of the bound variable is a type.
+                abs.ty.univ_lvl(env, ty_env)?;
+
+                let ty = abs.ty.clone().eval(env)?;
+
+                env.push(Val::Var(l));
+                ty_env.push(ty.clone());
+
+                let body_ty = abs.body.ty(env, ty_env);
+
+                env.pop();
+                ty_env.pop();
+
+                let body_ty = body_ty?;
+
+                Ok(Val::Pi(Box::new(Closure {
+                    ty,
+                    body: body_ty.reify(Lvl(l.0 + 1))?,
+                    env: env.clone(),
+                })))
+            }
+            Tm::App(n, m) => match n.ty(env, ty_env)? {
+                Val::Pi(mut closure) => {
+                    let m_ty = m.ty(env, ty_env)?.reify(l);
+                    let param_ty = closure.ty.reify(l);
+                    if m_ty == param_ty {
+                        closure.env.push(m.clone().eval(env)?);
+                        Ok(closure.body.eval(&closure.env)?)
+                    } else {
+                        Err(Error::TyMismatch)
+                    }
+                }
+                _ => Err(Error::TyMismatch),
+            },
+            Tm::Pi(abs) => {
+                let ty_u = abs.ty.univ_lvl(env, ty_env)?;
+                let ty = abs.ty.clone().eval(env)?;
+
+                env.push(Val::Var(l));
+                ty_env.push(ty);
+
+                let body_u = abs.body.univ_lvl(env, ty_env);
+
+                env.pop();
+                ty_env.pop();
+
+                let body_u = body_u?;
+
+                Ok(Val::U(ty_u.max(body_u)))
+            }
+            Tm::U(n) => Ok(Val::U(n + 1)),
+        }
+    }
+
+    /// Computes the level of the universe to which the lambda term belongs.
+    pub fn univ_lvl(&self, env: &mut Env, ty_env: &mut TyEnv) -> Result<u32, Error> {
+        match self.ty(env, ty_env)? {
+            Val::U(n) => Ok(n),
+            _ => Err(Error::TyMismatch),
+        }
+    }
 }
 
 /// Lambda abstraction or dependent product type with an environment.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Closure {
     pub ty: Val,
     pub body: Tm,
@@ -117,7 +198,7 @@ impl Closure {
 }
 
 /// Lambda term in weak head normal form.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Val {
     /// Variable.
     Var(Lvl),
@@ -141,7 +222,7 @@ impl Val {
     pub fn reify(&self, l: Lvl) -> Result<Tm, Error> {
         match self {
             Val::Var(k) => {
-                let i = Ix(l.0.checked_sub(k.0).ok_or(Error::LvlUnderflow)?);
+                let i = Ix(l.0.checked_sub(k.0 + 1).ok_or(Error::LvlUnderflow)?);
                 Ok(Tm::Var(i))
             }
             Val::Abs(closure) => Ok(Tm::Abs(Box::new(closure.reify(l)?))),
@@ -175,5 +256,47 @@ mod tests {
             body: Tm::App(Box::new(id.clone()), Box::new(Tm::Var(Ix(0)))),
         }));
         assert_eq!(id_eta.beta_eq(&id, &vec![]), Ok(true));
+    }
+
+    #[test]
+    fn ty() {
+        // λx.x : U 0 → U 0
+        let id = Tm::Abs(Box::new(Abs {
+            ty: Tm::U(0),
+            body: Tm::Var(Ix(0)),
+        }));
+        let id_ty = Tm::Pi(Box::new(Abs {
+            ty: Tm::U(0),
+            body: Tm::U(0),
+        }));
+        assert_eq!(
+            id.ty(&mut vec![], &mut vec![])
+                .and_then(|v| v.reify(Lvl(0))),
+            Ok(id_ty.clone())
+        );
+
+        // (λx.x) (λx.x) : U 0 → U 0
+        let n = Tm::Abs(Box::new(Abs {
+            ty: id_ty.clone(),
+            body: Tm::Var(Ix(0)),
+        }));
+        let id_id = Tm::App(Box::new(n.clone()), Box::new(id.clone()));
+        assert_eq!(
+            id_id
+                .ty(&mut vec![], &mut vec![])
+                .and_then(|v| v.reify(Lvl(0))),
+            Ok(id_ty)
+        );
+
+        // Πx.x : U 1
+        let n = Tm::Pi(Box::new(Abs {
+            ty: Tm::U(0),
+            body: Tm::Var(Ix(0)),
+        }));
+        let n_ty = Tm::U(1);
+        assert_eq!(
+            n.ty(&mut vec![], &mut vec![]).and_then(|v| v.reify(Lvl(0))),
+            Ok(n_ty)
+        );
     }
 }
