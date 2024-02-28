@@ -1,3 +1,5 @@
+pub mod univ_lvl;
+
 use std::ops::Neg;
 
 /// de Bruijn index.
@@ -45,7 +47,7 @@ pub enum Tm {
     Pi(Box<Abs>),
 
     /// Type universe.
-    U(u32),
+    U(univ_lvl::Expr),
 
     /// Inductive type family.
     Fix {
@@ -116,7 +118,7 @@ impl Tm {
                 }
             }
             Tm::Pi(abs) => Ok(Val::Pi(Box::new(abs.eval(env)?))),
-            Tm::U(n) => Ok(Val::U(*n)),
+            Tm::U(n) => Ok(Val::U(n.clone())),
             Tm::Fix { ty, ctors } => Ok(Val::Fix {
                 ty: ty.eval(env)?.into(),
                 ctors: ctors
@@ -215,9 +217,9 @@ impl Tm {
 
                 let body_u = body_u?;
 
-                Ok(Val::U(ty_u.max(body_u)))
+                Ok(Val::U(ty_u.max(&body_u)))
             }
-            Tm::U(n) => Ok(Val::U(n + 1)),
+            Tm::U(u) => Ok(Val::U(u.clone() + 1)),
             Tm::Fix { ty, ctors } => {
                 ty.ty(env, ty_env)?;
 
@@ -251,7 +253,7 @@ impl Tm {
                         arg.check_ctor_param(
                             Lvl(l.0 + 1 + i),
                             l,
-                            universe,
+                            &universe,
                             uncurrified.args.len(),
                             Variance::Covariant,
                         )?;
@@ -440,7 +442,7 @@ impl Tm {
     }
 
     /// Computes the level of the universe to which the lambda term belongs.
-    pub fn univ_lvl(&self, env: &mut Env, ty_env: &mut TyEnv) -> Result<u32, Error> {
+    pub fn univ_lvl(&self, env: &mut Env, ty_env: &mut TyEnv) -> Result<univ_lvl::Expr, Error> {
         match self.ty(env, ty_env)? {
             Val::U(n) => Ok(n),
             _ => Err(Error::TyMismatch),
@@ -469,7 +471,7 @@ impl Tm {
                 ty: abs.ty.unlift(k, by)?,
                 body: abs.body.unlift(k + 1, by)?,
             }))),
-            Tm::U(n) => Ok(Tm::U(*n)),
+            Tm::U(n) => Ok(Tm::U(n.clone())),
             Tm::Fix { ty, ctors } => Ok(Tm::Fix {
                 ty: Box::new(ty.unlift(k, by)?),
                 ctors: ctors
@@ -539,7 +541,7 @@ pub enum Val {
     Pi(Box<Closure>),
 
     /// Type universe.
-    U(u32),
+    U(univ_lvl::Expr),
 
     /// Inductive type family.
     Fix {
@@ -587,7 +589,7 @@ impl Val {
             Val::Abs(closure) => Ok(Tm::Abs(Box::new(closure.reify(l)?))),
             Val::App(n, m) => Ok(Tm::App(Box::new(n.reify(l)?), Box::new(m.reify(l)?))),
             Val::Pi(closure) => Ok(Tm::Pi(Box::new(closure.reify(l)?))),
-            Val::U(n) => Ok(Tm::U(*n)),
+            Val::U(n) => Ok(Tm::U(n.clone())),
             Val::Fix { ty, ctors } => Ok(Tm::Fix {
                 ty: Box::new(ty.reify(l)?),
                 ctors: ctors
@@ -691,7 +693,7 @@ impl Val {
         &self,
         l: Lvl,
         fix_l: Lvl,
-        fix_universe: u32,
+        fix_universe: &univ_lvl::Expr,
         fix_indices: usize,
         v: Variance,
     ) -> Result<(), Error> {
@@ -709,7 +711,7 @@ impl Val {
                 )?;
             }
             Val::U(n) => {
-                if *n >= fix_universe {
+                if *n >= *fix_universe {
                     return Err(Error::TyMismatch);
                 }
             }
@@ -810,7 +812,7 @@ mod tests {
     fn beta_eq() {
         // (λx.x) = (λx.x)
         let id = Tm::Abs(Box::new(Abs {
-            ty: Tm::U(0),
+            ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::Var(Ix(0)),
         }));
         assert_eq!(id.beta_eq(&id, &vec![]), Ok(true));
@@ -821,7 +823,7 @@ mod tests {
 
         // (λx.(λy.y) x) = (λx.x)
         let id_eta = Tm::Abs(Box::new(Abs {
-            ty: Tm::U(0),
+            ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::App(Box::new(id.clone()), Box::new(Tm::Var(Ix(0)))),
         }));
         assert_eq!(id_eta.beta_eq(&id, &vec![]), Ok(true));
@@ -831,14 +833,14 @@ mod tests {
     fn induction() {
         // ℕ := μX.[X; X → X]
         let n = Tm::Fix {
-            ty: Box::new(Tm::U(0)),
+            ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
                 Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(0),
+                    ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Var(Ix(0)),
                 })),
                 Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(0),
+                    ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Pi(Box::new(Abs {
                         ty: Tm::Var(Ix(0)),
                         body: Tm::Var(Ix(1)),
@@ -924,12 +926,12 @@ mod tests {
     fn ty() {
         // λx.x : U 0 → U 0
         let id = Tm::Abs(Box::new(Abs {
-            ty: Tm::U(0),
+            ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::Var(Ix(0)),
         }));
         let id_ty = Tm::Pi(Box::new(Abs {
-            ty: Tm::U(0),
-            body: Tm::U(0),
+            ty: Tm::U(univ_lvl::Var(0).into()),
+            body: Tm::U(univ_lvl::Var(0).into()),
         }));
         assert_eq!(
             id.ty(&mut vec![], &mut vec![])
@@ -952,10 +954,10 @@ mod tests {
 
         // Πx.x : U 1
         let n = Tm::Pi(Box::new(Abs {
-            ty: Tm::U(0),
+            ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::Var(Ix(0)),
         }));
-        let n_ty = Tm::U(1);
+        let n_ty = Tm::U(univ_lvl::Expr::from(univ_lvl::Var(0)) + 1);
         assert_eq!(
             n.ty(&mut vec![], &mut vec![]).and_then(|v| v.reify(Lvl(0))),
             Ok(n_ty)
@@ -966,14 +968,14 @@ mod tests {
     fn ty_fix() {
         // ℕ := μX.[X; X → X]
         let n = Tm::Fix {
-            ty: Box::new(Tm::U(0)),
+            ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
                 Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(0),
+                    ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Var(Ix(0)),
                 })),
                 Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(0),
+                    ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Pi(Box::new(Abs {
                         ty: Tm::Var(Ix(0)),
                         body: Tm::Var(Ix(1)),
@@ -985,7 +987,7 @@ mod tests {
         // ℕ : U 0
         assert_eq!(
             n.ty(&mut vec![], &mut vec![]).and_then(|v| v.reify(Lvl(0))),
-            Ok(Tm::U(0))
+            Ok(Tm::U(univ_lvl::Var(0).into()))
         );
 
         // S 0 : ℕ
@@ -1009,14 +1011,14 @@ mod tests {
     fn ty_ind() {
         // ℕ := μX.[X; X → X]
         let n = Tm::Fix {
-            ty: Box::new(Tm::U(0)),
+            ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
                 Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(0),
+                    ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Var(Ix(0)),
                 })),
                 Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(0),
+                    ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Pi(Box::new(Abs {
                         ty: Tm::Var(Ix(0)),
                         body: Tm::Var(Ix(1)),
