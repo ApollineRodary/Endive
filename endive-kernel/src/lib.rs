@@ -1,3 +1,11 @@
+//! The Endive kernel.
+//!
+//! At the heart of Endive is the Endive kernel, which implements a variant of intuistionistic
+//! type theory with inductive types, universes and universe level variables. Higher level
+//! constructs are translated into the core language that the kernel understands, which is smaller
+//! and therefore more amenable to formal reasoning. This separation follows what is known as the
+//! de Bruijn criterion.
+
 pub mod univ_lvl;
 
 use std::{ops::Neg, rc::Rc};
