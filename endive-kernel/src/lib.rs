@@ -10,21 +10,21 @@ pub struct Ix(pub usize);
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Lvl(usize);
 
-/// Lambda abstraction or dependent product type.
+/// Binding of a variable in a lambda term.
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Abs {
+pub struct Binding {
     /// Type of the bound variable.
-    pub ty: Tm,
+    pub bound_ty: Tm,
 
-    /// Body of the abstraction.
+    /// Body of the binding.
     pub body: Tm,
 }
 
-impl Abs {
+impl Binding {
     /// Evaluates the abstraction to a closure in the given environment.
     pub fn eval(&self, env: &Env) -> Result<Closure, Error> {
         Ok(Closure {
-            ty: self.ty.eval(env)?,
+            ty: self.bound_ty.eval(env)?,
             body: self.body.clone(),
             env: env.clone(),
         })
@@ -38,13 +38,13 @@ pub enum Tm {
     Var(Ix),
 
     /// Lambda abstraction.
-    Abs(Box<Abs>),
+    Abs(Box<Binding>),
 
     /// Application.
     App(Box<Tm>, Box<Tm>),
 
     /// Dependent product type.
-    Pi(Box<Abs>),
+    Pi(Box<Binding>),
 
     /// Type universe.
     U(univ_lvl::Expr),
@@ -170,9 +170,9 @@ impl Tm {
                 .cloned(),
             Tm::Abs(abs) => {
                 // Check that the type of the bound variable is a type.
-                abs.ty.univ_lvl(env, ty_env)?;
+                abs.bound_ty.univ_lvl(env, ty_env)?;
 
-                let ty = abs.ty.clone().eval(env)?;
+                let ty = abs.bound_ty.clone().eval(env)?;
 
                 env.push(Val::Var(l));
                 ty_env.push(ty.clone());
@@ -204,8 +204,8 @@ impl Tm {
                 _ => Err(Error::TyMismatch),
             },
             Tm::Pi(abs) => {
-                let ty_u = abs.ty.univ_lvl(env, ty_env)?;
-                let ty = abs.ty.clone().eval(env)?;
+                let ty_u = abs.bound_ty.univ_lvl(env, ty_env)?;
+                let ty = abs.bound_ty.clone().eval(env)?;
 
                 env.push(Val::Var(l));
                 ty_env.push(ty);
@@ -459,16 +459,16 @@ impl Tm {
                     Ok(Tm::Var(Ix(i.0.checked_sub(by).ok_or(Error::IxOverflow)?)))
                 }
             }
-            Tm::Abs(abs) => Ok(Tm::Abs(Box::new(Abs {
-                ty: abs.ty.unlift(k, by)?,
+            Tm::Abs(abs) => Ok(Tm::Abs(Box::new(Binding {
+                bound_ty: abs.bound_ty.unlift(k, by)?,
                 body: abs.body.unlift(k + 1, by)?,
             }))),
             Tm::App(m, n) => Ok(Tm::App(
                 Box::new(m.unlift(k, by)?),
                 Box::new(n.unlift(k, by)?),
             )),
-            Tm::Pi(abs) => Ok(Tm::Pi(Box::new(Abs {
-                ty: abs.ty.unlift(k, by)?,
+            Tm::Pi(abs) => Ok(Tm::Pi(Box::new(Binding {
+                bound_ty: abs.bound_ty.unlift(k, by)?,
                 body: abs.body.unlift(k + 1, by)?,
             }))),
             Tm::U(n) => Ok(Tm::U(n.clone())),
@@ -517,9 +517,9 @@ impl Closure {
 
     /// Reifies the closure into an abstraction in normal form. Variables are reified into de
     /// Bruijn indices assuming current level `l`.
-    pub fn reify(&self, l: Lvl) -> Result<Abs, Error> {
-        Ok(Abs {
-            ty: self.ty.reify(l)?,
+    pub fn reify(&self, l: Lvl) -> Result<Binding, Error> {
+        Ok(Binding {
+            bound_ty: self.ty.reify(l)?,
             body: self.apply(Val::Var(l))?.reify(Lvl(l.0 + 1))?,
         })
     }
@@ -811,8 +811,8 @@ mod tests {
     #[test]
     fn beta_eq() {
         // (λx.x) = (λx.x)
-        let id = Tm::Abs(Box::new(Abs {
-            ty: Tm::U(univ_lvl::Var(0).into()),
+        let id = Tm::Abs(Box::new(Binding {
+            bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::Var(Ix(0)),
         }));
         assert_eq!(id.beta_eq(&id, &vec![]), Ok(true));
@@ -822,8 +822,8 @@ mod tests {
         assert_eq!(id_id.beta_eq(&id, &vec![]), Ok(true));
 
         // (λx.(λy.y) x) = (λx.x)
-        let id_eta = Tm::Abs(Box::new(Abs {
-            ty: Tm::U(univ_lvl::Var(0).into()),
+        let id_eta = Tm::Abs(Box::new(Binding {
+            bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::App(Box::new(id.clone()), Box::new(Tm::Var(Ix(0)))),
         }));
         assert_eq!(id_eta.beta_eq(&id, &vec![]), Ok(true));
@@ -835,14 +835,14 @@ mod tests {
         let n = Tm::Fix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
-                Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(univ_lvl::Var(0).into()),
+                Tm::Abs(Box::new(Binding {
+                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Var(Ix(0)),
                 })),
-                Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Pi(Box::new(Abs {
-                        ty: Tm::Var(Ix(0)),
+                Tm::Abs(Box::new(Binding {
+                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
+                    body: Tm::Pi(Box::new(Binding {
+                        bound_ty: Tm::Var(Ix(0)),
                         body: Tm::Var(Ix(1)),
                     })),
                 })),
@@ -883,21 +883,21 @@ mod tests {
         };
 
         // add : ℕ → ℕ → ℕ
-        let add = Tm::Abs(Box::new(Abs {
-            ty: n.clone(),
-            body: Tm::Abs(Box::new(Abs {
-                ty: n.clone(),
+        let add = Tm::Abs(Box::new(Binding {
+            bound_ty: n.clone(),
+            body: Tm::Abs(Box::new(Binding {
+                bound_ty: n.clone(),
                 body: Tm::Ind {
-                    motive: Box::new(Tm::Abs(Box::new(Abs {
-                        ty: n.clone(),
+                    motive: Box::new(Tm::Abs(Box::new(Binding {
+                        bound_ty: n.clone(),
                         body: n.clone(),
                     }))),
                     cases: vec![
                         Tm::Var(Ix(1)),
-                        Tm::Abs(Box::new(Abs {
-                            ty: n.clone(),
-                            body: Tm::Abs(Box::new(Abs {
-                                ty: n.clone(),
+                        Tm::Abs(Box::new(Binding {
+                            bound_ty: n.clone(),
+                            body: Tm::Abs(Box::new(Binding {
+                                bound_ty: n.clone(),
                                 body: Tm::Ctor {
                                     fix: Box::new(n.clone()),
                                     i: 1,
@@ -925,12 +925,12 @@ mod tests {
     #[test]
     fn ty() {
         // λx.x : U 0 → U 0
-        let id = Tm::Abs(Box::new(Abs {
-            ty: Tm::U(univ_lvl::Var(0).into()),
+        let id = Tm::Abs(Box::new(Binding {
+            bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::Var(Ix(0)),
         }));
-        let id_ty = Tm::Pi(Box::new(Abs {
-            ty: Tm::U(univ_lvl::Var(0).into()),
+        let id_ty = Tm::Pi(Box::new(Binding {
+            bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::U(univ_lvl::Var(0).into()),
         }));
         assert_eq!(
@@ -940,8 +940,8 @@ mod tests {
         );
 
         // (λx.x) (λx.x) : U 0 → U 0
-        let n = Tm::Abs(Box::new(Abs {
-            ty: id_ty.clone(),
+        let n = Tm::Abs(Box::new(Binding {
+            bound_ty: id_ty.clone(),
             body: Tm::Var(Ix(0)),
         }));
         let id_id = Tm::App(Box::new(n.clone()), Box::new(id.clone()));
@@ -953,8 +953,8 @@ mod tests {
         );
 
         // Πx.x : U 1
-        let n = Tm::Pi(Box::new(Abs {
-            ty: Tm::U(univ_lvl::Var(0).into()),
+        let n = Tm::Pi(Box::new(Binding {
+            bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::Var(Ix(0)),
         }));
         let n_ty = Tm::U(univ_lvl::Expr::from(univ_lvl::Var(0)) + 1);
@@ -970,14 +970,14 @@ mod tests {
         let n = Tm::Fix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
-                Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(univ_lvl::Var(0).into()),
+                Tm::Abs(Box::new(Binding {
+                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Var(Ix(0)),
                 })),
-                Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Pi(Box::new(Abs {
-                        ty: Tm::Var(Ix(0)),
+                Tm::Abs(Box::new(Binding {
+                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
+                    body: Tm::Pi(Box::new(Binding {
+                        bound_ty: Tm::Var(Ix(0)),
                         body: Tm::Var(Ix(1)),
                     })),
                 })),
@@ -1013,14 +1013,14 @@ mod tests {
         let n = Tm::Fix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
-                Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(univ_lvl::Var(0).into()),
+                Tm::Abs(Box::new(Binding {
+                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
                     body: Tm::Var(Ix(0)),
                 })),
-                Tm::Abs(Box::new(Abs {
-                    ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Pi(Box::new(Abs {
-                        ty: Tm::Var(Ix(0)),
+                Tm::Abs(Box::new(Binding {
+                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
+                    body: Tm::Pi(Box::new(Binding {
+                        bound_ty: Tm::Var(Ix(0)),
                         body: Tm::Var(Ix(1)),
                     })),
                 })),
@@ -1028,21 +1028,21 @@ mod tests {
         };
 
         // add : ℕ → ℕ → ℕ
-        let add = Tm::Abs(Box::new(Abs {
-            ty: n.clone(),
-            body: Tm::Abs(Box::new(Abs {
-                ty: n.clone(),
+        let add = Tm::Abs(Box::new(Binding {
+            bound_ty: n.clone(),
+            body: Tm::Abs(Box::new(Binding {
+                bound_ty: n.clone(),
                 body: Tm::Ind {
-                    motive: Box::new(Tm::Abs(Box::new(Abs {
-                        ty: n.clone(),
+                    motive: Box::new(Tm::Abs(Box::new(Binding {
+                        bound_ty: n.clone(),
                         body: n.clone(),
                     }))),
                     cases: vec![
                         Tm::Var(Ix(1)),
-                        Tm::Abs(Box::new(Abs {
-                            ty: n.clone(),
-                            body: Tm::Abs(Box::new(Abs {
-                                ty: n.clone(),
+                        Tm::Abs(Box::new(Binding {
+                            bound_ty: n.clone(),
+                            body: Tm::Abs(Box::new(Binding {
+                                bound_ty: n.clone(),
                                 body: Tm::Ctor {
                                     fix: Box::new(n.clone()),
                                     i: 1,
@@ -1060,10 +1060,10 @@ mod tests {
         assert_eq!(
             add.ty(&mut vec![], &mut vec![])
                 .and_then(|v| v.reify(Lvl(0))),
-            Ok(Tm::Pi(Box::new(Abs {
-                ty: n.clone(),
-                body: Tm::Pi(Box::new(Abs {
-                    ty: n.clone(),
+            Ok(Tm::Pi(Box::new(Binding {
+                bound_ty: n.clone(),
+                body: Tm::Pi(Box::new(Binding {
+                    bound_ty: n.clone(),
                     body: n.clone(),
                 })),
             })))
