@@ -118,6 +118,7 @@
             rust-analyzer
             rustc
             rustfmt
+            nodejs
           ];
 
           RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
