@@ -138,7 +138,6 @@ type TyEnv = Env;
 #[derive(PartialEq, Eq, Debug)]
 pub enum Error {
     IxOverflow,
-    LvlUnderflow,
     TyMismatch,
 }
 
@@ -612,7 +611,7 @@ impl Val {
     fn reify(&self, l: Lvl) -> Result<Tm, Error> {
         match self {
             Val::Var(k) => {
-                let i = Ix(l.0.checked_sub(k.0 + 1).ok_or(Error::LvlUnderflow)?);
+                let i = Ix(l.0.checked_sub(k.0 + 1).expect("de Bruijn level underflow"));
                 Ok(Tm::Var(i))
             }
             Val::Abs(closure) => Ok(Tm::Abs(Box::new(closure.reify(l)?))),
