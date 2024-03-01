@@ -24,6 +24,17 @@ impl Engine {
         Ok(())
     }
 
+    /// Prove a new theorem.
+    pub fn prove(&mut self, name: String, tm: &Tm, ty: &Tm) -> Result<(), Error> {
+        let ty = self.normalize_internal(ty)?;
+        let tm = self.normalize_internal(tm)?;
+        if ty != tm.ty().unwrap() {
+            return Err(Error::InvalidTy);
+        }
+        self.defs.insert(name, tm);
+        Ok(())
+    }
+
     /// Normalize a lambda term.
     pub fn normalize(&self, tm: &Tm) -> Result<String, Error> {
         Ok(endive_print::Tm(self.normalize_internal(tm)?).to_string())
