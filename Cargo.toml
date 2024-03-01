@@ -1,3 +1,10 @@
 [workspace]
-members = ["endive-engine", "endive-kernel", "endive-lambda", "endive-parse", "endive-print", "endive-stmt"]
+members = [
+    "crates/endive-engine",
+    "crates/endive-kernel",
+    "crates/endive-lambda",
+    "crates/endive-parse",
+    "crates/endive-print",
+    "crates/endive-stmt",
+]
 resolver = "2"
