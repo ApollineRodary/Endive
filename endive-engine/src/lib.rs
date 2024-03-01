@@ -35,16 +35,10 @@ impl Engine {
     /// Translate a lambda term from the higher level language to the kernel language.
     fn translate_tm(&self, tm: &Tm, env: &mut Vec<String>) -> Result<endive_kernel::Tm, Error> {
         Ok(match tm {
-            Tm::Id(id) => {
-                match env
-                .iter()
-                .position(|env_id| env_id == id) {
-                    Some(ix) => endive_kernel::Tm::Var(Ix(ix)),
-                    None => {
-                        self.defs.get(id).cloned().ok_or(Error::UnboundVariable)?
-                    }
-                }
-            }
+            Tm::Id(id) => match env.iter().position(|env_id| env_id == id) {
+                Some(ix) => endive_kernel::Tm::Var(Ix(ix)),
+                None => self.defs.get(id).cloned().ok_or(Error::UnboundVariable)?,
+            },
             Tm::Abs(binding) => {
                 let bound_ty = self.translate_tm(&binding.bound_ty, env)?;
 
