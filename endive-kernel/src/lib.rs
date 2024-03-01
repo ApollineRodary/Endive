@@ -8,7 +8,7 @@ pub struct Ix(pub usize);
 
 /// de Bruijn level.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Lvl(usize);
+struct Lvl(usize);
 
 /// Binding of a variable in a lambda term.
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -22,7 +22,7 @@ pub struct Binding {
 
 impl Binding {
     /// Evaluates the abstraction to a closure in the given environment.
-    pub fn eval(&self, env: &Rc<Env>) -> Result<Closure, Error> {
+    fn eval(&self, env: &Rc<Env>) -> Result<Closure, Error> {
         Ok(Closure {
             ty: self.bound_ty.eval(env)?,
             body: self.body.clone(),
@@ -88,14 +88,14 @@ pub enum Tm {
 /// The environment is a linked list of values. The head of the list is the value of the variable
 /// with the innermost binder.
 #[derive(Debug)]
-pub enum Env {
+enum Env {
     Nil,
     Cons(Val, Rc<Env>),
 }
 
 impl Env {
     /// Returns the `i`-th value in the environment.
-    pub fn get(&self, i: Ix) -> Option<&Val> {
+    fn get(&self, i: Ix) -> Option<&Val> {
         match self {
             Env::Nil => None,
             Env::Cons(val, env) => {
@@ -109,7 +109,7 @@ impl Env {
     }
 
     /// Returns the length of the environment.
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         match self {
             Env::Nil => 0,
             Env::Cons(_, env) => 1 + env.len(),
@@ -117,7 +117,7 @@ impl Env {
     }
 
     /// Pushes a value to the environment.
-    pub fn push(self: &Rc<Self>, val: Val) -> Rc<Self> {
+    fn push(self: &Rc<Self>, val: Val) -> Rc<Self> {
         Rc::new(Env::Cons(val, self.clone()))
     }
 }
@@ -132,7 +132,7 @@ impl Default for Env {
 ///
 /// The environment is a linked list of values. The head of the list is the type of the variable
 /// with the innermost binder.
-pub type TyEnv = Env;
+type TyEnv = Env;
 
 /// Error type.
 #[derive(PartialEq, Eq, Debug)]
@@ -144,7 +144,7 @@ pub enum Error {
 
 impl Tm {
     /// Evaluates a lambda term to weak head normal form in the given environment.
-    pub fn eval(&self, env: &Rc<Env>) -> Result<Val, Error> {
+    fn eval(&self, env: &Rc<Env>) -> Result<Val, Error> {
         match self {
             Tm::Var(i) => env.get(*i).ok_or(Error::IxOverflow).cloned(),
             Tm::Abs(abs) => Ok(Val::Abs(Box::new(abs.eval(env)?))),
@@ -186,18 +186,28 @@ impl Tm {
     }
 
     /// Beta normalizes the lambda term.
-    pub fn normalize(&self, env: &Rc<Env>) -> Result<Tm, Error> {
+    pub fn normalize(&self) -> Result<Tm, Error> {
         // Normalization by Evaluation
-        self.eval(env)?.reify(Lvl(env.len()))
+        self.eval(&Default::default())?.reify(Lvl(0))
     }
 
     /// Beta equivalence.
-    pub fn beta_eq(&self, other: &Tm, env: &Rc<Env>) -> Result<bool, Error> {
-        Ok(self.normalize(env)? == other.normalize(env)?)
+    pub fn beta_eq(&self, other: &Tm) -> Result<bool, Error> {
+        Ok(self.normalize()? == other.normalize()?)
     }
 
     /// Infers the type of the lambda term using rules from Pure Type Systems.
-    pub fn ty(&self, env: &Rc<Env>, ty_env: &Rc<TyEnv>) -> Result<Val, Error> {
+    pub fn ty(&self) -> Result<Tm, Error> {
+        self.ty_internal(&Default::default(), &Default::default())?
+            .reify(Lvl(0))
+    }
+
+    /// Infers the type of the lambda term using rules from Pure Type Systems.
+    ///
+    /// Unlike [`ty`] which is the public interface, this method takes an environment and a typing
+    /// environment as arguments and returns a value corresponding to the inferred type. This is
+    /// useful for inferring the type of a subterm in a larger term.
+    fn ty_internal(&self, env: &Rc<Env>, ty_env: &Rc<TyEnv>) -> Result<Val, Error> {
         let l = Lvl(env.len());
 
         match self {
@@ -210,7 +220,7 @@ impl Tm {
 
                 let body_ty = abs
                     .body
-                    .ty(&env.push(Val::Var(l)), &ty_env.push(ty.clone()))?;
+                    .ty_internal(&env.push(Val::Var(l)), &ty_env.push(ty.clone()))?;
 
                 Ok(Val::Pi(Box::new(Closure {
                     ty,
@@ -218,9 +228,9 @@ impl Tm {
                     env: env.clone(),
                 })))
             }
-            Tm::App(n, m) => match n.ty(env, ty_env)? {
+            Tm::App(n, m) => match n.ty_internal(env, ty_env)? {
                 Val::Pi(closure) => {
-                    let m_ty = m.ty(env, ty_env)?.reify(l);
+                    let m_ty = m.ty_internal(env, ty_env)?.reify(l);
                     let param_ty = closure.ty.reify(l);
                     if m_ty == param_ty {
                         Ok(closure.body.eval(&closure.env.push(m.clone().eval(env)?))?)
@@ -242,7 +252,7 @@ impl Tm {
             }
             Tm::U(u) => Ok(Val::U(u.clone() + 1)),
             Tm::Fix { ty, ctors } => {
-                ty.ty(env, ty_env)?;
+                ty.ty_internal(env, ty_env)?;
 
                 let ty = ty.clone().eval(env)?;
                 let uncurrified = ty.uncurrify_pi(l)?;
@@ -260,7 +270,7 @@ impl Tm {
                 }
 
                 for ctor in ctors {
-                    match ctor.ty(env, ty_env)? {
+                    match ctor.ty_internal(env, ty_env)? {
                         Val::Pi(closure) if closure.ty.reify(l) == ty.reify(l) => {}
                         _ => return Err(Error::TyMismatch),
                     }
@@ -295,7 +305,7 @@ impl Tm {
                 Ok(ty)
             }
             Tm::Ctor { fix, i, args } => {
-                fix.ty(env, ty_env)?;
+                fix.ty_internal(env, ty_env)?;
 
                 let mut ctor = match fix.eval(env)? {
                     Val::Fix { ty, ctors } => ctors
@@ -308,7 +318,7 @@ impl Tm {
 
                 // Check that the constructor is called with the right arguments.
                 for (i, arg) in args.iter().enumerate() {
-                    let arg_ty = arg.ty(env, ty_env)?;
+                    let arg_ty = arg.ty_internal(env, ty_env)?;
                     ctor = match &ctor {
                         Val::Pi(closure) => {
                             if closure.ty.reify(Lvl(l.0 + 1 + i))? != arg_ty.reify(l)? {
@@ -330,7 +340,7 @@ impl Tm {
             Tm::Ind { motive, cases, val } => {
                 // Part 1: check that the motive is of the form `Πx1. ... Πxk.(F x1 ... xk) → U n`.
 
-                let motive_uncurrified = motive.ty(env, ty_env)?.uncurrify_pi(l)?;
+                let motive_uncurrified = motive.ty_internal(env, ty_env)?.uncurrify_pi(l)?;
 
                 match motive_uncurrified.out {
                     Val::U(_) => {}
@@ -374,7 +384,7 @@ impl Tm {
 
                 // Part 2: check that the value to be inducted upon has the right type.
 
-                let val_ty_uncurrified = val.ty(env, ty_env)?.uncurrify_app()?;
+                let val_ty_uncurrified = val.ty_internal(env, ty_env)?.uncurrify_app()?;
 
                 if val_ty_uncurrified.args.len() != index_count {
                     return Err(Error::TyMismatch);
@@ -398,7 +408,7 @@ impl Tm {
                     // induction hypotheses.
 
                     let mut case_ty_l = Lvl(l.0);
-                    let mut case_ty = case.ty(env, ty_env)?;
+                    let mut case_ty = case.ty_internal(env, ty_env)?;
 
                     let mut expected_ctor_params = Vec::new();
                     let mut out_ctor_args = Vec::new();
@@ -463,15 +473,15 @@ impl Tm {
     }
 
     /// Computes the level of the universe to which the lambda term belongs.
-    pub fn univ_lvl(&self, env: &Rc<Env>, ty_env: &Rc<TyEnv>) -> Result<univ_lvl::Expr, Error> {
-        match self.ty(env, ty_env)? {
+    fn univ_lvl(&self, env: &Rc<Env>, ty_env: &Rc<TyEnv>) -> Result<univ_lvl::Expr, Error> {
+        match self.ty_internal(env, ty_env)? {
             Val::U(n) => Ok(n),
             _ => Err(Error::TyMismatch),
         }
     }
 
     /// Subtracts `by` from the de Bruijn indices greater or equal to `k` in the lambda term.
-    pub fn unlift(&self, k: usize, by: usize) -> Result<Tm, Error> {
+    fn unlift(&self, k: usize, by: usize) -> Result<Tm, Error> {
         match self {
             Tm::Var(i) => {
                 if i.0 < k {
@@ -522,7 +532,7 @@ impl Tm {
 
 /// Lambda abstraction or dependent product type with an environment.
 #[derive(Clone, Debug)]
-pub struct Closure {
+struct Closure {
     pub ty: Val,
     pub body: Tm,
     pub env: Rc<Env>,
@@ -530,13 +540,13 @@ pub struct Closure {
 
 impl Closure {
     /// Applies the closure to a value.
-    pub fn apply(&self, val: Val) -> Result<Val, Error> {
+    fn apply(&self, val: Val) -> Result<Val, Error> {
         self.body.eval(&self.env.push(val))
     }
 
     /// Reifies the closure into an abstraction in normal form. Variables are reified into de
     /// Bruijn indices assuming current level `l`.
-    pub fn reify(&self, l: Lvl) -> Result<Binding, Error> {
+    fn reify(&self, l: Lvl) -> Result<Binding, Error> {
         Ok(Binding {
             bound_ty: self.ty.reify(l)?,
             body: self.apply(Val::Var(l))?.reify(Lvl(l.0 + 1))?,
@@ -546,7 +556,7 @@ impl Closure {
 
 /// Lambda term in weak head normal form.
 #[derive(Clone, Debug)]
-pub enum Val {
+enum Val {
     /// Variable.
     Var(Lvl),
 
@@ -599,7 +609,7 @@ pub enum Val {
 impl Val {
     /// Reifies a value into a normal form. Variables are reified into de Bruijn indices assuming
     /// current level `l`.
-    pub fn reify(&self, l: Lvl) -> Result<Tm, Error> {
+    fn reify(&self, l: Lvl) -> Result<Tm, Error> {
         match self {
             Val::Var(k) => {
                 let i = Ix(l.0.checked_sub(k.0 + 1).ok_or(Error::LvlUnderflow)?);
@@ -636,7 +646,7 @@ impl Val {
     }
 
     /// Applies the value to another value.
-    pub fn apply(&self, val: Val) -> Result<Val, Error> {
+    fn apply(&self, val: Val) -> Result<Val, Error> {
         match self {
             Val::Abs(closure) => closure.apply(val),
             _ => Ok(Val::App(Box::new(self.clone()), Box::new(val))),
@@ -644,7 +654,7 @@ impl Val {
     }
 
     /// Applies the principle of induction to the value.
-    pub fn induction(&self, motive: Val, cases: Vec<Val>, l: Lvl) -> Result<Val, Error> {
+    fn induction(&self, motive: Val, cases: Vec<Val>, l: Lvl) -> Result<Val, Error> {
         let Val::Ctor { fix, i, args } = self else {
             return Ok(Val::Ind {
                 motive: Box::new(motive),
@@ -858,18 +868,18 @@ mod tests {
             bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::Var(Ix(0)),
         }));
-        assert_eq!(id.beta_eq(&id, &Default::default()), Ok(true));
+        assert_eq!(id.beta_eq(&id), Ok(true));
 
         // (λx.x) (λx.x) = x
         let id_id = Tm::App(Box::new(id.clone()), Box::new(id.clone()));
-        assert_eq!(id_id.beta_eq(&id, &Default::default()), Ok(true));
+        assert_eq!(id_id.beta_eq(&id), Ok(true));
 
         // (λx.(λy.y) x) = (λx.x)
         let id_eta = Tm::Abs(Box::new(Binding {
             bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::App(Box::new(id.clone()), Box::new(Tm::Var(Ix(0)))),
         }));
-        assert_eq!(id_eta.beta_eq(&id, &Default::default()), Ok(true));
+        assert_eq!(id_eta.beta_eq(&id), Ok(true));
     }
 
     #[test]
@@ -978,11 +988,7 @@ mod tests {
             bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::U(univ_lvl::Var(0).into()),
         }));
-        assert_eq!(
-            id.ty(&Default::default(), &Default::default())
-                .and_then(|v| v.reify(Lvl(0))),
-            Ok(id_ty.clone())
-        );
+        assert_eq!(id.ty(), Ok(id_ty.clone()));
 
         // (λx.x) (λx.x) : U 0 → U 0
         let n = Tm::Abs(Box::new(Binding {
@@ -990,12 +996,7 @@ mod tests {
             body: Tm::Var(Ix(0)),
         }));
         let id_id = Tm::App(Box::new(n.clone()), Box::new(id.clone()));
-        assert_eq!(
-            id_id
-                .ty(&Default::default(), &Default::default())
-                .and_then(|v| v.reify(Lvl(0))),
-            Ok(id_ty)
-        );
+        assert_eq!(id_id.ty(), Ok(id_ty));
 
         // Πx.x : U 1
         let n = Tm::Pi(Box::new(Binding {
@@ -1003,11 +1004,7 @@ mod tests {
             body: Tm::Var(Ix(0)),
         }));
         let n_ty = Tm::U(univ_lvl::Expr::from(univ_lvl::Var(0)) + 1);
-        assert_eq!(
-            n.ty(&Default::default(), &Default::default())
-                .and_then(|v| v.reify(Lvl(0))),
-            Ok(n_ty)
-        );
+        assert_eq!(n.ty(), Ok(n_ty));
     }
 
     #[test]
@@ -1031,11 +1028,7 @@ mod tests {
         };
 
         // ℕ : U 0
-        assert_eq!(
-            n.ty(&Default::default(), &Default::default())
-                .and_then(|v| v.reify(Lvl(0))),
-            Ok(Tm::U(univ_lvl::Var(0).into()))
-        );
+        assert_eq!(n.ty(), Ok(Tm::U(univ_lvl::Var(0).into())));
 
         // S 0 : ℕ
         let one = Tm::Ctor {
@@ -1047,11 +1040,7 @@ mod tests {
                 args: vec![],
             }],
         };
-        assert_eq!(
-            one.ty(&Default::default(), &Default::default())
-                .and_then(|v| v.reify(Lvl(0))),
-            Ok(n.clone())
-        );
+        assert_eq!(one.ty(), Ok(n.clone()));
     }
 
     #[test]
@@ -1105,8 +1094,7 @@ mod tests {
 
         // add : ℕ → ℕ → ℕ
         assert_eq!(
-            add.ty(&Default::default(), &Default::default())
-                .and_then(|v| v.reify(Lvl(0))),
+            add.ty(),
             Ok(Tm::Pi(Box::new(Binding {
                 bound_ty: n.clone(),
                 body: Tm::Pi(Box::new(Binding {
