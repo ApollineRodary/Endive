@@ -87,6 +87,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "endive-stmt"
+version = "0.1.0"
+dependencies = [
+ "endive-lambda",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

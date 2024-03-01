@@ -1,0 +1,7 @@
+[package]
+name = "endive-stmt"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+endive-lambda = { path = "../endive-lambda" }
