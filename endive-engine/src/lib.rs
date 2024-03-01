@@ -42,6 +42,7 @@ impl Engine {
                 Box::new(self.translate_tm(n, env)?),
                 Box::new(self.translate_tm(m, env)?),
             ),
+            Tm::Ty => endive_kernel::Tm::U(Default::default()),
             _ => todo!(),
         })
     }
