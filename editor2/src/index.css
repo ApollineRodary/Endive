@@ -1,0 +1,31 @@
+html,
+body,
+endive-view {
+  height: 100%;
+}
+
+body {
+  margin: 0 auto;
+  width: 21cm;
+}
+
+@font-face {
+  font-family: "Latin Modern Roman";
+  font-weight: normal;
+  font-style: normal;
+  src: url("fonts/lmroman17-regular.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Latin Modern Roman";
+  font-weight: bold;
+  font-style: normal;
+  src: url("fonts/lmroman12-bold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Latin Modern Roman";
+  font-weight: normal;
+  font-style: italic;
+  src: url("fonts/lmroman12-italic.otf") format("opentype");
+}

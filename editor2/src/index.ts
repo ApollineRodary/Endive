@@ -1,0 +1,10 @@
+import "./components/button";
+import "./components/statementSeparator";
+import "./components/definitionStatement";
+import "./components/emptyStatement";
+import "./components/nameInput";
+import "./components/patternInput";
+import "./components/proofStatement";
+import "./components/termInput";
+import "./components/theoremStatement";
+import "./components/view";
