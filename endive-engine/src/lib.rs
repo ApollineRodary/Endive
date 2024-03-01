@@ -20,16 +20,23 @@ impl Engine {
 
     /// Define a new constant.
     pub fn define(&mut self, name: String, tm: &Tm) -> Result<(), Error> {
+        self.defs.insert(name, self.normalize_internal(tm)?);
+        Ok(())
+    }
+
+    /// Normalize a lambda term.
+    pub fn normalize(&self, tm: &Tm) -> Result<String, Error> {
+        Ok(endive_print::Tm(self.normalize_internal(tm)?).to_string())
+    }
+
+    fn normalize_internal(&self, tm: &Tm) -> Result<endive_kernel::Tm, Error> {
         let tm = self.translate_tm(tm, &mut vec![])?;
         if tm.ty().is_err() {
             return Err(Error::InvalidTy);
         }
-        self.defs.insert(
-            name,
-            tm.normalize()
-                .expect("term failed to normalize after type checking"),
-        );
-        Ok(())
+        Ok(tm
+            .normalize()
+            .expect("term failed to normalize after type checking"))
     }
 
     /// Translate a lambda term from the higher level language to the kernel language.
@@ -74,6 +81,17 @@ mod tests {
     use super::Engine;
 
     #[test]
+    fn normalize() {
+        let engine = Engine::new();
+        let tm = Tm::Abs(Box::new(Binding {
+            bound_name: "x".to_owned(),
+            bound_ty: Tm::Ty,
+            body: Tm::Id("x".to_owned()),
+        }));
+        assert_eq!(engine.normalize(&tm).unwrap(), "λa:U(0).a");
+    }
+
+    #[test]
     fn define() {
         let mut engine = Engine::new();
         let tm = Tm::Abs(Box::new(Binding {
@@ -82,5 +100,9 @@ mod tests {
             body: Tm::Id("x".to_owned()),
         }));
         engine.define("id".to_owned(), &tm).unwrap();
+        assert_eq!(
+            engine.normalize(&Tm::Id("id".to_owned())).unwrap(),
+            "λa:U(0).a"
+        );
     }
 }

@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 endive-kernel = { path = "../endive-kernel" }
 endive-lambda = { path = "../endive-lambda" }
+endive-print = { path = "../endive-print" }
