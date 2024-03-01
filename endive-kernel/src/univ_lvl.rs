@@ -7,7 +7,7 @@ use std::{
 
 /// Universe level variable.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Var(pub u32);
+pub struct Var(pub usize);
 
 impl Display for Var {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -24,7 +24,7 @@ impl fmt::Debug for Var {
 /// Universe level expression of the form `max(0, l1 + c1, ..., lk + ck)` where `l1, ..., lk` are
 /// universe level variables and `c1, ..., ck` are constants.
 #[derive(Clone, PartialEq, Eq, Default)]
-pub struct Expr(HashMap<u32, u32>);
+pub struct Expr(HashMap<usize, u32>);
 
 impl Expr {
     /// Computes the maximum of two universe level expressions.
