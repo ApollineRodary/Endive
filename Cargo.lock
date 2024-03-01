@@ -5,3 +5,7 @@ version = 3
 [[package]]
 name = "endive-kernel"
 version = "0.1.0"
+
+[[package]]
+name = "endive-lambda"
+version = "0.1.0"
