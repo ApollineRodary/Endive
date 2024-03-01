@@ -55,6 +55,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "endive-engine"
+version = "0.1.0"
+dependencies = [
+ "endive-kernel",
+ "endive-lambda",
+]
+
+[[package]]
 name = "endive-kernel"
 version = "0.1.0"
 
