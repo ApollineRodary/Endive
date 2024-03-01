@@ -626,34 +626,58 @@ impl Val {
 
     /// Applies the principle of induction to the value.
     pub fn induction(&self, motive: Val, cases: Vec<Val>, l: Lvl) -> Result<Val, Error> {
-        match self {
-            Val::Ctor { fix, i, args } => {
-                let ctor = match &**fix {
-                    Val::Fix { ty: _, ctors } => ctors.get(*i).ok_or(Error::TyMismatch)?,
-                    _ => return Err(Error::TyMismatch),
-                };
-                let mut ctor = match ctor {
-                    Val::Abs(closure) => closure.apply(Val::Var(l))?,
-                    _ => return Err(Error::TyMismatch),
-                };
-                let mut case = cases.get(*i).ok_or(Error::TyMismatch)?.clone();
-                let mut args = args.iter().enumerate();
-                while let Val::Pi(closure) = &ctor {
-                    let (j, arg) = args.next().ok_or(Error::TyMismatch)?;
-                    case = case.apply(arg.clone())?;
-                    if closure.ty.is_apply_of_var(l) {
-                        case = case.apply(arg.induction(motive.clone(), cases.clone(), l)?)?;
-                    }
-                    ctor = closure.apply(Val::Var(Lvl(l.0 + 1 + j)))?;
-                }
-                Ok(case)
-            }
-            _ => Ok(Val::Ind {
+        let Val::Ctor { fix, i, args } = self else {
+            return Ok(Val::Ind {
                 motive: Box::new(motive),
                 cases,
                 val: Box::new(self.clone()),
-            }),
+            });
+        };
+        let Val::Fix { ty: _, ctors } = &**fix else {
+            return Ok(Val::Ind {
+                motive: Box::new(motive),
+                cases,
+                val: Box::new(self.clone()),
+            });
+        };
+        let Some(ctor) = ctors.get(*i) else {
+            return Ok(Val::Ind {
+                motive: Box::new(motive),
+                cases,
+                val: Box::new(self.clone()),
+            });
+        };
+        let Val::Abs(closure) = ctor else {
+            return Ok(Val::Ind {
+                motive: Box::new(motive),
+                cases,
+                val: Box::new(self.clone()),
+            });
+        };
+        let mut ctor = closure.apply(Val::Var(l))?;
+        let Some(mut case) = cases.get(*i).cloned() else {
+            return Ok(Val::Ind {
+                motive: Box::new(motive),
+                cases,
+                val: Box::new(self.clone()),
+            });
+        };
+        let mut args = args.iter().enumerate();
+        while let Val::Pi(closure) = &ctor {
+            let Some((j, arg)) = args.next() else {
+                return Ok(Val::Ind {
+                    motive: Box::new(motive),
+                    cases,
+                    val: Box::new(self.clone()),
+                });
+            };
+            case = case.apply(arg.clone())?;
+            if closure.ty.is_apply_of_var(l) {
+                case = case.apply(arg.induction(motive.clone(), cases.clone(), l)?)?;
+            }
+            ctor = closure.apply(Val::Var(Lvl(l.0 + 1 + j)))?;
         }
+        Ok(case)
     }
 
     /// Returns whether the value is a currified application of variable `Val::Var(l)`.
