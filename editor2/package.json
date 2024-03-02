@@ -11,5 +11,8 @@
   "devDependencies": {
     "parcel": "^2.12.0",
     "prettier": "^3.2.5"
+  },
+  "dependencies": {
+    "endive-wasm": "file:../crates/endive-wasm/pkg"
   }
 }

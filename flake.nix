@@ -7,9 +7,11 @@
       url = "github:hercules-ci/gitignore.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    rust-overlay.url = "github:oxalica/rust-overlay";
   };
 
-  outputs = { self, nixpkgs, flake-utils, gitignore }:
+  outputs = { self, nixpkgs, flake-utils, gitignore, rust-overlay }:
     {
       nixosModules.default = { config, lib, pkgs, ... }:
         let
@@ -51,7 +53,10 @@
         };
     } // flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ rust-overlay.overlays.default ];
+        };
         lib = pkgs.lib;
       in
       {
@@ -109,16 +114,18 @@
 
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
-            cargo
+            nodejs
             ocaml
             ocamlformat
             ocamlPackages.dune_3
             ocamlPackages.menhir
             opam
-            rust-analyzer
-            rustc
-            rustfmt
-            nodejs
+            rust-analyzer-unwrapped
+            wasm-pack
+            (rust-bin.stable.latest.minimal.override {
+              extensions = [ "rust-src" "rustfmt" ];
+              targets = [ "wasm32-unknown-unknown" ];
+            })
           ];
 
           RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
