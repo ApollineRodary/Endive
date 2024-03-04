@@ -6,6 +6,7 @@
 //! and therefore more amenable to formal reasoning. This separation follows what is known as the
 //! de Bruijn criterion.
 
+mod induction;
 pub mod univ_lvl;
 
 use std::{ops::Neg, rc::Rc};
