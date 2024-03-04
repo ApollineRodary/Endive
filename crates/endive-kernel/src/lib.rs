@@ -6,8 +6,12 @@
 //! and therefore more amenable to formal reasoning. This separation follows what is known as the
 //! de Bruijn criterion.
 
+mod global_env;
 mod induction;
 pub mod univ_lvl;
+
+pub use global_env::*;
+pub use induction::*;
 
 use std::{ops::Neg, rc::Rc};
 
