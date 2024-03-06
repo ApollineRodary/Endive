@@ -7,4 +7,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
+endive-kernel = { path = "../endive-kernel" }
+js-sys = "0.3"
 wasm-bindgen = "0.2"

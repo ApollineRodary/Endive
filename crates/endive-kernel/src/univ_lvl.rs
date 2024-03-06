@@ -39,6 +39,11 @@ impl Expr {
         }
         result
     }
+
+    /// Returns an iterator over the universe level variables and their constants.
+    pub fn iter(&self) -> impl Iterator<Item = (Var, u32)> + '_ {
+        self.0.iter().map(|(&var, &c)| (Var(var), c))
+    }
 }
 
 impl From<Var> for Expr {
