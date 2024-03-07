@@ -212,8 +212,8 @@ impl Tm {
     }
 
     /// Infers the type of the lambda term using rules from Pure Type Systems.
-    pub fn ty(&self) -> Result<Tm, Error> {
-        self.ty_internal(&Default::default(), &Default::default())?
+    pub fn ty(&self, e: &GlobalEnv) -> Result<Tm, Error> {
+        self.ty_internal(e, &Default::default(), &Default::default())?
             .reify(Lvl(0))
     }
 
@@ -222,20 +222,25 @@ impl Tm {
     /// Unlike [`ty`] which is the public interface, this method takes a local context and a typing
     /// local context as arguments and returns a value corresponding to the inferred type. This is
     /// useful for inferring the type of a subterm in a larger term.
-    pub(crate) fn ty_internal(&self, c: &Rc<Ctx>, tc: &Rc<TyCtx>) -> Result<Val, Error> {
+    pub(crate) fn ty_internal(
+        &self,
+        e: &GlobalEnv,
+        c: &Rc<Ctx>,
+        tc: &Rc<TyCtx>,
+    ) -> Result<Val, Error> {
         let l = Lvl(c.len());
 
         match self {
             Tm::Var(i) => tc.get(*i).ok_or(Error::IxOverflow).cloned(),
             Tm::Abs(abs) => {
                 // Check that the type of the bound variable is a type.
-                abs.bound_ty.univ_lvl(c, tc)?;
+                abs.bound_ty.univ_lvl(e, c, tc)?;
 
                 let ty = abs.bound_ty.clone().eval(c)?;
 
-                let body_ty = abs
-                    .body
-                    .ty_internal(&c.push(Val::Var(l)), &tc.push(ty.clone()))?;
+                let body_ty =
+                    abs.body
+                        .ty_internal(e, &c.push(Val::Var(l)), &tc.push(ty.clone()))?;
 
                 Ok(Val::Pi(Box::new(BindingClosure::new(
                     ty,
@@ -243,12 +248,15 @@ impl Tm {
                     c.clone(),
                 ))))
             }
-            Tm::App(n, m) => match n.ty_internal(c, tc)? {
+            Tm::App(n, m) => match n.ty_internal(e, c, tc)? {
                 Val::Pi(closure) => {
-                    let m_ty = m.ty_internal(c, tc)?.reify(l);
+                    let m_ty = m.ty_internal(e, c, tc)?.reify(l);
                     let param_ty = closure.ty.reify(l);
                     if m_ty == param_ty {
-                        Ok(closure.closure.body.eval(&closure.closure.c.push(m.clone().eval(c)?))?)
+                        Ok(closure
+                            .closure
+                            .body
+                            .eval(&closure.closure.c.push(m.clone().eval(c)?))?)
                     } else {
                         Err(Error::TyMismatch)
                     }
@@ -256,16 +264,16 @@ impl Tm {
                 _ => Err(Error::TyMismatch),
             },
             Tm::Pi(abs) => {
-                let ty_u = abs.bound_ty.univ_lvl(c, tc)?;
+                let ty_u = abs.bound_ty.univ_lvl(e, c, tc)?;
                 let ty = abs.bound_ty.clone().eval(c)?;
 
-                let body_u = abs.body.univ_lvl(&c.push(Val::Var(l)), &tc.push(ty))?;
+                let body_u = abs.body.univ_lvl(e, &c.push(Val::Var(l)), &tc.push(ty))?;
 
                 Ok(Val::U(ty_u.max(&body_u)))
             }
             Tm::U(u) => Ok(Val::U(u.clone() + 1)),
             Tm::Fix { ty, ctors } => {
-                ty.ty_internal(c, tc)?;
+                ty.ty_internal(e, c, tc)?;
 
                 let ty = ty.clone().eval(c)?;
                 let uncurrified = ty.uncurrify_pi(l)?;
@@ -277,13 +285,13 @@ impl Tm {
                 // Check that the indices belong to a universe strictly smaller than the universe
                 // of the inductive type family.
                 for index in &uncurrified.args {
-                    if index.reify(l)?.univ_lvl(c, tc)? >= universe {
+                    if index.reify(l)?.univ_lvl(e, c, tc)? >= universe {
                         return Err(Error::TyMismatch);
                     }
                 }
 
                 for ctor in ctors {
-                    match ctor.ty_internal(c, tc)? {
+                    match ctor.ty_internal(e, c, tc)? {
                         Val::Pi(closure) if closure.ty.beta_eq(l, &ty, l)? => {}
                         _ => return Err(Error::TyMismatch),
                     }
@@ -318,7 +326,7 @@ impl Tm {
                 Ok(ty)
             }
             Tm::Ctor { fix, i, args } => {
-                fix.ty_internal(c, tc)?;
+                fix.ty_internal(e, c, tc)?;
 
                 let mut ctor = match fix.eval(c)? {
                     Val::Fix { ty, ctors } => ctors
@@ -331,7 +339,7 @@ impl Tm {
 
                 // Check that the constructor is called with the right arguments.
                 for (i, arg) in args.iter().enumerate() {
-                    let arg_ty = arg.ty_internal(c, tc)?;
+                    let arg_ty = arg.ty_internal(e, c, tc)?;
                     ctor = match &ctor {
                         Val::Pi(closure) => {
                             if !closure.ty.beta_eq(Lvl(l.0 + 1 + i), &arg_ty, l)? {
@@ -353,7 +361,7 @@ impl Tm {
             Tm::Ind { motive, cases, val } => {
                 // Part 1: check that the motive is of the form `Πx1. ... Πxk.(F x1 ... xk) → U n`.
 
-                let motive_uncurrified = motive.ty_internal(c, tc)?.uncurrify_pi(l)?;
+                let motive_uncurrified = motive.ty_internal(e, c, tc)?.uncurrify_pi(l)?;
 
                 match motive_uncurrified.out {
                     Val::U(_) => {}
@@ -397,7 +405,7 @@ impl Tm {
 
                 // Part 2: check that the value to be inducted upon has the right type.
 
-                let val_ty_uncurrified = val.ty_internal(c, tc)?.uncurrify_app()?;
+                let val_ty_uncurrified = val.ty_internal(e, c, tc)?.uncurrify_app()?;
 
                 if val_ty_uncurrified.args.len() != index_count {
                     return Err(Error::TyMismatch);
@@ -421,7 +429,7 @@ impl Tm {
                     // induction hypotheses.
 
                     let mut case_ty_l = Lvl(l.0);
-                    let mut case_ty = case.ty_internal(c, tc)?;
+                    let mut case_ty = case.ty_internal(e, c, tc)?;
 
                     let mut expected_ctor_params = Vec::new();
                     let mut out_ctor_args = Vec::new();
@@ -433,7 +441,11 @@ impl Tm {
                             prev_was_self = false;
 
                             // Ignore the induction hypothesis.
-                            case_ty = closure.closure.body.unlift(0, 1)?.eval(&closure.closure.c)?;
+                            case_ty = closure
+                                .closure
+                                .body
+                                .unlift(0, 1)?
+                                .eval(&closure.closure.c)?;
                         } else {
                             prev_was_self = {
                                 let uncurrified = closure.ty.uncurrify_app()?;
@@ -486,8 +498,13 @@ impl Tm {
     }
 
     /// Computes the level of the universe to which the lambda term belongs.
-    fn univ_lvl(&self, c: &Rc<Ctx>, tc: &Rc<TyCtx>) -> Result<univ_lvl::Expr, Error> {
-        match self.ty_internal(c, tc)? {
+    fn univ_lvl(
+        &self,
+        e: &GlobalEnv,
+        c: &Rc<Ctx>,
+        tc: &Rc<TyCtx>,
+    ) -> Result<univ_lvl::Expr, Error> {
+        match self.ty_internal(e, c, tc)? {
             Val::U(n) => Ok(n),
             _ => Err(Error::TyMismatch),
         }
@@ -1059,6 +1076,8 @@ mod tests {
 
     #[test]
     fn ty() {
+        let e = GlobalEnv::new();
+
         // λx.x : U 0 → U 0
         let id = Tm::Abs(Box::new(Binding {
             bound_ty: Tm::U(univ_lvl::Var(0).into()),
@@ -1068,7 +1087,7 @@ mod tests {
             bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::U(univ_lvl::Var(0).into()),
         }));
-        assert_eq!(id.ty(), Ok(id_ty.clone()));
+        assert_eq!(id.ty(&e), Ok(id_ty.clone()));
 
         // (λx.x) (λx.x) : U 0 → U 0
         let n = Tm::Abs(Box::new(Binding {
@@ -1076,7 +1095,7 @@ mod tests {
             body: Tm::Var(Ix(0)),
         }));
         let id_id = Tm::App(Box::new(n.clone()), Box::new(id.clone()));
-        assert_eq!(id_id.ty(), Ok(id_ty));
+        assert_eq!(id_id.ty(&e), Ok(id_ty));
 
         // Πx.x : U 1
         let n = Tm::Pi(Box::new(Binding {
@@ -1084,11 +1103,13 @@ mod tests {
             body: Tm::Var(Ix(0)),
         }));
         let n_ty = Tm::U(univ_lvl::Expr::from(univ_lvl::Var(0)) + 1);
-        assert_eq!(n.ty(), Ok(n_ty));
+        assert_eq!(n.ty(&e), Ok(n_ty));
     }
 
     #[test]
     fn ty_fix() {
+        let e = GlobalEnv::new();
+
         // ℕ := μX.[X; X → X]
         let n = Tm::Fix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
@@ -1108,7 +1129,7 @@ mod tests {
         };
 
         // ℕ : U 0
-        assert_eq!(n.ty(), Ok(Tm::U(univ_lvl::Var(0).into())));
+        assert_eq!(n.ty(&e), Ok(Tm::U(univ_lvl::Var(0).into())));
 
         // S 0 : ℕ
         let one = Tm::Ctor {
@@ -1120,11 +1141,13 @@ mod tests {
                 args: vec![],
             }],
         };
-        assert_eq!(one.ty(), Ok(n.clone()));
+        assert_eq!(one.ty(&e), Ok(n.clone()));
     }
 
     #[test]
     fn ty_ind() {
+        let e = GlobalEnv::new();
+
         // ℕ := μX.[X; X → X]
         let n = Tm::Fix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
@@ -1174,7 +1197,7 @@ mod tests {
 
         // add : ℕ → ℕ → ℕ
         assert_eq!(
-            add.ty(),
+            add.ty(&e),
             Ok(Tm::Pi(Box::new(Binding {
                 bound_ty: n.clone(),
                 body: Tm::Pi(Box::new(Binding {
@@ -1187,6 +1210,8 @@ mod tests {
 
     #[test]
     fn hypothetical_syllogism() {
+        let e = GlobalEnv::new();
+
         // ΠP.ΠQ.ΠR.(P -> Q) -> (Q -> R) -> P -> R
         let statement = Tm::Pi(Box::new(Binding {
             bound_ty: Tm::U(univ_lvl::Expr::default()),
@@ -1247,6 +1272,6 @@ mod tests {
             })),
         }));
 
-        assert_eq!(proof.ty().unwrap().beta_eq(&statement), Ok(true));
+        assert_eq!(proof.ty(&e).unwrap().beta_eq(&statement), Ok(true));
     }
 }
