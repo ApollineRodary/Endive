@@ -26,9 +26,34 @@ pub struct InductiveTypeFamily {
     pub ctors: Vec<Ctor>,
 }
 
+impl InductiveTypeFamily {
+    /// Validates the inductive type family.
+    fn validate(&self) -> Result<(), Error> {
+        let (inductive_c, inductive_tc) = self
+            .params
+            .add_to_ctx(Rc::new(Ctx::Nil), Rc::new(TyCtx::Nil))?;
+        self.indices
+            .validate_univ_level(&inductive_c, &inductive_tc, &self.univ_lvl)?;
+        for ctor in &self.ctors {
+            if ctor.indices.len() != self.indices.0.len() {
+                return Err(Error::TyMismatch);
+            }
+            let c = inductive_c.clone();
+            let tc = inductive_tc.clone();
+            for param in &ctor.params {
+                c.push(Val::Var(Lvl(c.len())));
+                tc.push(param.validate(&c, &tc, &self.indices, &inductive_c, &self.univ_lvl)?);
+            }
+            self.indices
+                .validate_apply(&inductive_c, &ctor.indices, &c, &tc)?;
+        }
+        Ok(())
+    }
+}
+
 /// A constructor of an inductive type family.
 pub struct Ctor {
-    /// The parameters of the constructor.
+    /// The types of parameters of the constructor.
     pub params: Vec<CtorParam>,
 
     /// The indices for the constructed value.
@@ -39,20 +64,20 @@ pub struct Ctor {
     pub indices: Vec<Tm>,
 }
 
-/// A constructor parameter, which is a chain of zero or more dependent type products with
+/// A constructor parameter type, which is a chain of zero or more dependent type products with
 /// additional constraints to ensure strict positivity.
 pub struct CtorParam {
-    /// The telescope of the parameter.
+    /// The telescope of the parameter type.
     pub tele: Telescope,
 
     /// The last type in the chain of dependent product types.
-    pub tail: CtorParamTail,
+    pub last: CtorParamLast,
 }
 
 /// The last type in the chain of dependent product types representing a constructor parameter.
 ///
 /// See [`CtorParam`].
-pub enum CtorParamTail {
+pub enum CtorParamLast {
     /// The inductive type family being defined, applied to the bound parameters and given indices,
     /// which must have the same length as the indices of the family (i.e the inductive type family
     /// must be fully applied).
