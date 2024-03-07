@@ -11,7 +11,7 @@ mod global_env;
 mod induction;
 pub mod univ_lvl;
 
-use closure::Closure;
+use closure::BindingClosure;
 pub use global_env::*;
 pub use induction::*;
 
@@ -37,12 +37,12 @@ pub struct Binding {
 
 impl Binding {
     /// Evaluates the abstraction to a closure in the given local context.
-    fn eval(&self, c: &Rc<Ctx>) -> Result<Closure, Error> {
-        Ok(Closure {
-            ty: self.bound_ty.eval(c)?,
-            body: self.body.clone(),
-            c: c.clone(),
-        })
+    fn eval(&self, c: &Rc<Ctx>) -> Result<BindingClosure, Error> {
+        Ok(BindingClosure::new(
+            self.bound_ty.eval(c)?,
+            self.body.clone(),
+            c.clone(),
+        ))
     }
 }
 
@@ -237,18 +237,18 @@ impl Tm {
                     .body
                     .ty_internal(&c.push(Val::Var(l)), &tc.push(ty.clone()))?;
 
-                Ok(Val::Pi(Box::new(Closure {
+                Ok(Val::Pi(Box::new(BindingClosure::new(
                     ty,
-                    body: body_ty.reify(Lvl(l.0 + 1))?,
-                    c: c.clone(),
-                })))
+                    body_ty.reify(Lvl(l.0 + 1))?,
+                    c.clone(),
+                ))))
             }
             Tm::App(n, m) => match n.ty_internal(c, tc)? {
                 Val::Pi(closure) => {
                     let m_ty = m.ty_internal(c, tc)?.reify(l);
                     let param_ty = closure.ty.reify(l);
                     if m_ty == param_ty {
-                        Ok(closure.body.eval(&closure.c.push(m.clone().eval(c)?))?)
+                        Ok(closure.closure.body.eval(&closure.closure.c.push(m.clone().eval(c)?))?)
                     } else {
                         Err(Error::TyMismatch)
                     }
@@ -433,7 +433,7 @@ impl Tm {
                             prev_was_self = false;
 
                             // Ignore the induction hypothesis.
-                            case_ty = closure.body.unlift(0, 1)?.eval(&closure.c)?;
+                            case_ty = closure.closure.body.unlift(0, 1)?.eval(&closure.closure.c)?;
                         } else {
                             prev_was_self = {
                                 let uncurrified = closure.ty.uncurrify_app()?;
@@ -550,13 +550,13 @@ enum Val {
     Var(Lvl),
 
     /// Lambda abstraction.
-    Abs(Box<Closure>),
+    Abs(Box<BindingClosure>),
 
     /// Application.
     App(Box<Val>, Box<Val>),
 
     /// Dependent product type.
-    Pi(Box<Closure>),
+    Pi(Box<BindingClosure>),
 
     /// Type universe.
     U(univ_lvl::Expr),

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{univ_lvl, Binding, Closure, Ctx, Error, Lvl, Tm, TyCtx, Val};
+use crate::{univ_lvl, Binding, BindingClosure, Ctx, Error, Lvl, Tm, TyCtx, Val};
 
 /// A sequence of types. For each type, an argument of that type is bound in every subsequent type.
 pub struct Telescope(pub Vec<Tm>);
@@ -49,11 +49,11 @@ impl Telescope {
                     body: acc,
                 }))
             });
-            Ok(Val::Pi(Box::new(Closure {
-                ty: self.0[0].eval(c)?,
-                body: tail,
-                c: c.clone(),
-            })))
+            Ok(Val::Pi(Box::new(BindingClosure::new(
+                self.0[0].eval(c)?,
+                tail,
+                c.clone(),
+            ))))
         }
     }
 
