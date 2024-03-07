@@ -6,10 +6,12 @@
 //! and therefore more amenable to formal reasoning. This separation follows what is known as the
 //! de Bruijn criterion.
 
+mod closure;
 mod global_env;
 mod induction;
 pub mod univ_lvl;
 
+use closure::Closure;
 pub use global_env::*;
 pub use induction::*;
 
@@ -538,30 +540,6 @@ impl Tm {
                 val: Box::new(val.unlift(k, by)?),
             }),
         }
-    }
-}
-
-/// Lambda abstraction or dependent product type with a local context.
-#[derive(Clone, Debug)]
-struct Closure {
-    pub ty: Val,
-    pub body: Tm,
-    pub c: Rc<Ctx>,
-}
-
-impl Closure {
-    /// Applies the closure to a value.
-    fn apply(&self, val: Val) -> Result<Val, Error> {
-        self.body.eval(&self.c.push(val))
-    }
-
-    /// Reifies the closure into an abstraction in normal form. Variables are reified into de
-    /// Bruijn indices assuming current level `l`.
-    fn reify(&self, l: Lvl) -> Result<Binding, Error> {
-        Ok(Binding {
-            bound_ty: self.ty.reify(l)?,
-            body: self.apply(Val::Var(l))?.reify(Lvl(l.0 + 1))?,
-        })
     }
 }
 
