@@ -220,7 +220,7 @@ impl Tm {
     /// Unlike [`ty`] which is the public interface, this method takes a local context and a typing
     /// local context as arguments and returns a value corresponding to the inferred type. This is
     /// useful for inferring the type of a subterm in a larger term.
-    fn ty_internal(&self, c: &Rc<Ctx>, tc: &Rc<TyCtx>) -> Result<Val, Error> {
+    pub(crate) fn ty_internal(&self, c: &Rc<Ctx>, tc: &Rc<TyCtx>) -> Result<Val, Error> {
         let l = Lvl(c.len());
 
         match self {
