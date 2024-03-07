@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use endive_kernel::{Binding, Ix};
+use endive_kernel::{Binding, GlobalEnv, Ix};
 use endive_lambda::Tm;
 
 pub struct Engine {
@@ -28,7 +28,7 @@ impl Engine {
     pub fn prove(&mut self, name: String, tm: &Tm, ty: &Tm) -> Result<(), Error> {
         let ty = self.normalize_internal(ty)?;
         let tm = self.normalize_internal(tm)?;
-        if ty != tm.ty().unwrap() {
+        if ty != tm.ty(&GlobalEnv::new()).unwrap() {
             return Err(Error::InvalidTy);
         }
         self.defs.insert(name, tm);
@@ -42,7 +42,7 @@ impl Engine {
 
     fn normalize_internal(&self, tm: &Tm) -> Result<endive_kernel::Tm, Error> {
         let tm = self.translate_tm(tm, &mut vec![])?;
-        if tm.ty().is_err() {
+        if tm.ty(&GlobalEnv::new()).is_err() {
             return Err(Error::InvalidTy);
         }
         Ok(tm

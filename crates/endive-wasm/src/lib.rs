@@ -1,6 +1,6 @@
 //! WebAssembly interface to Endive.
 
-use endive_kernel::{univ_lvl, Binding, Ix, Tm};
+use endive_kernel::{univ_lvl, Binding, GlobalEnv, Ix, Tm};
 use js_sys::{Array, Error, Object, Reflect, TypeError};
 use wasm_bindgen::prelude::*;
 
@@ -300,7 +300,7 @@ pub fn normalize(n: &JsValue) -> Result<JsValue, JsValue> {
 pub fn ty(n: &JsValue) -> Result<JsValue, JsValue> {
     Ok(kernel_tm_to_js_tm(
         &js_tm_to_kernel_tm(&n)?
-            .ty()
+            .ty(&GlobalEnv::new())
             .map_err(kernel_error_to_js_error)?,
     ))
 }
