@@ -1,7 +1,89 @@
-use crate::{univ_lvl, Tm};
+use std::rc::Rc;
+
+use crate::{univ_lvl, Binding, Closure, Ctx, Error, Lvl, Tm, TyCtx, Val};
 
 /// A sequence of types. For each type, an argument of that type is bound in every subsequent type.
 pub struct Telescope(pub Vec<Tm>);
+
+impl Telescope {
+    /// Adds the parameters to the context and their types to the type context, returning the
+    /// resulting context and type context.
+    fn add_to_ctx(&self, mut c: Rc<Ctx>, mut tc: Rc<TyCtx>) -> Result<(Rc<Ctx>, Rc<TyCtx>), Error> {
+        for (l, ty) in self.0.iter().enumerate() {
+            ty.univ_lvl(&c, &tc)?;
+            let ty = ty.eval(&c)?;
+            c = Rc::new(Ctx::Cons(Val::Var(Lvl(l)), c));
+            tc = Rc::new(TyCtx::Cons(ty, tc));
+        }
+        Ok((c, tc))
+    }
+
+    /// Validates that the telescope has universe level at most `max_univ_lvl`.
+    fn validate_univ_level(
+        &self,
+        c: &Rc<Ctx>,
+        tc: &Rc<TyCtx>,
+        max_univ_lvl: &univ_lvl::Expr,
+    ) -> Result<(), Error> {
+        let mut c = c.clone();
+        let mut tc = tc.clone();
+        for (l, ty) in self.0.iter().enumerate() {
+            if ty.univ_lvl(&c, &tc)? > *max_univ_lvl {
+                return Err(Error::TyMismatch);
+            }
+            let ty = ty.eval(&c)?;
+            c = Rc::new(Ctx::Cons(Val::Var(Lvl(l)), c));
+            tc = Rc::new(TyCtx::Cons(ty, tc));
+        }
+        Ok(())
+    }
+
+    /// Evaluates the telescope to a dependent product type chain that ends with `tail`.
+    fn eval_to_pi(&self, c: &Rc<Ctx>, tail: Tm) -> Result<Val, Error> {
+        if self.0.is_empty() {
+            tail.eval(c)
+        } else {
+            let tail = self.0[1..].iter().fold(tail, |acc, ty| {
+                Tm::Pi(Box::new(Binding {
+                    bound_ty: ty.clone(),
+                    body: acc,
+                }))
+            });
+            Ok(Val::Pi(Box::new(Closure {
+                ty: self.0[0].eval(c)?,
+                body: tail,
+                c: c.clone(),
+            })))
+        }
+    }
+
+    /// Validates a currified application of the telescope to the arguments.
+    fn validate_apply(
+        &self,
+        c: &Rc<Ctx>,
+        args: &[Tm],
+        args_c: &Rc<Ctx>,
+        args_tc: &Rc<TyCtx>,
+    ) -> Result<(), Error> {
+        if self.0.len() != args.len() {
+            return Err(Error::TyMismatch);
+        }
+        let l = Lvl(c.len());
+        let dummy = Tm::U(univ_lvl::Expr::default());
+        let mut pi = self.eval_to_pi(c, dummy)?;
+        let mut i = 0;
+        while let Val::Pi(closure) = pi {
+            let arg = &args[i];
+            let ty = arg.ty_internal(args_c, args_tc)?;
+            if !ty.beta_eq(l, &closure.ty, l)? {
+                return Err(Error::TyMismatch);
+            }
+            pi = closure.apply(arg.eval(args_c)?)?;
+            i += 1;
+        }
+        Ok(())
+    }
+}
 
 /// A parameterized family of inductive types.
 pub struct InductiveTypeFamily {
@@ -72,6 +154,37 @@ pub struct CtorParam {
 
     /// The last type in the chain of dependent product types.
     pub last: CtorParamLast,
+}
+
+impl CtorParam {
+    /// Validates the constructor parameter type and returns a value that represents it.
+    fn validate(
+        &self,
+        c: &Rc<Ctx>,
+        tc: &Rc<TyCtx>,
+        inductive_indices: &Telescope,
+        inductive_c: &Rc<Ctx>,
+        max_univ_lvl: &univ_lvl::Expr,
+    ) -> Result<Val, Error> {
+        let tail = match &self.last {
+            CtorParamLast::This { indices } => {
+                if indices.len() != inductive_indices.0.len() {
+                    return Err(Error::TyMismatch);
+                }
+                let (c, tc) = self.tele.add_to_ctx(c.clone(), tc.clone())?;
+                inductive_indices.validate_apply(inductive_c, &indices, &c, &tc)?;
+                todo!()
+            }
+            CtorParamLast::Other(ty) => {
+                let (c, tc) = self.tele.add_to_ctx(c.clone(), tc.clone())?;
+                if ty.univ_lvl(&c, &tc)? > *max_univ_lvl {
+                    return Err(Error::TyMismatch);
+                }
+                ty.eval(&c)?
+            }
+        };
+        self.tele.eval_to_pi(&c, tail.reify(Lvl(c.len()))?)
+    }
 }
 
 /// The last type in the chain of dependent product types representing a constructor parameter.
