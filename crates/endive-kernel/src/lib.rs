@@ -205,7 +205,8 @@ impl Tm {
 
     /// Beta equivalence.
     pub fn beta_eq(&self, other: &Tm) -> Result<bool, Error> {
-        Ok(self.normalize()? == other.normalize()?)
+        let c = Default::default();
+        self.eval(&c)?.beta_eq(Lvl(0), &other.eval(&c)?, Lvl(0))
     }
 
     /// Infers the type of the lambda term using rules from Pure Type Systems.
@@ -281,7 +282,7 @@ impl Tm {
 
                 for ctor in ctors {
                     match ctor.ty_internal(c, tc)? {
-                        Val::Pi(closure) if closure.ty.reify(l) == ty.reify(l) => {}
+                        Val::Pi(closure) if closure.ty.beta_eq(l, &ty, l)? => {}
                         _ => return Err(Error::TyMismatch),
                     }
 
@@ -331,7 +332,7 @@ impl Tm {
                     let arg_ty = arg.ty_internal(c, tc)?;
                     ctor = match &ctor {
                         Val::Pi(closure) => {
-                            if closure.ty.reify(Lvl(l.0 + 1 + i))? != arg_ty.reify(l)? {
+                            if !closure.ty.beta_eq(Lvl(l.0 + 1 + i), &arg_ty, l)? {
                                 return Err(Error::TyMismatch);
                             }
                             closure.apply(arg.eval(c)?)?
@@ -459,7 +460,7 @@ impl Tm {
                         .zip(ctor_uncurrified.args.iter())
                         .enumerate()
                     {
-                        if expected.reify(Lvl(l.0 + j))? != actual.reify(Lvl(l.0 + j))? {
+                        if !expected.beta_eq(Lvl(l.0 + j), actual, Lvl(l.0 + j))? {
                             return Err(Error::TyMismatch);
                         }
                     }
@@ -472,7 +473,7 @@ impl Tm {
                         args: out_ctor_args,
                     })?;
 
-                    if case_ty.reify(case_ty_l) != expected_out.reify(case_ty_l) {
+                    if !case_ty.beta_eq(case_ty_l, &expected_out, case_ty_l)? {
                         return Err(Error::TyMismatch);
                     }
                 }
@@ -833,6 +834,97 @@ impl Val {
                 has_var = has_var || val.has_var(l, var_l)?;
                 Ok(has_var)
             }
+        }
+    }
+
+    /// Beta equivalence.
+    pub(crate) fn beta_eq(&self, l: Lvl, other: &Val, other_l: Lvl) -> Result<bool, Error> {
+        match (self, other) {
+            (Val::Var(i), Val::Var(j)) => Ok(l.0 + j.0 == other_l.0 + i.0),
+            (Val::Abs(closure), Val::Abs(other_closure))
+            | (Val::Pi(closure), Val::Pi(other_closure)) => {
+                if !closure.ty.beta_eq(l, &other_closure.ty, other_l)? {
+                    return Ok(false);
+                }
+                closure.apply(Val::Var(l))?.beta_eq(
+                    Lvl(l.0 + 1),
+                    &other_closure.apply(Val::Var(other_l))?,
+                    Lvl(other_l.0 + 1),
+                )
+            }
+            (Val::App(m, n), Val::App(other_m, other_n)) => {
+                if !m.beta_eq(l, other_m, other_l)? {
+                    return Ok(false);
+                }
+                n.beta_eq(l, other_n, other_l)
+            }
+            (Val::U(n), Val::U(other_n)) => Ok(n == other_n),
+            (
+                Val::Fix { ty, ctors },
+                Val::Fix {
+                    ty: other_ty,
+                    ctors: other_ctors,
+                },
+            ) => {
+                if !ty.beta_eq(l, other_ty, other_l)? {
+                    return Ok(false);
+                }
+                if ctors.len() != other_ctors.len() {
+                    return Ok(false);
+                }
+                for (ctor, other_ctor) in ctors.iter().zip(other_ctors) {
+                    if !ctor.beta_eq(l, other_ctor, other_l)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            (
+                Val::Ctor { fix, i, args },
+                Val::Ctor {
+                    fix: other_fix,
+                    i: other_i,
+                    args: other_args,
+                },
+            ) => {
+                if !fix.beta_eq(l, other_fix, other_l)? {
+                    return Ok(false);
+                }
+                if i != other_i {
+                    return Ok(false);
+                }
+                if args.len() != other_args.len() {
+                    return Ok(false);
+                }
+                for (arg, other_arg) in args.iter().zip(other_args) {
+                    if !arg.beta_eq(l, other_arg, other_l)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            (
+                Val::Ind { motive, cases, val },
+                Val::Ind {
+                    motive: other_motive,
+                    cases: other_cases,
+                    val: other_val,
+                },
+            ) => {
+                if !motive.beta_eq(l, other_motive, other_l)? {
+                    return Ok(false);
+                }
+                if cases.len() != other_cases.len() {
+                    return Ok(false);
+                }
+                for (case, other_case) in cases.iter().zip(other_cases) {
+                    if !case.beta_eq(l, other_case, other_l)? {
+                        return Ok(false);
+                    }
+                }
+                val.beta_eq(l, other_val, other_l)
+            }
+            _ => Ok(false),
         }
     }
 }
