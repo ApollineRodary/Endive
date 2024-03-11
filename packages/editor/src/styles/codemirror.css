@@ -12,6 +12,13 @@
   font-size: 20px;
 }
 
+.cm-editor .cm-lintRange-error {
+  background-image: none;
+  background-color: #d3fff7;
+}
+.cm-editor .cm-lintPoint {
+  visibility: hidden;
+}
 .cm-editor .cm-sideLint {
   color: #6c6c6c;
   font-style: italic;
