@@ -1111,4 +1111,69 @@ mod tests {
             })))
         );
     }
+
+    #[test]
+    fn hypothetical_syllogism() {
+        // ΠP.ΠQ.ΠR.(P -> Q) -> (Q -> R) -> P -> R
+        let statement = Tm::Pi(Box::new(Binding {
+            bound_ty: Tm::U(univ_lvl::Expr::default()),
+            body: Tm::Pi(Box::new(Binding {
+                bound_ty: Tm::U(univ_lvl::Expr::default()),
+                body: Tm::Pi(Box::new(Binding {
+                    bound_ty: Tm::U(univ_lvl::Expr::default()),
+                    body: Tm::Pi(Box::new(Binding {
+                        bound_ty: Tm::Pi(Box::new(Binding {
+                            bound_ty: Tm::Var(Ix(2)),
+                            body: Tm::Var(Ix(2)),
+                        })),
+                        body: Tm::Pi(Box::new(Binding {
+                            bound_ty: Tm::Pi(Box::new(Binding {
+                                bound_ty: Tm::Var(Ix(2)),
+                                body: Tm::Var(Ix(2)),
+                            })),
+                            body: Tm::Pi(Box::new(Binding {
+                                bound_ty: Tm::Var(Ix(4)),
+                                body: Tm::Var(Ix(3)),
+                            })),
+                        })),
+                    })),
+                })),
+            })),
+        }));
+
+        // λP.λQ.λR.λpq:P -> Q.λqr:Q -> R.λp:P.qr (pq p)
+        let proof = Tm::Abs(Box::new(Binding {
+            bound_ty: Tm::U(univ_lvl::Expr::default()),
+            body: Tm::Abs(Box::new(Binding {
+                bound_ty: Tm::U(univ_lvl::Expr::default()),
+                body: Tm::Abs(Box::new(Binding {
+                    bound_ty: Tm::U(univ_lvl::Expr::default()),
+                    body: Tm::Abs(Box::new(Binding {
+                        bound_ty: Tm::Pi(Box::new(Binding {
+                            bound_ty: Tm::Var(Ix(2)),
+                            body: Tm::Var(Ix(2)),
+                        })),
+                        body: Tm::Abs(Box::new(Binding {
+                            bound_ty: Tm::Pi(Box::new(Binding {
+                                bound_ty: Tm::Var(Ix(2)),
+                                body: Tm::Var(Ix(2)),
+                            })),
+                            body: Tm::Abs(Box::new(Binding {
+                                bound_ty: Tm::Var(Ix(4)),
+                                body: Tm::App(
+                                    Box::new(Tm::Var(Ix(1))),
+                                    Box::new(Tm::App(
+                                        Box::new(Tm::Var(Ix(2))),
+                                        Box::new(Tm::Var(Ix(0))),
+                                    )),
+                                ),
+                            })),
+                        })),
+                    })),
+                })),
+            })),
+        }));
+
+        assert_eq!(proof.ty().unwrap().beta_eq(&statement), Ok(true));
+    }
 }
