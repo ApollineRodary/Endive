@@ -1,12 +1,19 @@
-html, body{
+html{
 height:100%;
 margin:0;
 padding:0;
 overflow:auto;
 font-family:monospace;
+scroll-behavior: smooth;
 }
 body {
+height:100%;
+margin:0;
+padding:0;    
 --menu-height : 12vh;
+--menu-width : 20vw;
+display: flex;
+flex-direction: column;
 }
 
 
@@ -24,6 +31,7 @@ animation : gradientAnimation 20s ease infinite;
 padding-right:4em;
 box-sizing: border-box;
 box-shadow:0px 0px 20px grey;
+z-index: 2;
 }
 
 @keyframes gradientAnimation{
@@ -60,8 +68,9 @@ font-weight:bold;
 
 .Menu{
 background-color:#9bff9b; 
-height:100vh; 
-width:20vw;
+height:100vh;
+position: fixed;
+width:var(--menu-width);
 padding-top:calc(var(--menu-height) + 2vh);
 box-sizing: border-box;
 }
@@ -69,10 +78,11 @@ box-sizing: border-box;
 .Submenu{
 font-size:20px;
 text-align:center;
+color:black;
 font-family:monospace;
 margin-top:25px;
-background-color:#9bff9b;
-border:2px solid white;
+background-color:white;
+/*border:2px solid white;*/
 text-decoration:none;
 border-radius:10px;
 margin-left:10px;
@@ -80,6 +90,37 @@ margin-right:10px;
 padding-top:4px;
 padding-bottom:4px;
 cursor:pointer;
+}
+
+.Submenu:hover{
+background-color:#f2f2f2;
+}
+
+.Content{
+margin-top:var(--menu-height);	
+margin-left:var(--menu-width);	
+padding:20px;
+width:auto;
+flex-grow: 1;
+display:flex;
+flex-direction:column;
+align-items: stretch;
+justify-items: stretch;
+}
+
+.BoxContent{
+font-size:20px;
+text-align:center;
+color:black;
+width:100%;
+flex-grow: 1;
+font-family:monospace;
+background-color:#d8ffd8;
+/*border:2px solid white;*/
+text-decoration:none;
+border-radius:10px;
+padding-top:4px;
+padding-bottom:4px;
 }
 
 
