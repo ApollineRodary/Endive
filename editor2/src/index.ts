@@ -20,7 +20,6 @@ import url from "url:endive-wasm/endive_wasm_bg.wasm";
 
 async function main() {
   await intialize(url);
-  console.log(endive.add(1, 2));
 }
 
 main();
