@@ -14,6 +14,7 @@ depends: [
   "ocaml"
   "ocamlformat" {with-test}
   "ppx_inline_test" {with-test}
+  "sexplib"
   "odoc" {with-doc}
 ]
 build: [
