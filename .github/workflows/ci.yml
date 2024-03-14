@@ -33,12 +33,13 @@ jobs:
         run: npm ci
       - name: Check formatting with prettier
         run: npm run format:check
-      - name: Install VS Code extension dependencies
-        run: npm ci
-        working-directory: endive-vscode
+      - name: Build editor
+        run: npm run build --workspace=editor
+      - name: Build editor2
+        run: npm run build --workspace=editor2
+      - name: Build website
+        run: npm run build --workspace=website
       - name: Check VS Code extension linting
-        run: npm run lint
-        working-directory: endive-vscode
+        run: npm run lint --workspace=endive-vscode
       - name: Compile VS Code extension
-        run: npm run compile
-        working-directory: endive-vscode
+        run: npm run compile --workspace=endive-vscode
