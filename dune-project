@@ -4,8 +4,8 @@
 (name endive)
 
 (source (github ApollineRodary/Endive))
-(maintainers)
-(authors)
+(maintainers "The Endive contributors")
+(authors "The Endive contributors")
 (license MIT)
 
 (package
@@ -17,6 +17,7 @@
    menhir
    ocaml
    (ocamlformat :with-test)
-   (ppx_inline_test :with-test)))
+   (ppx_inline_test :with-test)
+   sexplib))
 
 (generate_opam_files true)
