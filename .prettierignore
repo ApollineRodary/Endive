@@ -6,6 +6,12 @@
 /flake.lock
 /result
 
+# WebAssembly glue code
+/crates/endive-wasm/pkg/
+
 /endive-lsp-server/lsp-ws-proxy/
 
+/editor/dist/
+/editor2/dist/
 /endive-vscode/out/
+/website/dist/
