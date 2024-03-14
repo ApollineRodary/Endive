@@ -142,26 +142,6 @@ Blockly.defineBlocksWithJsonArray([
   },
 
   {
-    type: "proposition_implies",
-    message0: "%1 implique %2",
-    args0: [
-      {
-        type: "input_value",
-        name: "ANTECEDENT",
-      },
-      {
-        type: "input_value",
-        name: "CONSEQUENT",
-      },
-    ],
-    inputsInline: true,
-    output: null,
-    colour: 65,
-    tooltip: "",
-    helpUrl: "",
-  },
-
-  {
     type: "proposition_reference",
     message0: "%1",
     args0: [
@@ -306,3 +286,19 @@ Blockly.defineBlocksWithJsonArray([
     "helpUrl": ""
   }*/
 ]);
+
+Blockly.Blocks["proposition_implies"] = {
+  init: function () {
+    this.appendValueInput("ANTECEDENT");
+    this.appendValueInput("CONSEQUENT").appendField("⇒");
+    this.setOutput(true, null);
+    this.setColour(65);
+    this.inputsInline = true;
+    let thisBlock = this;
+    this.svgGroup_.addEventListener("dblclick", function (event) {
+      thisBlock.inputsInline = !thisBlock.inputsInline;
+      thisBlock.setInputsInline(thisBlock.inputsInline);
+      event.stopPropagation();
+    });
+  },
+};
