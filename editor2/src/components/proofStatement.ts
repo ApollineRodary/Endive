@@ -72,9 +72,7 @@ export class ProofStatement extends HTMLElement {
       {
         regexp: /^\s*so\s*(?:\s(.*)\s*)?$/i,
         callback: (match) => {
-          const tactic = document.createElement(
-            "endive-so-tactic",
-          ) as SoTactic;
+          const tactic = document.createElement("endive-so-tactic") as SoTactic;
           tactic.value = match[1] ?? "";
           patternInput.replaceWith(tactic);
           this.appendEmptyTactic();
