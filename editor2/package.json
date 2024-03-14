@@ -1,5 +1,5 @@
 {
-  "name": "endive-editor",
+  "name": "@endive/editor2",
   "version": "0.1.0",
   "description": "A web-based editor for Endive",
   "scripts": {
@@ -9,8 +9,5 @@
   },
   "devDependencies": {
     "parcel": "^2.12.0"
-  },
-  "dependencies": {
-    "endive-wasm": "file:../crates/endive-wasm/pkg"
   }
 }
