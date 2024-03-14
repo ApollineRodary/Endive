@@ -2,7 +2,9 @@
   "name": "endive",
   "workspaces": [
     "app",
+    "crates/endive-wasm/pkg",
     "editor",
+    "editor2",
     "vscode-plugin",
     "website"
   ],
