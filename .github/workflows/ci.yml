@@ -18,7 +18,7 @@ jobs:
         with:
           ocaml-compiler: 5.1.1
       - name: Install opam dependencies
-        run: opam install . --deps-only --with-test --yes
+        run: opam install . --deps-only --with-test --locked --yes
       - name: Check OCaml formatting
         run: opam exec -- dune build @fmt
       - name: Build OCaml packages
