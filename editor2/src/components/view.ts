@@ -34,7 +34,10 @@ export class View extends HTMLElement {
   private createStatementSeparator() {
     const separator = document.createElement("endive-statement-separator");
     separator.addEventListener("insert", () => {
-      this.insertStatement(separator, document.createElement("endive-empty-statement"));
+      this.insertStatement(
+        separator,
+        document.createElement("endive-empty-statement"),
+      );
     });
     return separator;
   }

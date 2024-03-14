@@ -107,6 +107,7 @@ $ dune fmt
 ```
 
 To format the rest of the code:
+
 ```sh
 $ npm run format
 ```

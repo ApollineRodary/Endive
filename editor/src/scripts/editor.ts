@@ -1,10 +1,24 @@
-import { EditorView, drawSelection, highlightSpecialChars } from "@codemirror/view";
+import {
+  EditorView,
+  drawSelection,
+  highlightSpecialChars,
+} from "@codemirror/view";
 import { languageServer } from "codemirror-languageserver";
 import { placeholder } from "@codemirror/view";
-import { codeFolding, defaultHighlightStyle, foldGutter } from "@codemirror/language";
+import {
+  codeFolding,
+  defaultHighlightStyle,
+  foldGutter,
+} from "@codemirror/language";
 
 import { keymap } from "@codemirror/view";
-import { insertTab, indentLess, history, historyKeymap, defaultKeymap } from "@codemirror/commands";
+import {
+  insertTab,
+  indentLess,
+  history,
+  historyKeymap,
+  defaultKeymap,
+} from "@codemirror/commands";
 
 import { foldNodeProp, foldInside } from "@codemirror/language";
 
@@ -98,10 +112,7 @@ globalThis.editor = new EditorView({
     history(),
     drawSelection(),
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-    keymap.of([
-      ...defaultKeymap,
-      ...historyKeymap,
-    ]),
+    keymap.of([...defaultKeymap, ...historyKeymap]),
     codeFolding(),
     foldGutter(),
     placeholder("Hi ! Start typing, or press Esc if you're lost :)"),
