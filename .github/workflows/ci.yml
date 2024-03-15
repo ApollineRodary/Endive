@@ -39,12 +39,12 @@ jobs:
       - name: Check formatting with prettier
         run: npm run format:check
       - name: Build editor
-        run: npm run build --workspace=editor
+        run: npm run build --workspace=packages/editor
       - name: Build editor2
-        run: npm run build --workspace=editor2
+        run: npm run build --workspace=packages/editor2
       - name: Build website
-        run: npm run build --workspace=website
+        run: npm run build --workspace=packages/website
       - name: Check VS Code extension linting
-        run: npm run lint --workspace=endive-vscode
+        run: npm run lint --workspace=packages/vscode-plugin
       - name: Compile VS Code extension
-        run: npm run compile --workspace=endive-vscode
+        run: npm run compile --workspace=packages/vscode-plugin

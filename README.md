@@ -57,7 +57,7 @@ Currently implemented:
 A Visual Studio Code extension adding support for the LSP server and providing
 syntax highlighting is available in the `endive-vscode` directory.
 
-![Editing an Endive file in VS Code](./endive-vscode/screenshot.png)
+![Editing an Endive file in VS Code](./packages/vscode-plugin/screenshot.png)
 
 ## Building & running
 
@@ -92,10 +92,10 @@ $ cd endive-vscode
 $ npm run compile
 ```
 
-To use the VS Code extension, open `endive-vscode/src/extension.ts` in VS Code
+To use the VS Code extension, open `packages/vscode-plugin/src/extension.ts` in VS Code
 and press <kbd>F5</kbd>.
 
-The TextMate grammar file is located at `endive-vscode/endive.tmLanguage.json`.
+The TextMate grammar file is located at `packages/vscode-plugin/endive.tmLanguage.json`.
 The `editor.action.inspectTMScopes` command can be useful to debug the grammar.
 
 ## Contributing
@@ -112,7 +112,7 @@ To format the rest of the code:
 $ npm run format
 ```
 
-After modifying the VS Code extension (in `endive-vscode`):
+After modifying the VS Code extension (in `packages/vscode-plugin`):
 
 ```sh
 $ npm run lint   # Check for linter warnings.
