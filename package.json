@@ -1,12 +1,12 @@
 {
   "name": "endive",
   "workspaces": [
-    "app",
+    "packags/app",
     "crates/endive-wasm/pkg",
-    "editor",
-    "editor2",
-    "vscode-plugin",
-    "website"
+    "packages/editor",
+    "packages/editor2",
+    "packages/vscode-plugin",
+    "packages/website"
   ],
   "devDependencies": {
     "prettier": "^3.2.4"
