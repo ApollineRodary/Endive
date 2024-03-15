@@ -109,15 +109,13 @@ h1 {
 
 .BoxContent {
   font-size: 20px;
-  text-align: center;
+  text-align: justify;
   color: black;
-  width: 100%;
   flex-grow: 1;
   font-family: monospace;
   background-color: #d8ffd8;
   /*border:2px solid white;*/
   text-decoration: none;
   border-radius: 10px;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding: 30px;
 }
