@@ -1,6 +1,6 @@
 {
-  "name": "endive",
-  "displayName": "Endive",
+  "name": "@endive/vscode-plugin",
+  "displayName": "A Visual Studio Code plugin for Endive",
   "description": "",
   "version": "0.0.1",
   "engines": {
