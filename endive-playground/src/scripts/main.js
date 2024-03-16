@@ -151,11 +151,11 @@ function toggleMathDisplay() {
 
 function toggleautomatic() {
   if (globalThis.automaticVerif) {
-    document.getElementById("automatic").classList.remove("pressed");
-    document.getElementById("verifyproof").style.display = "block";
+    document.getElementById("toggleAutomaticVerif").classList.remove("pressed");
+    document.getElementById("verifyProof").style.display = "block";
   } else {
-    document.getElementById("automatic").classList.add("pressed");
-    document.getElementById("verifyproof").style.display = "none";
+    document.getElementById("toggleAutomaticVerif").classList.add("pressed");
+    document.getElementById("verifyProof").style.display = "none";
   }
   globalThis.automaticVerif = !globalThis.automaticVerif;
 }
