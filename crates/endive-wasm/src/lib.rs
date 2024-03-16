@@ -290,6 +290,9 @@ fn kernel_error_to_js_error(err: endive_kernel::Error) -> JsValue {
         endive_kernel::Error::InductiveOutOfBound => {
             Error::new("Inductive index out of bounds").into()
         }
+        endive_kernel::Error::CtorOutOfBound => {
+            Error::new("Constructor index out of bounds").into()
+        }
     }
 }
 

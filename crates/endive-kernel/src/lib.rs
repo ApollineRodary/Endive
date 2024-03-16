@@ -151,6 +151,7 @@ pub enum Error {
     IxOverflow,
     TyMismatch,
     InductiveOutOfBound,
+    CtorOutOfBound,
 }
 
 impl Tm {
@@ -365,8 +366,39 @@ impl Tm {
 
                 Ok(Val::U(inductive.univ_lvl.clone()))
             }
-            Tm::Ctor { .. } => todo!(),
-            Tm::Induction { .. } => todo!(),
+            Tm::Ctor {
+                inductive_idx,
+                inductive_args,
+                ctor_idx,
+                ctor_args,
+            } => {
+                let inductive = e
+                    .inductives
+                    .get(*inductive_idx)
+                    .ok_or(Error::InductiveOutOfBound)?;
+
+                let ctor = inductive
+                    .ctors
+                    .get(*ctor_idx)
+                    .ok_or(Error::CtorOutOfBound)?;
+
+                let inductive_args = inductive.params.validate_apply_and_return_evaluated_args(
+                    e,
+                    &Rc::new(Ctx::Nil),
+                    &inductive_args,
+                    c,
+                    tc,
+                )?;
+
+                Ok(Val::Inductive {
+                    idx: *inductive_idx,
+                    args: inductive_args,
+                    indices: todo!(),
+                })
+            }
+            Tm::Induction { .. } => {
+                todo!()
+            }
             Tm::OldFix { ty, ctors } => {
                 ty.ty_internal(e, c, tc)?;
 
