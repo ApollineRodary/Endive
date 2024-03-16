@@ -214,6 +214,7 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
         }
         Tm::Inductive { .. } => todo!(),
         Tm::Ctor { .. } => todo!(),
+        Tm::Induction { .. } => todo!(),
         Tm::OldFix { ty, ctors } => {
             let obj = Object::new();
             Reflect::set(

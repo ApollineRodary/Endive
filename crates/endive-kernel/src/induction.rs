@@ -1,6 +1,8 @@
-use std::rc::Rc;
+use std::{num::NonZeroUsize, rc::Rc};
 
-use crate::{univ_lvl, Binding, BindingClosure, Ctx, Error, GlobalEnv, Lvl, Tm, TyCtx, Val};
+use crate::{
+    closure::Closure, univ_lvl, Binding, BindingClosure, Ctx, Error, GlobalEnv, Lvl, Tm, TyCtx, Val,
+};
 
 /// A sequence of types. For each type, an argument of that type is bound in every subsequent type.
 pub struct Telescope(pub Vec<Tm>);
@@ -263,4 +265,31 @@ pub enum CtorParamLast {
 
     /// Another type, which does not contain the inductive type family being defined.
     Other(Tm),
+}
+
+/// A case in an application of the induction principle.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Case {
+    /// The number of variables bound in the case.
+    pub param_count: usize,
+
+    /// The body of the case.
+    pub body: Tm,
+}
+
+/// A case in an application of the induction principle, with the body represented as a closure.
+#[derive(Clone, Debug)]
+pub(crate) enum CaseVal {
+    /// A case that is directly a value, for example when the corresponding constructor does not
+    /// take any argument.
+    Constant(Val),
+
+    /// A case that is a closure.
+    Closure {
+        /// The number of variables bound in the case.
+        param_count: NonZeroUsize,
+
+        /// The body of the case.
+        body: Closure,
+    },
 }
