@@ -60,7 +60,6 @@ Blockly.defineBlocksWithJsonArray([
   },
 
   // Statements
-
   {
     type: "proposition_forall",
     message0: "Pour tout %1 , %2",
@@ -160,19 +159,25 @@ Blockly.defineBlocksWithJsonArray([
   // Tactics
   {
     type: "tactic_let",
-    message0: "Soit %1.",
+    message0: "Soit %1 dans %2.",
     args0: [
       {
         type: "field_variable",
         name: "VARIABLE",
         variable: "x",
       },
+      {
+        type: "input_dummy",
+        name: "TYPE",
+      },
     ],
+    inputsInline: true,
     previousStatement: null,
     nextStatement: null,
     colour: 170,
     tooltip: "",
     helpUrl: "",
+    extensions: ["dynamic_type_dropdown"],
   },
 
   {
@@ -206,85 +211,6 @@ Blockly.defineBlocksWithJsonArray([
     tooltip: "",
     helpUrl: "",
   },
-
-  /*
-  {
-    "type": "proof_destroy_implies",
-    "message0": "Supposons %1. Alors,",
-    "args0": [
-      {
-        "type": "input_value",
-        "name": "HYPOTHESIS"
-      }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "colour": 170,
-    "tooltip": "",
-    "helpUrl": ""
-  },
-
-  {
-    "type": "proof_destroy_and",
-    "message0": "Premièrement, %1 %2 De plus, %3 %4",
-    "args0": [
-      {
-        "type": "input_end_row"
-      },
-      {
-        "type": "input_statement",
-        "name": "LEFT"
-      },
-      {
-        "type": "input_end_row"
-      },
-      {
-        "type": "input_statement",
-        "name": "RIGHT"
-      }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "colour": 170,
-    "tooltip": "",
-    "helpUrl": ""
-  },
-
-  {
-    "type": "proof_destroy_or",
-    "message0": "En particulier, montrons la proposition de %1.",
-    "args0": [
-      {
-        "type": "field_dropdown",
-        "name": "WHICH",
-        "options": [
-          ["gauche", "LEFT"],
-          ["droite", "RIGHT"]
-        ]
-      }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "colour": 170,
-    "tooltip": "",
-    "helpUrl": ""
-  },
-  
-  {
-    "type": "proof_axiom",
-    "message0": "Par hypothèse, %1",
-    "args0": [
-      {
-        "type": "input_value",
-        "name": "STATEMENT"
-      }
-    ],
-    "previousStatement": null,
-    "nextStatement": null,
-    "colour": 170,
-    "tooltip": "",
-    "helpUrl": ""
-  }*/
 ]);
 
 Blockly.Blocks["proposition_implies"] = {
@@ -302,3 +228,12 @@ Blockly.Blocks["proposition_implies"] = {
     });
   },
 };
+
+Blockly.Extensions.register("dynamic_type_dropdown", function () {
+  let thisBlock = this;
+  this.getInput("TYPE").appendField(
+    new Blockly.FieldDropdown(function () {
+      return customTypes.map((t) => [t[0], t[0].toUpperCase()]);
+    }),
+  );
+});

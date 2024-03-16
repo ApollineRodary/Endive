@@ -21,7 +21,7 @@ const verifyProofs = function (button) {
   console.log(verifyTheorems(workspace));
 };
 
-var toolbox = {
+let toolbox = {
   kind: "categoryToolbox",
   contents: [
     {
@@ -94,14 +94,21 @@ var toolbox = {
   ],
 };
 
-var workspace = Blockly.inject("blocklyDiv", {
+let workspace = Blockly.inject("blocklyDiv", {
   toolbox: toolbox,
   scrollbars: false,
   horizontalLayout: false,
   toolboxPosition: "start",
 });
 
-endiveGenerator.init(workspace);
 workspace.clear();
+workspace.userDefinedTypes = [["Prop"]];
 workspace.addChangeListener(updateCode);
 workspace.registerButtonCallback("verifyProofs", verifyProofs);
+
+let defaultVariableNames = ["x", "y", "z", "P", "Q"];
+defaultVariableNames.forEach(function (variableName) {
+  workspace.createVariable(variableName);
+});
+
+endiveGenerator.init(workspace);
