@@ -26,7 +26,7 @@ impl Telescope {
     }
 
     /// Validates that the telescope has universe level at most `max_univ_lvl`.
-    fn validate_univ_level(
+    fn validate_univ_level_at_most(
         &self,
         e: &GlobalEnv,
         c: &Rc<Ctx>,
@@ -246,7 +246,7 @@ impl InductiveTypeFamily {
                 .add_to_ctx(e, Rc::new(Ctx::Nil), Rc::new(TyCtx::Nil))?;
         let args = inductive_c.iter().map(|v| v.clone()).collect::<Vec<_>>();
         self.indices
-            .validate_univ_level(e, &inductive_c, &inductive_tc, &self.univ_lvl)?;
+            .validate_univ_level_at_most(e, &inductive_c, &inductive_tc, &self.univ_lvl)?;
         for ctor in &self.ctors {
             if ctor.indices.len() != self.indices.0.len() {
                 return Err(Error::TyMismatch);
