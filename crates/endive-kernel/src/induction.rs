@@ -65,64 +65,32 @@ impl Telescope {
         }
     }
 
-    /// Validates a currified application of the telescope to the arguments.
+    /// Validates a currified application of the telescope to the arguments. The evaluated
+    /// arguments along with the resulting context are returned.
     pub(crate) fn validate_apply(
         &self,
         e: &GlobalEnv,
-        c: &Rc<Ctx>,
+        mut c: Rc<Ctx>,
         args: &[Tm],
         args_c: &Rc<Ctx>,
         args_tc: &Rc<TyCtx>,
-    ) -> Result<(), Error> {
+    ) -> Result<(Vec<Val>, Rc<Ctx>), Error> {
         if self.0.len() != args.len() {
             return Err(Error::TyMismatch);
         }
-        let l = Lvl(c.len());
-        let dummy = Tm::U(univ_lvl::Expr::default());
-        let mut pi = self.eval_to_pi(&e, c, dummy)?;
-        let mut i = 0;
-        while let Val::Pi(closure) = pi {
-            let arg = &args[i];
-            let ty = arg.ty_internal(e, args_c, args_tc)?;
-            if !ty.beta_eq(e, l, &closure.ty, l)? {
-                return Err(Error::TyMismatch);
-            }
-            pi = closure.apply(e, arg.eval(&e, args_c)?)?;
-            i += 1;
-        }
-        Ok(())
-    }
-
-    /// Validates a currified application of the telescope to the arguments, and returns the evaluated
-    /// arguments.
-    pub(crate) fn validate_apply_and_return_evaluated_args(
-        &self,
-        e: &GlobalEnv,
-        c: &Rc<Ctx>,
-        args: &[Tm],
-        args_c: &Rc<Ctx>,
-        args_tc: &Rc<TyCtx>,
-    ) -> Result<Vec<Val>, Error> {
-        if self.0.len() != args.len() {
-            return Err(Error::TyMismatch);
-        }
-        let l = Lvl(c.len());
-        let dummy = Tm::U(univ_lvl::Expr::default());
-        let mut pi = self.eval_to_pi(&e, c, dummy)?;
-        let mut i = 0;
         let mut evaluated_args = Vec::new();
-        while let Val::Pi(closure) = pi {
-            let arg = &args[i];
-            let ty = arg.ty_internal(e, args_c, args_tc)?;
-            if !ty.beta_eq(e, l, &closure.ty, l)? {
+        let l = Lvl(args_c.len());
+        for (arg, expected_ty) in args.iter().zip(self.0.iter()) {
+            let arg_ty = arg.ty_internal(e, args_c, args_tc)?;
+            let expected_ty = expected_ty.eval(&e, &c)?;
+            if !arg_ty.beta_eq(e, l, &expected_ty, l)? {
                 return Err(Error::TyMismatch);
             }
             let evaluated_arg = arg.eval(&e, args_c)?;
             evaluated_args.push(evaluated_arg.clone());
-            pi = closure.apply(e, evaluated_arg)?;
-            i += 1;
+            c = c.push(evaluated_arg);
         }
-        Ok(evaluated_args)
+        Ok((evaluated_args, c))
     }
 }
 
@@ -239,8 +207,8 @@ impl InductiveTypeFamily {
     /// Validates the inductive type family.
     ///
     /// The validation requires the family to already be added to the global environment at the
-    /// index `index`.
-    pub(crate) fn validate(&self, e: &GlobalEnv, index: usize) -> Result<(), Error> {
+    /// index `idx`.
+    pub(crate) fn validate(&self, e: &GlobalEnv, idx: usize) -> Result<(), Error> {
         let (inductive_c, inductive_tc) =
             self.params
                 .add_to_ctx(e, Rc::new(Ctx::Nil), Rc::new(TyCtx::Nil))?;
@@ -255,7 +223,7 @@ impl InductiveTypeFamily {
             let tc = inductive_tc.clone();
             for param in &ctor.params {
                 c.push(Val::Var(Lvl(c.len())));
-                tc.push(param.validate(
+                tc.push(param.eval_and_validate_univ_lvl_at_most(
                     e,
                     &c,
                     &tc,
@@ -263,11 +231,11 @@ impl InductiveTypeFamily {
                     &self.indices,
                     &inductive_c,
                     &self.univ_lvl,
-                    index,
+                    idx,
                 )?);
             }
             self.indices
-                .validate_apply(e, &inductive_c, &ctor.indices, &c, &tc)?;
+                .validate_apply(e, inductive_c.clone(), &ctor.indices, &c, &tc)?;
         }
         Ok(())
     }
@@ -286,6 +254,45 @@ pub struct Ctor {
     pub indices: Vec<Tm>,
 }
 
+impl Ctor {
+    /// Validates a constructor application and returns the indices of the returned inductive type.
+    pub(crate) fn validate_apply(
+        &self,
+        e: &GlobalEnv,
+        inductive_idx: usize,
+        inductive_args: &[Val],
+        inductive_indices: &Telescope,
+        mut inductive_c: Rc<Ctx>,
+        args: &[Tm],
+        args_c: &Rc<Ctx>,
+        args_tc: &Rc<TyCtx>,
+    ) -> Result<Vec<Val>, Error> {
+        if self.params.len() != args.len() {
+            return Err(Error::TyMismatch);
+        }
+        let l = Lvl(args_c.len());
+        for (arg, param) in args.iter().zip(&self.params) {
+            let arg_ty = arg.ty_internal(e, args_c, args_tc)?;
+            let expected_ty = param.eval(
+                e,
+                args_c,
+                args_tc,
+                inductive_args,
+                inductive_indices,
+                &inductive_c,
+                inductive_idx,
+            )?;
+            if !arg_ty.beta_eq(e, l, &expected_ty, l)? {
+                return Err(Error::TyMismatch);
+            }
+            inductive_c = inductive_c.push(expected_ty);
+        }
+        let (indices, _) =
+            inductive_indices.validate_apply(e, inductive_c, &self.indices, args_c, args_tc)?;
+        Ok(indices)
+    }
+}
+
 /// A constructor parameter type, which is a chain of zero or more dependent type products with
 /// additional constraints to ensure strict positivity.
 pub struct CtorParam {
@@ -302,8 +309,43 @@ impl CtorParam {
         self.tele.0.is_empty() && matches!(&self.last, CtorParamLast::This { .. })
     }
 
-    /// Validates the constructor parameter type and returns a value that represents it.
-    fn validate(
+    /// Evaluates the constructor parameter type to a WHNF term.
+    fn eval(
+        &self,
+        e: &GlobalEnv,
+        c: &Rc<Ctx>,
+        tc: &Rc<TyCtx>,
+        inductive_args: &[Val],
+        inductive_indices: &Telescope,
+        inductive_c: &Rc<Ctx>,
+        inductive_idx: usize,
+    ) -> Result<Val, Error> {
+        let tail = match &self.last {
+            CtorParamLast::This { indices } => {
+                if indices.len() != inductive_indices.0.len() {
+                    return Err(Error::TyMismatch);
+                }
+                let (c, tc) = self.tele.add_to_ctx(e, c.clone(), tc.clone())?;
+                let (indices, _) =
+                    inductive_indices.validate_apply(e, inductive_c.clone(), &indices, &c, &tc)?;
+                Val::Inductive {
+                    idx: inductive_idx,
+                    args: inductive_args.to_vec(),
+                    indices,
+                }
+            }
+            CtorParamLast::Other(ty) => {
+                let (c, tc) = self.tele.add_to_ctx(e, c.clone(), tc.clone())?;
+                ty.univ_lvl(e, &c, &tc)?;
+                ty.eval(&e, &c)?
+            }
+        };
+        self.tele.eval_to_pi(&e, &c, tail.reify(e, Lvl(c.len()))?)
+    }
+
+    /// Evaluates the constructor parameter type to a WHNF term and validates that its type belongs
+    /// to universe level at most `max_univ_lvl`.
+    fn eval_and_validate_univ_lvl_at_most(
         &self,
         e: &GlobalEnv,
         c: &Rc<Ctx>,
@@ -320,13 +362,8 @@ impl CtorParam {
                     return Err(Error::TyMismatch);
                 }
                 let (c, tc) = self.tele.add_to_ctx(e, c.clone(), tc.clone())?;
-                let indices = inductive_indices.validate_apply_and_return_evaluated_args(
-                    e,
-                    inductive_c,
-                    &indices,
-                    &c,
-                    &tc,
-                )?;
+                let (indices, _) =
+                    inductive_indices.validate_apply(e, inductive_c.clone(), &indices, &c, &tc)?;
                 Val::Inductive {
                     idx: inductive_idx,
                     args: inductive_args.to_vec(),
