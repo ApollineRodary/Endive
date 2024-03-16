@@ -10,6 +10,7 @@ const updateCodeEvents = new Set([
   Blockly.Events.BLOCK_DELETE,
   Blockly.Events.BLOCK_MOVE,
 ]);
+
 export function resize() {
   Blockly.svgResize(workspace);
 }
@@ -159,9 +160,13 @@ function toggleautomatic() {
   globalThis.automaticVerif = !globalThis.automaticVerif;
 }
 
-document.getElementById("togglelatex").addEventListener("click", togglelatex);
-document.getElementById("verifyproof").addEventListener("click", verifyProofs);
-document.getElementById("automatic").addEventListener("click", toggleautomatic);
+document
+  .getElementById("toggleMathDisplay")
+  .addEventListener("click", toggleMathDisplay);
+document.getElementById("verifyProof").addEventListener("click", verifyProofs);
+document
+  .getElementById("toggleAutomaticVerif")
+  .addEventListener("click", toggleautomatic);
 
 endiveGenerator.init(workspace);
-latexGenerator.init(workspace);
+htmlGenerator.init(workspace);
