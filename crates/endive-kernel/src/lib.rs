@@ -12,12 +12,12 @@ mod global_env;
 mod induction;
 pub mod univ_lvl;
 
-use closure::BindingClosure;
+use closure::{BindingClosure, Closure};
 use ctx::{Ctx, TyCtx};
 pub use global_env::*;
 pub use induction::*;
 
-use std::{ops::Neg, rc::Rc};
+use std::{num::NonZeroUsize, ops::Neg, rc::Rc};
 
 /// de Bruijn index.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -91,6 +91,24 @@ pub enum Tm {
 
         /// Arguments to the constructor.
         ctor_args: Vec<Tm>,
+    },
+
+    /// Principle of induction.
+    Induction {
+        /// Index of the inductive type family in the global environment.
+        inductive_idx: usize,
+
+        /// Arguments to the inductive type family.
+        inductive_args: Vec<Tm>,
+
+        /// Motive of the induction.
+        motive: Box<Tm>,
+
+        /// Cases of the induction.
+        cases: Vec<Case>,
+
+        /// Value on which to perform the induction.
+        val: Box<Tm>,
     },
 
     /// Inductive type family.
@@ -177,6 +195,40 @@ impl Tm {
                     .iter()
                     .map(|arg| arg.eval(e, c))
                     .collect::<Result<_, _>>()?,
+            }),
+            Tm::Induction {
+                inductive_idx,
+                inductive_args,
+                motive,
+                cases,
+                val,
+            } => Ok(Val::Induction {
+                inductive_idx: *inductive_idx,
+                inductive_args: inductive_args
+                    .iter()
+                    .map(|arg| arg.eval(e, c))
+                    .collect::<Result<_, _>>()?,
+                motive: Box::new(Closure {
+                    body: (**motive).clone(),
+                    c: c.clone(),
+                }),
+                cases: cases
+                    .iter()
+                    .map(|case| {
+                        if let Some(param_count) = NonZeroUsize::new(case.param_count) {
+                            Ok(CaseVal::Closure {
+                                param_count,
+                                body: Closure {
+                                    body: case.body.clone(),
+                                    c: c.clone(),
+                                },
+                            })
+                        } else {
+                            Ok(CaseVal::Constant(case.body.eval(e, c)?))
+                        }
+                    })
+                    .collect::<Result<_, _>>()?,
+                val: Box::new(val.eval(e, c)?),
             }),
             Tm::OldFix { ty, ctors } => Ok(Val::OldFix {
                 ty: ty.eval(e, c)?.into(),
@@ -281,6 +333,7 @@ impl Tm {
             Tm::U(u) => Ok(Val::U(u.clone() + 1)),
             Tm::Inductive { .. } => todo!(),
             Tm::Ctor { .. } => todo!(),
+            Tm::Induction { .. } => todo!(),
             Tm::OldFix { ty, ctors } => {
                 ty.ty_internal(e, c, tc)?;
 
@@ -548,6 +601,7 @@ impl Tm {
             Tm::U(n) => Ok(Tm::U(n.clone())),
             Tm::Inductive { .. } => todo!(),
             Tm::Ctor { .. } => todo!(),
+            Tm::Induction { .. } => todo!(),
             Tm::OldFix { ty, ctors } => Ok(Tm::OldFix {
                 ty: Box::new(ty.unlift(k, by)?),
                 ctors: ctors
@@ -618,6 +672,24 @@ enum Val {
 
         /// Arguments to the constructor.
         ctor_args: Vec<Val>,
+    },
+
+    /// Principle of induction.
+    Induction {
+        /// Index of the inductive type family in the global environment.
+        inductive_idx: usize,
+
+        /// Arguments to the inductive type family.
+        inductive_args: Vec<Val>,
+
+        /// Motive of the induction.
+        motive: Box<Closure>,
+
+        /// Cases of the induction.
+        cases: Vec<CaseVal>,
+
+        /// Value on which to perform the induction.
+        val: Box<Val>,
     },
 
     /// Inductive type family.
@@ -694,6 +766,45 @@ impl Val {
                     .iter()
                     .map(|arg| arg.reify(e, l))
                     .collect::<Result<_, _>>()?,
+            }),
+            Val::Induction {
+                inductive_idx,
+                inductive_args,
+                motive,
+                cases,
+                val,
+            } => Ok(Tm::Induction {
+                inductive_idx: *inductive_idx,
+                inductive_args: inductive_args
+                    .iter()
+                    .map(|arg| arg.reify(e, l))
+                    .collect::<Result<_, _>>()?,
+                motive: Box::new(
+                    motive
+                        .body
+                        .eval(e, &motive.c.push(Val::Var(l)))?
+                        .reify(e, Lvl(l.0 + 1))?,
+                ),
+                cases: cases
+                    .iter()
+                    .map(|case| match case {
+                        CaseVal::Closure { param_count, body } => {
+                            let mut c = body.c.clone();
+                            for _ in 0..param_count.get() {
+                                c = Ctx::push(&c, Val::Var(Lvl(c.len())));
+                            }
+                            Ok(Case {
+                                param_count: param_count.get(),
+                                body: body.body.eval(e, &c)?.reify(e, Lvl(c.len()))?,
+                            })
+                        }
+                        CaseVal::Constant(val) => Ok(Case {
+                            param_count: 0,
+                            body: val.reify(e, l)?,
+                        }),
+                    })
+                    .collect::<Result<_, _>>()?,
+                val: Box::new(val.reify(e, l)?),
             }),
             Val::OldFix { ty, ctors } => Ok(Tm::OldFix {
                 ty: Box::new(ty.reify(e, l)?),
@@ -883,7 +994,7 @@ impl Val {
                     .apply(e, Val::Var(l))?
                     .has_var(e, Lvl(l.0 + 1), var_l)?),
             Val::U(_) => Ok(false),
-            Val::Inductive { idx, args, indices } => {
+            Val::Inductive { args, indices, .. } => {
                 let mut has_var = false;
                 for arg in args {
                     has_var = has_var || arg.has_var(e, l, var_l)?;
