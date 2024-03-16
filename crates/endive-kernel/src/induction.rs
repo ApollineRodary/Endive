@@ -117,7 +117,10 @@ pub struct InductiveTypeFamily {
 
 impl InductiveTypeFamily {
     /// Validates the inductive type family.
-    fn validate(&self, e: &GlobalEnv) -> Result<(), Error> {
+    ///
+    /// The validation requires the family to already be added to the global environment at the
+    /// index `index`.
+    pub(crate) fn validate(&self, e: &GlobalEnv, index: usize) -> Result<(), Error> {
         let (inductive_c, inductive_tc) =
             self.params
                 .add_to_ctx(e, Rc::new(Ctx::Nil), Rc::new(TyCtx::Nil))?;
@@ -131,7 +134,15 @@ impl InductiveTypeFamily {
             let tc = inductive_tc.clone();
             for param in &ctor.params {
                 c.push(Val::Var(Lvl(c.len())));
-                tc.push(param.validate(e, &c, &tc, &self.indices, &inductive_c, &self.univ_lvl)?);
+                tc.push(param.validate(
+                    e,
+                    &c,
+                    &tc,
+                    &self.indices,
+                    &inductive_c,
+                    &self.univ_lvl,
+                    index,
+                )?);
             }
             self.indices
                 .validate_apply(e, &inductive_c, &ctor.indices, &c, &tc)?;
@@ -173,6 +184,7 @@ impl CtorParam {
         inductive_indices: &Telescope,
         inductive_c: &Rc<Ctx>,
         max_univ_lvl: &univ_lvl::Expr,
+        index: usize,
     ) -> Result<Val, Error> {
         let tail = match &self.last {
             CtorParamLast::This { indices } => {
