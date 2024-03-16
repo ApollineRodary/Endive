@@ -90,6 +90,38 @@ impl Telescope {
         }
         Ok(())
     }
+
+    /// Validates a currified application of the telescope to the arguments, and returns the evaluated
+    /// arguments.
+    fn validate_apply_and_return_evaluated_args(
+        &self,
+        e: &GlobalEnv,
+        c: &Rc<Ctx>,
+        args: &[Tm],
+        args_c: &Rc<Ctx>,
+        args_tc: &Rc<TyCtx>,
+    ) -> Result<Vec<Val>, Error> {
+        if self.0.len() != args.len() {
+            return Err(Error::TyMismatch);
+        }
+        let l = Lvl(c.len());
+        let dummy = Tm::U(univ_lvl::Expr::default());
+        let mut pi = self.eval_to_pi(c, dummy)?;
+        let mut i = 0;
+        let mut evaluated_args = Vec::new();
+        while let Val::Pi(closure) = pi {
+            let arg = &args[i];
+            let ty = arg.ty_internal(e, args_c, args_tc)?;
+            if !ty.beta_eq(l, &closure.ty, l)? {
+                return Err(Error::TyMismatch);
+            }
+            let evaluated_arg = arg.eval(args_c)?;
+            evaluated_args.push(evaluated_arg.clone());
+            pi = closure.apply(evaluated_arg)?;
+            i += 1;
+        }
+        Ok(evaluated_args)
+    }
 }
 
 /// A parameterized family of inductive types.
@@ -124,6 +156,7 @@ impl InductiveTypeFamily {
         let (inductive_c, inductive_tc) =
             self.params
                 .add_to_ctx(e, Rc::new(Ctx::Nil), Rc::new(TyCtx::Nil))?;
+        let args = inductive_c.iter().map(|v| v.clone()).collect::<Vec<_>>();
         self.indices
             .validate_univ_level(e, &inductive_c, &inductive_tc, &self.univ_lvl)?;
         for ctor in &self.ctors {
@@ -138,6 +171,7 @@ impl InductiveTypeFamily {
                     e,
                     &c,
                     &tc,
+                    &args,
                     &self.indices,
                     &inductive_c,
                     &self.univ_lvl,
@@ -181,10 +215,11 @@ impl CtorParam {
         e: &GlobalEnv,
         c: &Rc<Ctx>,
         tc: &Rc<TyCtx>,
+        inductive_args: &[Val],
         inductive_indices: &Telescope,
         inductive_c: &Rc<Ctx>,
         max_univ_lvl: &univ_lvl::Expr,
-        index: usize,
+        idx: usize,
     ) -> Result<Val, Error> {
         let tail = match &self.last {
             CtorParamLast::This { indices } => {
@@ -192,8 +227,18 @@ impl CtorParam {
                     return Err(Error::TyMismatch);
                 }
                 let (c, tc) = self.tele.add_to_ctx(e, c.clone(), tc.clone())?;
-                inductive_indices.validate_apply(e, inductive_c, &indices, &c, &tc)?;
-                todo!()
+                let indices = inductive_indices.validate_apply_and_return_evaluated_args(
+                    e,
+                    inductive_c,
+                    &indices,
+                    &c,
+                    &tc,
+                )?;
+                Val::Inductive {
+                    idx,
+                    args: inductive_args.to_vec(),
+                    indices,
+                }
             }
             CtorParamLast::Other(ty) => {
                 let (c, tc) = self.tele.add_to_ctx(e, c.clone(), tc.clone())?;
