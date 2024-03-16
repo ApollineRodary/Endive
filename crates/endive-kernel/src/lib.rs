@@ -64,6 +64,21 @@ pub enum Tm {
     /// Type universe.
     U(univ_lvl::Expr),
 
+    /// Constructor of an inductive type.
+    Ctor {
+        /// Index of the inductive type family in the global environment.
+        inductive_idx: usize,
+
+        /// Arguments to the inductive type family.
+        inductive_args: Vec<Tm>,
+
+        /// Index of the constructor.
+        ctor_idx: usize,
+
+        /// Arguments to the constructor.
+        ctor_args: Vec<Tm>,
+    },
+
     /// Inductive type family.
     OldFix {
         /// Type.
@@ -172,6 +187,7 @@ impl Tm {
             }
             Tm::Pi(abs) => Ok(Val::Pi(Box::new(abs.eval(c)?))),
             Tm::U(n) => Ok(Val::U(n.clone())),
+            Tm::Ctor { .. } => todo!(),
             Tm::OldFix { ty, ctors } => Ok(Val::Fix {
                 ty: ty.eval(c)?.into(),
                 ctors: ctors
@@ -272,6 +288,7 @@ impl Tm {
                 Ok(Val::U(ty_u.max(&body_u)))
             }
             Tm::U(u) => Ok(Val::U(u.clone() + 1)),
+            Tm::Ctor { .. } => todo!(),
             Tm::OldFix { ty, ctors } => {
                 ty.ty_internal(e, c, tc)?;
 
@@ -533,6 +550,7 @@ impl Tm {
                 body: abs.body.unlift(k + 1, by)?,
             }))),
             Tm::U(n) => Ok(Tm::U(n.clone())),
+            Tm::Ctor { .. } => todo!(),
             Tm::OldFix { ty, ctors } => Ok(Tm::OldFix {
                 ty: Box::new(ty.unlift(k, by)?),
                 ctors: ctors
