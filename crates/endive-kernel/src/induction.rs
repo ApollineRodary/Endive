@@ -150,6 +150,24 @@ pub struct InductiveTypeFamily {
 }
 
 impl InductiveTypeFamily {
+    pub(crate) fn induction_principle(
+        &self,
+        e: &GlobalEnv,
+        inductive_idx: usize,
+        inductive_args: Vec<Val>,
+        motive: Closure,
+        cases: Vec<CaseVal>,
+        val: Val,
+    ) -> Result<Val, Error> {
+        Ok(Val::Induction {
+            inductive_idx,
+            inductive_args,
+            motive: Box::new(motive),
+            cases,
+            val: Box::new(val),
+        })
+    }
+
     /// Validates the inductive type family.
     ///
     /// The validation requires the family to already be added to the global environment at the
