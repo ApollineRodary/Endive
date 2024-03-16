@@ -46,7 +46,7 @@ impl Engine {
             return Err(Error::InvalidTy);
         }
         Ok(tm
-            .normalize()
+            .normalize(&GlobalEnv::new())
             .expect("term failed to normalize after type checking"))
     }
 

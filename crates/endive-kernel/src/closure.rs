@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{Binding, Ctx, Error, Lvl, Tm, Val};
+use crate::{Binding, Ctx, Error, GlobalEnv, Lvl, Tm, Val};
 
 /// A lambda term accompanied by a local context.
 #[derive(Clone, Debug)]
@@ -33,16 +33,16 @@ impl BindingClosure {
     }
 
     /// Applies the closure to a value.
-    pub(crate) fn apply(&self, val: Val) -> Result<Val, Error> {
-        self.closure.body.eval(&self.closure.c.push(val))
+    pub(crate) fn apply(&self, e: &GlobalEnv, val: Val) -> Result<Val, Error> {
+        self.closure.body.eval(e, &self.closure.c.push(val))
     }
 
     /// Reifies the closure into an abstraction in normal form. Variables are reified into de
     /// Bruijn indices assuming current level `l`.
-    pub(crate) fn reify(&self, l: Lvl) -> Result<Binding, Error> {
+    pub(crate) fn reify(&self, e: &GlobalEnv, l: Lvl) -> Result<Binding, Error> {
         Ok(Binding {
-            bound_ty: self.ty.reify(l)?,
-            body: self.apply(Val::Var(l))?.reify(Lvl(l.0 + 1))?,
+            bound_ty: self.ty.reify(e, l)?,
+            body: self.apply(e, Val::Var(l))?.reify(e, Lvl(l.0 + 1))?,
         })
     }
 }
