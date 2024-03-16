@@ -16,7 +16,7 @@ impl Telescope {
     ) -> Result<(Rc<Ctx>, Rc<TyCtx>), Error> {
         for (l, ty) in self.0.iter().enumerate() {
             ty.univ_lvl(e, &c, &tc)?;
-            let ty = ty.eval(&c)?;
+            let ty = ty.eval(&e, &c)?;
             c = Rc::new(Ctx::Cons(Val::Var(Lvl(l)), c));
             tc = Rc::new(TyCtx::Cons(ty, tc));
         }
@@ -37,7 +37,7 @@ impl Telescope {
             if ty.univ_lvl(e, &c, &tc)? > *max_univ_lvl {
                 return Err(Error::TyMismatch);
             }
-            let ty = ty.eval(&c)?;
+            let ty = ty.eval(&e, &c)?;
             c = Rc::new(Ctx::Cons(Val::Var(Lvl(l)), c));
             tc = Rc::new(TyCtx::Cons(ty, tc));
         }
@@ -45,9 +45,9 @@ impl Telescope {
     }
 
     /// Evaluates the telescope to a dependent product type chain that ends with `tail`.
-    fn eval_to_pi(&self, c: &Rc<Ctx>, tail: Tm) -> Result<Val, Error> {
+    fn eval_to_pi(&self, e: &GlobalEnv, c: &Rc<Ctx>, tail: Tm) -> Result<Val, Error> {
         if self.0.is_empty() {
-            tail.eval(c)
+            tail.eval(&e, c)
         } else {
             let tail = self.0[1..].iter().fold(tail, |acc, ty| {
                 Tm::Pi(Box::new(Binding {
@@ -56,7 +56,7 @@ impl Telescope {
                 }))
             });
             Ok(Val::Pi(Box::new(BindingClosure::new(
-                self.0[0].eval(c)?,
+                self.0[0].eval(&e, c)?,
                 tail,
                 c.clone(),
             ))))
@@ -77,15 +77,15 @@ impl Telescope {
         }
         let l = Lvl(c.len());
         let dummy = Tm::U(univ_lvl::Expr::default());
-        let mut pi = self.eval_to_pi(c, dummy)?;
+        let mut pi = self.eval_to_pi(&e, c, dummy)?;
         let mut i = 0;
         while let Val::Pi(closure) = pi {
             let arg = &args[i];
             let ty = arg.ty_internal(e, args_c, args_tc)?;
-            if !ty.beta_eq(l, &closure.ty, l)? {
+            if !ty.beta_eq(e, l, &closure.ty, l)? {
                 return Err(Error::TyMismatch);
             }
-            pi = closure.apply(arg.eval(args_c)?)?;
+            pi = closure.apply(e, arg.eval(&e, args_c)?)?;
             i += 1;
         }
         Ok(())
@@ -106,18 +106,18 @@ impl Telescope {
         }
         let l = Lvl(c.len());
         let dummy = Tm::U(univ_lvl::Expr::default());
-        let mut pi = self.eval_to_pi(c, dummy)?;
+        let mut pi = self.eval_to_pi(&e, c, dummy)?;
         let mut i = 0;
         let mut evaluated_args = Vec::new();
         while let Val::Pi(closure) = pi {
             let arg = &args[i];
             let ty = arg.ty_internal(e, args_c, args_tc)?;
-            if !ty.beta_eq(l, &closure.ty, l)? {
+            if !ty.beta_eq(e, l, &closure.ty, l)? {
                 return Err(Error::TyMismatch);
             }
-            let evaluated_arg = arg.eval(args_c)?;
+            let evaluated_arg = arg.eval(&e, args_c)?;
             evaluated_args.push(evaluated_arg.clone());
-            pi = closure.apply(evaluated_arg)?;
+            pi = closure.apply(e, evaluated_arg)?;
             i += 1;
         }
         Ok(evaluated_args)
@@ -245,10 +245,10 @@ impl CtorParam {
                 if ty.univ_lvl(e, &c, &tc)? > *max_univ_lvl {
                     return Err(Error::TyMismatch);
                 }
-                ty.eval(&c)?
+                ty.eval(&e, &c)?
             }
         };
-        self.tele.eval_to_pi(&c, tail.reify(Lvl(c.len()))?)
+        self.tele.eval_to_pi(&e, &c, tail.reify(e, Lvl(c.len()))?)
     }
 }
 

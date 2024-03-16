@@ -293,7 +293,7 @@ fn kernel_error_to_js_error(err: endive_kernel::Error) -> JsValue {
 pub fn normalize(n: &JsValue) -> Result<JsValue, JsValue> {
     Ok(kernel_tm_to_js_tm(
         &js_tm_to_kernel_tm(&n)?
-            .normalize()
+            .normalize(&GlobalEnv::new())
             .map_err(kernel_error_to_js_error)?,
     ))
 }
@@ -311,5 +311,7 @@ pub fn ty(n: &JsValue) -> Result<JsValue, JsValue> {
 pub fn beta_eq(n: &JsValue, m: &JsValue) -> Result<JsValue, JsValue> {
     let n = js_tm_to_kernel_tm(&n)?;
     let m = js_tm_to_kernel_tm(&m)?;
-    Ok(n.beta_eq(&m).map_err(kernel_error_to_js_error)?.into())
+    Ok(n.beta_eq(&GlobalEnv::new(), &m)
+        .map_err(kernel_error_to_js_error)?
+        .into())
 }

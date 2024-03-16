@@ -39,9 +39,9 @@ pub struct Binding {
 
 impl Binding {
     /// Evaluates the abstraction to a closure in the given local context.
-    fn eval(&self, c: &Rc<Ctx>) -> Result<BindingClosure, Error> {
+    fn eval(&self, e: &GlobalEnv, c: &Rc<Ctx>) -> Result<BindingClosure, Error> {
         Ok(BindingClosure::new(
-            self.bound_ty.eval(c)?,
+            self.bound_ty.eval(e, c)?,
             self.body.clone(),
             c.clone(),
         ))
@@ -136,29 +136,29 @@ pub enum Error {
 
 impl Tm {
     /// Evaluates a lambda term to weak head normal form in the given local context.
-    fn eval(&self, c: &Rc<Ctx>) -> Result<Val, Error> {
+    fn eval(&self, e: &GlobalEnv, c: &Rc<Ctx>) -> Result<Val, Error> {
         match self {
             Tm::Var(i) => c.get(*i).ok_or(Error::IxOverflow).cloned(),
-            Tm::Abs(abs) => Ok(Val::Abs(Box::new(abs.eval(c)?))),
+            Tm::Abs(abs) => Ok(Val::Abs(Box::new(abs.eval(e, c)?))),
             Tm::App(n, m) => {
-                let n = n.eval(c)?;
-                let m = m.eval(c)?;
+                let n = n.eval(e, c)?;
+                let m = m.eval(e, c)?;
                 match n {
-                    Val::Abs(closure) => closure.apply(m),
+                    Val::Abs(closure) => closure.apply(e, m),
                     _ => Ok(Val::App(Box::new(n), Box::new(m))),
                 }
             }
-            Tm::Pi(abs) => Ok(Val::Pi(Box::new(abs.eval(c)?))),
+            Tm::Pi(abs) => Ok(Val::Pi(Box::new(abs.eval(e, c)?))),
             Tm::U(n) => Ok(Val::U(n.clone())),
             Tm::Inductive { idx, args, indices } => Ok(Val::Inductive {
                 idx: *idx,
                 args: args
                     .iter()
-                    .map(|arg| arg.eval(c))
+                    .map(|arg| arg.eval(e, c))
                     .collect::<Result<_, _>>()?,
                 indices: indices
                     .iter()
-                    .map(|index| index.eval(c))
+                    .map(|index| index.eval(e, c))
                     .collect::<Result<_, _>>()?,
             }),
             Tm::Ctor {
@@ -170,57 +170,58 @@ impl Tm {
                 inductive_idx: *inductive_idx,
                 inductive_args: inductive_args
                     .iter()
-                    .map(|arg| arg.eval(c))
+                    .map(|arg| arg.eval(e, c))
                     .collect::<Result<_, _>>()?,
                 ctor_idx: *ctor_idx,
                 ctor_args: ctor_args
                     .iter()
-                    .map(|arg| arg.eval(c))
+                    .map(|arg| arg.eval(e, c))
                     .collect::<Result<_, _>>()?,
             }),
             Tm::OldFix { ty, ctors } => Ok(Val::OldFix {
-                ty: ty.eval(c)?.into(),
+                ty: ty.eval(e, c)?.into(),
                 ctors: ctors
                     .iter()
-                    .map(|ctor| ctor.eval(c))
+                    .map(|ctor| ctor.eval(e, c))
                     .collect::<Result<_, _>>()?,
             }),
             Tm::OldCtor { fix, i, args } => Ok(Val::OldCtor {
-                fix: Box::new(fix.eval(c)?),
+                fix: Box::new(fix.eval(e, c)?),
                 i: *i,
                 args: args
                     .iter()
-                    .map(|arg| arg.eval(c))
+                    .map(|arg| arg.eval(e, c))
                     .collect::<Result<_, _>>()?,
             }),
             Tm::OldInd { motive, cases, val } => {
-                let motive = motive.eval(c)?;
+                let motive = motive.eval(e, c)?;
                 let cases = cases
                     .iter()
-                    .map(|case| case.eval(c))
+                    .map(|case| case.eval(e, c))
                     .collect::<Result<_, _>>()?;
-                let val = val.eval(c)?;
-                val.induction(motive, cases, Lvl(c.len()))
+                let val = val.eval(e, c)?;
+                val.induction(e, motive, cases, Lvl(c.len()))
             }
         }
     }
 
     /// Beta normalizes the lambda term.
-    pub fn normalize(&self) -> Result<Tm, Error> {
+    pub fn normalize(&self, e: &GlobalEnv) -> Result<Tm, Error> {
         // Normalization by Evaluation
-        self.eval(&Default::default())?.reify(Lvl(0))
+        self.eval(e, &Default::default())?.reify(e, Lvl(0))
     }
 
     /// Beta equivalence.
-    pub fn beta_eq(&self, other: &Tm) -> Result<bool, Error> {
+    pub fn beta_eq(&self, e: &GlobalEnv, other: &Tm) -> Result<bool, Error> {
         let c = Default::default();
-        self.eval(&c)?.beta_eq(Lvl(0), &other.eval(&c)?, Lvl(0))
+        self.eval(e, &c)?
+            .beta_eq(e, Lvl(0), &other.eval(e, &c)?, Lvl(0))
     }
 
     /// Infers the type of the lambda term using rules from Pure Type Systems.
     pub fn ty(&self, e: &GlobalEnv) -> Result<Tm, Error> {
         self.ty_internal(e, &Default::default(), &Default::default())?
-            .reify(Lvl(0))
+            .reify(e, Lvl(0))
     }
 
     /// Infers the type of the lambda term using rules from Pure Type Systems.
@@ -242,7 +243,7 @@ impl Tm {
                 // Check that the type of the bound variable is a type.
                 abs.bound_ty.univ_lvl(e, c, tc)?;
 
-                let ty = abs.bound_ty.clone().eval(c)?;
+                let ty = abs.bound_ty.clone().eval(e, c)?;
 
                 let body_ty =
                     abs.body
@@ -250,19 +251,19 @@ impl Tm {
 
                 Ok(Val::Pi(Box::new(BindingClosure::new(
                     ty,
-                    body_ty.reify(Lvl(l.0 + 1))?,
+                    body_ty.reify(e, Lvl(l.0 + 1))?,
                     c.clone(),
                 ))))
             }
             Tm::App(n, m) => match n.ty_internal(e, c, tc)? {
                 Val::Pi(closure) => {
-                    let m_ty = m.ty_internal(e, c, tc)?.reify(l);
-                    let param_ty = closure.ty.reify(l);
+                    let m_ty = m.ty_internal(e, c, tc)?.reify(e, l);
+                    let param_ty = closure.ty.reify(e, l);
                     if m_ty == param_ty {
                         Ok(closure
                             .closure
                             .body
-                            .eval(&closure.closure.c.push(m.clone().eval(c)?))?)
+                            .eval(e, &closure.closure.c.push(m.clone().eval(e, c)?))?)
                     } else {
                         Err(Error::TyMismatch)
                     }
@@ -271,7 +272,7 @@ impl Tm {
             },
             Tm::Pi(abs) => {
                 let ty_u = abs.bound_ty.univ_lvl(e, c, tc)?;
-                let ty = abs.bound_ty.clone().eval(c)?;
+                let ty = abs.bound_ty.clone().eval(e, c)?;
 
                 let body_u = abs.body.univ_lvl(e, &c.push(Val::Var(l)), &tc.push(ty))?;
 
@@ -283,8 +284,8 @@ impl Tm {
             Tm::OldFix { ty, ctors } => {
                 ty.ty_internal(e, c, tc)?;
 
-                let ty = ty.clone().eval(c)?;
-                let uncurrified = ty.uncurrify_pi(l)?;
+                let ty = ty.clone().eval(e, c)?;
+                let uncurrified = ty.uncurrify_pi(e, l)?;
                 let universe = match uncurrified.out {
                     Val::U(n) => n,
                     _ => return Err(Error::TyMismatch),
@@ -293,24 +294,25 @@ impl Tm {
                 // Check that the indices belong to a universe strictly smaller than the universe
                 // of the inductive type family.
                 for index in &uncurrified.args {
-                    if index.reify(l)?.univ_lvl(e, c, tc)? >= universe {
+                    if index.reify(e, l)?.univ_lvl(e, c, tc)? >= universe {
                         return Err(Error::TyMismatch);
                     }
                 }
 
                 for ctor in ctors {
                     match ctor.ty_internal(e, c, tc)? {
-                        Val::Pi(closure) if closure.ty.beta_eq(l, &ty, l)? => {}
+                        Val::Pi(closure) if closure.ty.beta_eq(e, l, &ty, l)? => {}
                         _ => return Err(Error::TyMismatch),
                     }
 
                     let ctor_uncurrified = ctor
-                        .eval(c)?
-                        .apply(Val::Var(l))?
-                        .uncurrify_pi(Lvl(l.0 + 1))?;
+                        .eval(e, c)?
+                        .apply(e, Val::Var(l))?
+                        .uncurrify_pi(e, Lvl(l.0 + 1))?;
 
                     for (i, arg) in ctor_uncurrified.args.iter().enumerate() {
                         arg.check_ctor_param(
+                            e,
                             Lvl(l.0 + 1 + i),
                             l,
                             &universe,
@@ -336,12 +338,12 @@ impl Tm {
             Tm::OldCtor { fix, i, args } => {
                 fix.ty_internal(e, c, tc)?;
 
-                let mut ctor = match fix.eval(c)? {
+                let mut ctor = match fix.eval(e, c)? {
                     Val::OldFix { ty, ctors } => ctors
                         .get(*i)
                         .cloned()
                         .ok_or(Error::TyMismatch)?
-                        .apply(Val::OldFix { ty, ctors })?,
+                        .apply(e, Val::OldFix { ty, ctors })?,
                     _ => return Err(Error::TyMismatch),
                 };
 
@@ -350,10 +352,10 @@ impl Tm {
                     let arg_ty = arg.ty_internal(e, c, tc)?;
                     ctor = match &ctor {
                         Val::Pi(closure) => {
-                            if !closure.ty.beta_eq(Lvl(l.0 + 1 + i), &arg_ty, l)? {
+                            if !closure.ty.beta_eq(e, Lvl(l.0 + 1 + i), &arg_ty, l)? {
                                 return Err(Error::TyMismatch);
                             }
-                            closure.apply(arg.eval(c)?)?
+                            closure.apply(e, arg.eval(e, c)?)?
                         }
                         _ => return Err(Error::TyMismatch),
                     };
@@ -369,7 +371,7 @@ impl Tm {
             Tm::OldInd { motive, cases, val } => {
                 // Part 1: check that the motive is of the form `Πx1. ... Πxk.(F x1 ... xk) → U n`.
 
-                let motive_uncurrified = motive.ty_internal(e, c, tc)?.uncurrify_pi(l)?;
+                let motive_uncurrified = motive.ty_internal(e, c, tc)?.uncurrify_pi(e, l)?;
 
                 match motive_uncurrified.out {
                     Val::U(_) => {}
@@ -390,7 +392,7 @@ impl Tm {
                 // This will fail if one of x1, ..., xk occurs in F.
                 let fix = fix_indexed_uncurrified
                     .f
-                    .reify(Lvl(l.0 + index_count))?
+                    .reify(e, Lvl(l.0 + index_count))?
                     .unlift(0, index_count)?;
 
                 let (fix_ty, fix_ctors) = match &fix_indexed_uncurrified.f {
@@ -398,7 +400,7 @@ impl Tm {
                     _ => return Err(Error::TyMismatch),
                 };
 
-                let fix_ty_uncurrified = fix_ty.uncurrify_pi(Lvl(l.0 + index_count))?;
+                let fix_ty_uncurrified = fix_ty.uncurrify_pi(e, Lvl(l.0 + index_count))?;
                 if fix_ty_uncurrified.args.len() != index_count {
                     return Err(Error::TyMismatch);
                 }
@@ -419,7 +421,7 @@ impl Tm {
                     return Err(Error::TyMismatch);
                 }
 
-                if val_ty_uncurrified.f.reify(l)? != fix {
+                if val_ty_uncurrified.f.reify(e, l)? != fix {
                     return Err(Error::TyMismatch);
                 }
 
@@ -429,8 +431,8 @@ impl Tm {
                     return Err(Error::TyMismatch);
                 }
 
-                let motive = motive.eval(c)?;
-                let fix_val = fix.eval(c)?;
+                let motive = motive.eval(e, c)?;
+                let fix_val = fix.eval(e, c)?;
 
                 for (i, (case, ctor)) in cases.iter().zip(fix_ctors.iter()).enumerate() {
                     // Part 3.1: construct the expected constructor parameters by filtering out the
@@ -453,17 +455,17 @@ impl Tm {
                                 .closure
                                 .body
                                 .unlift(0, 1)?
-                                .eval(&closure.closure.c)?;
+                                .eval(e, &closure.closure.c)?;
                         } else {
                             prev_was_self = {
                                 let uncurrified = closure.ty.uncurrify_app()?;
-                                uncurrified.f.reify(l).as_ref() == Ok(&fix)
+                                uncurrified.f.reify(e, l).as_ref() == Ok(&fix)
                             };
 
                             expected_ctor_params.push(closure.ty.clone());
                             out_ctor_args.push(Val::Var(case_ty_l));
 
-                            case_ty = closure.apply(Val::Var(Lvl(case_ty_l.0)))?;
+                            case_ty = closure.apply(e, Val::Var(Lvl(case_ty_l.0)))?;
                             case_ty_l.0 += 1;
                         }
                     }
@@ -475,32 +477,35 @@ impl Tm {
                     // Part 3.2: compare the expected constructor parameters with the actual
                     // constructor parameters.
 
-                    let ctor_uncurrified = ctor.apply(fix_val.clone())?.uncurrify_pi(l)?;
+                    let ctor_uncurrified = ctor.apply(e, fix_val.clone())?.uncurrify_pi(e, l)?;
 
                     for (j, (expected, actual)) in expected_ctor_params
                         .iter()
                         .zip(ctor_uncurrified.args.iter())
                         .enumerate()
                     {
-                        if !expected.beta_eq(Lvl(l.0 + j), actual, Lvl(l.0 + j))? {
+                        if !expected.beta_eq(e, Lvl(l.0 + j), actual, Lvl(l.0 + j))? {
                             return Err(Error::TyMismatch);
                         }
                     }
 
                     // Part 3.3: check that the case's return type is of the form `P (C x1 ... xk)`.
 
-                    let expected_out = motive.apply(Val::OldCtor {
-                        fix: Box::new(fix_val.clone()),
-                        i,
-                        args: out_ctor_args,
-                    })?;
+                    let expected_out = motive.apply(
+                        e,
+                        Val::OldCtor {
+                            fix: Box::new(fix_val.clone()),
+                            i,
+                            args: out_ctor_args,
+                        },
+                    )?;
 
-                    if !case_ty.beta_eq(case_ty_l, &expected_out, case_ty_l)? {
+                    if !case_ty.beta_eq(e, case_ty_l, &expected_out, case_ty_l)? {
                         return Err(Error::TyMismatch);
                     }
                 }
 
-                motive.apply(val.eval(c)?)
+                motive.apply(e, val.eval(e, c)?)
             }
         }
     }
@@ -652,25 +657,25 @@ enum Val {
 impl Val {
     /// Reifies a value into a normal form. Variables are reified into de Bruijn indices assuming
     /// current level `l`.
-    fn reify(&self, l: Lvl) -> Result<Tm, Error> {
+    fn reify(&self, e: &GlobalEnv, l: Lvl) -> Result<Tm, Error> {
         match self {
             Val::Var(k) => {
                 let i = Ix(l.0.checked_sub(k.0 + 1).expect("de Bruijn level underflow"));
                 Ok(Tm::Var(i))
             }
-            Val::Abs(closure) => Ok(Tm::Abs(Box::new(closure.reify(l)?))),
-            Val::App(n, m) => Ok(Tm::App(Box::new(n.reify(l)?), Box::new(m.reify(l)?))),
-            Val::Pi(closure) => Ok(Tm::Pi(Box::new(closure.reify(l)?))),
+            Val::Abs(closure) => Ok(Tm::Abs(Box::new(closure.reify(e, l)?))),
+            Val::App(n, m) => Ok(Tm::App(Box::new(n.reify(e, l)?), Box::new(m.reify(e, l)?))),
+            Val::Pi(closure) => Ok(Tm::Pi(Box::new(closure.reify(e, l)?))),
             Val::U(n) => Ok(Tm::U(n.clone())),
             Val::Inductive { idx, args, indices } => Ok(Tm::Inductive {
                 idx: *idx,
                 args: args
                     .iter()
-                    .map(|arg| arg.reify(l))
+                    .map(|arg| arg.reify(e, l))
                     .collect::<Result<_, _>>()?,
                 indices: indices
                     .iter()
-                    .map(|index| index.reify(l))
+                    .map(|index| index.reify(e, l))
                     .collect::<Result<_, _>>()?,
             }),
             Val::Ctor {
@@ -682,50 +687,50 @@ impl Val {
                 inductive_idx: *inductive_idx,
                 inductive_args: inductive_args
                     .iter()
-                    .map(|arg| arg.reify(l))
+                    .map(|arg| arg.reify(e, l))
                     .collect::<Result<_, _>>()?,
                 ctor_idx: *ctor_idx,
                 ctor_args: ctor_args
                     .iter()
-                    .map(|arg| arg.reify(l))
+                    .map(|arg| arg.reify(e, l))
                     .collect::<Result<_, _>>()?,
             }),
             Val::OldFix { ty, ctors } => Ok(Tm::OldFix {
-                ty: Box::new(ty.reify(l)?),
+                ty: Box::new(ty.reify(e, l)?),
                 ctors: ctors
                     .iter()
-                    .map(|ctor| ctor.reify(l))
+                    .map(|ctor| ctor.reify(e, l))
                     .collect::<Result<_, _>>()?,
             }),
             Val::OldCtor { fix, i, args } => Ok(Tm::OldCtor {
-                fix: Box::new(fix.reify(l)?),
+                fix: Box::new(fix.reify(e, l)?),
                 i: *i,
                 args: args
                     .iter()
-                    .map(|arg| arg.reify(l))
+                    .map(|arg| arg.reify(e, l))
                     .collect::<Result<_, _>>()?,
             }),
             Val::OldInd { motive, cases, val } => Ok(Tm::OldInd {
-                motive: Box::new(motive.reify(l)?),
+                motive: Box::new(motive.reify(e, l)?),
                 cases: cases
                     .iter()
-                    .map(|case| case.reify(l))
+                    .map(|case| case.reify(e, l))
                     .collect::<Result<_, _>>()?,
-                val: Box::new(val.reify(l)?),
+                val: Box::new(val.reify(e, l)?),
             }),
         }
     }
 
     /// Applies the value to another value.
-    fn apply(&self, val: Val) -> Result<Val, Error> {
+    fn apply(&self, e: &GlobalEnv, val: Val) -> Result<Val, Error> {
         match self {
-            Val::Abs(closure) => closure.apply(val),
+            Val::Abs(closure) => closure.apply(e, val),
             _ => Ok(Val::App(Box::new(self.clone()), Box::new(val))),
         }
     }
 
     /// Applies the principle of induction to the value.
-    fn induction(&self, motive: Val, cases: Vec<Val>, l: Lvl) -> Result<Val, Error> {
+    fn induction(&self, e: &GlobalEnv, motive: Val, cases: Vec<Val>, l: Lvl) -> Result<Val, Error> {
         let Val::OldCtor { fix, i, args } = self else {
             return Ok(Val::OldInd {
                 motive: Box::new(motive),
@@ -754,7 +759,7 @@ impl Val {
                 val: Box::new(self.clone()),
             });
         };
-        let mut ctor = closure.apply(Val::Var(l))?;
+        let mut ctor = closure.apply(e, Val::Var(l))?;
         let Some(mut case) = cases.get(*i).cloned() else {
             return Ok(Val::OldInd {
                 motive: Box::new(motive),
@@ -771,11 +776,11 @@ impl Val {
                     val: Box::new(self.clone()),
                 });
             };
-            case = case.apply(arg.clone())?;
+            case = case.apply(e, arg.clone())?;
             if closure.ty.is_apply_of_var(l) {
-                case = case.apply(arg.induction(motive.clone(), cases.clone(), l)?)?;
+                case = case.apply(e, arg.induction(e, motive.clone(), cases.clone(), l)?)?;
             }
-            ctor = closure.apply(Val::Var(Lvl(l.0 + 1 + j)))?;
+            ctor = closure.apply(e, Val::Var(Lvl(l.0 + 1 + j)))?;
         }
         Ok(case)
     }
@@ -802,12 +807,12 @@ impl Val {
     }
 
     /// Uncurrifies chained dependent products.
-    fn uncurrify_pi(&self, l: Lvl) -> Result<Pis, Error> {
+    fn uncurrify_pi(&self, e: &GlobalEnv, l: Lvl) -> Result<Pis, Error> {
         let mut v = self.clone();
         let mut args = vec![];
         while let Val::Pi(closure) = v {
             args.push(closure.ty.clone());
-            v = closure.apply(Val::Var(Lvl(l.0 + args.len())))?;
+            v = closure.apply(e, Val::Var(Lvl(l.0 + args.len())))?;
         }
         Ok(Pis { args, out: v })
     }
@@ -815,6 +820,7 @@ impl Val {
     /// Validates a constructor parameter.
     fn check_ctor_param(
         &self,
+        e: &GlobalEnv,
         l: Lvl,
         fix_l: Lvl,
         fix_universe: &univ_lvl::Expr,
@@ -825,8 +831,9 @@ impl Val {
             Val::Pi(closure) => {
                 closure
                     .ty
-                    .check_ctor_param(l, fix_l, fix_universe, fix_indices, -v)?;
-                closure.apply(Val::Var(l))?.check_ctor_param(
+                    .check_ctor_param(e, l, fix_l, fix_universe, fix_indices, -v)?;
+                closure.apply(e, Val::Var(l))?.check_ctor_param(
+                    e,
                     Lvl(l.0 + 1),
                     fix_l,
                     fix_universe,
@@ -851,7 +858,7 @@ impl Val {
                     }
                 } else {
                     for arg in uncurrified.args {
-                        if arg.has_var(l, fix_l)? {
+                        if arg.has_var(e, l, fix_l)? {
                             return Err(Error::TyMismatch);
                         }
                     }
@@ -863,22 +870,26 @@ impl Val {
     }
 
     /// Returns whether the value contains `Val::Var(var_l)`.
-    fn has_var(&self, l: Lvl, var_l: Lvl) -> Result<bool, Error> {
+    fn has_var(&self, e: &GlobalEnv, l: Lvl, var_l: Lvl) -> Result<bool, Error> {
         match self {
             Val::Var(k) => Ok(*k == var_l),
-            Val::App(m, n) => Ok(m.has_var(l, var_l)? || n.has_var(l, var_l)?),
-            Val::Abs(closure) => Ok(closure.ty.has_var(l, var_l)?
-                || closure.apply(Val::Var(l))?.has_var(Lvl(l.0 + 1), var_l)?),
-            Val::Pi(closure) => Ok(closure.ty.has_var(l, var_l)?
-                || closure.apply(Val::Var(l))?.has_var(Lvl(l.0 + 1), var_l)?),
+            Val::App(m, n) => Ok(m.has_var(e, l, var_l)? || n.has_var(e, l, var_l)?),
+            Val::Abs(closure) => Ok(closure.ty.has_var(e, l, var_l)?
+                || closure
+                    .apply(e, Val::Var(l))?
+                    .has_var(e, Lvl(l.0 + 1), var_l)?),
+            Val::Pi(closure) => Ok(closure.ty.has_var(e, l, var_l)?
+                || closure
+                    .apply(e, Val::Var(l))?
+                    .has_var(e, Lvl(l.0 + 1), var_l)?),
             Val::U(_) => Ok(false),
             Val::Inductive { idx, args, indices } => {
                 let mut has_var = false;
                 for arg in args {
-                    has_var = has_var || arg.has_var(l, var_l)?;
+                    has_var = has_var || arg.has_var(e, l, var_l)?;
                 }
                 for index in indices {
-                    has_var = has_var || index.has_var(l, var_l)?;
+                    has_var = has_var || index.has_var(e, l, var_l)?;
                 }
                 Ok(has_var)
             }
@@ -889,58 +900,66 @@ impl Val {
             } => {
                 let mut has_var = false;
                 for arg in inductive_args {
-                    has_var = has_var || arg.has_var(l, var_l)?;
+                    has_var = has_var || arg.has_var(e, l, var_l)?;
                 }
                 for arg in ctor_args {
-                    has_var = has_var || arg.has_var(l, var_l)?;
+                    has_var = has_var || arg.has_var(e, l, var_l)?;
                 }
                 Ok(has_var)
             }
+            Val::Induction { .. } => todo!(),
             Val::OldFix { ty, ctors } => {
-                let mut has_var = ty.has_var(l, var_l)?;
+                let mut has_var = ty.has_var(e, l, var_l)?;
                 for ctor in ctors {
-                    has_var = has_var || ctor.has_var(l, var_l)?;
+                    has_var = has_var || ctor.has_var(e, l, var_l)?;
                 }
                 Ok(has_var)
             }
             Val::OldCtor { fix, i: _, args } => {
-                let mut has_var = fix.has_var(l, var_l)?;
+                let mut has_var = fix.has_var(e, l, var_l)?;
                 for arg in args {
-                    has_var = has_var || arg.has_var(l, var_l)?;
+                    has_var = has_var || arg.has_var(e, l, var_l)?;
                 }
                 Ok(has_var)
             }
             Val::OldInd { motive, cases, val } => {
-                let mut has_var = motive.has_var(l, var_l)?;
+                let mut has_var = motive.has_var(e, l, var_l)?;
                 for case in cases {
-                    has_var = has_var || case.has_var(l, var_l)?;
+                    has_var = has_var || case.has_var(e, l, var_l)?;
                 }
-                has_var = has_var || val.has_var(l, var_l)?;
+                has_var = has_var || val.has_var(e, l, var_l)?;
                 Ok(has_var)
             }
         }
     }
 
     /// Beta equivalence.
-    pub(crate) fn beta_eq(&self, l: Lvl, other: &Val, other_l: Lvl) -> Result<bool, Error> {
+    pub(crate) fn beta_eq(
+        &self,
+        e: &GlobalEnv,
+        l: Lvl,
+        other: &Val,
+        other_l: Lvl,
+    ) -> Result<bool, Error> {
         match (self, other) {
             (Val::Var(i), Val::Var(j)) => Ok(l.0 + j.0 == other_l.0 + i.0),
             (Val::Abs(closure), Val::Abs(other_closure))
             | (Val::Pi(closure), Val::Pi(other_closure)) => {
-                if !closure.ty.beta_eq(l, &other_closure.ty, other_l)? {
+                if !closure.ty.beta_eq(e, l, &other_closure.ty, other_l)? {
                     return Ok(false);
                 }
-                closure.apply(Val::Var(l))?.beta_eq(
+                closure.apply(e, Val::Var(l))?.beta_eq(
+                    e,
                     Lvl(l.0 + 1),
-                    &other_closure.apply(Val::Var(other_l))?,
+                    &other_closure.apply(e, Val::Var(other_l))?,
                     Lvl(other_l.0 + 1),
                 )
             }
             (Val::App(m, n), Val::App(other_m, other_n)) => {
-                if !m.beta_eq(l, other_m, other_l)? {
+                if !m.beta_eq(e, l, other_m, other_l)? {
                     return Ok(false);
                 }
-                n.beta_eq(l, other_n, other_l)
+                n.beta_eq(e, l, other_n, other_l)
             }
             (Val::U(n), Val::U(other_n)) => Ok(n == other_n),
             (
@@ -950,14 +969,14 @@ impl Val {
                     ctors: other_ctors,
                 },
             ) => {
-                if !ty.beta_eq(l, other_ty, other_l)? {
+                if !ty.beta_eq(e, l, other_ty, other_l)? {
                     return Ok(false);
                 }
                 if ctors.len() != other_ctors.len() {
                     return Ok(false);
                 }
                 for (ctor, other_ctor) in ctors.iter().zip(other_ctors) {
-                    if !ctor.beta_eq(l, other_ctor, other_l)? {
+                    if !ctor.beta_eq(e, l, other_ctor, other_l)? {
                         return Ok(false);
                     }
                 }
@@ -971,7 +990,7 @@ impl Val {
                     args: other_args,
                 },
             ) => {
-                if !fix.beta_eq(l, other_fix, other_l)? {
+                if !fix.beta_eq(e, l, other_fix, other_l)? {
                     return Ok(false);
                 }
                 if i != other_i {
@@ -981,7 +1000,7 @@ impl Val {
                     return Ok(false);
                 }
                 for (arg, other_arg) in args.iter().zip(other_args) {
-                    if !arg.beta_eq(l, other_arg, other_l)? {
+                    if !arg.beta_eq(e, l, other_arg, other_l)? {
                         return Ok(false);
                     }
                 }
@@ -995,18 +1014,18 @@ impl Val {
                     val: other_val,
                 },
             ) => {
-                if !motive.beta_eq(l, other_motive, other_l)? {
+                if !motive.beta_eq(e, l, other_motive, other_l)? {
                     return Ok(false);
                 }
                 if cases.len() != other_cases.len() {
                     return Ok(false);
                 }
                 for (case, other_case) in cases.iter().zip(other_cases) {
-                    if !case.beta_eq(l, other_case, other_l)? {
+                    if !case.beta_eq(e, l, other_case, other_l)? {
                         return Ok(false);
                     }
                 }
-                val.beta_eq(l, other_val, other_l)
+                val.beta_eq(e, l, other_val, other_l)
             }
             _ => Ok(false),
         }
@@ -1049,27 +1068,31 @@ mod tests {
 
     #[test]
     fn beta_eq() {
+        let e = GlobalEnv::new();
+
         // (λx.x) = (λx.x)
         let id = Tm::Abs(Box::new(Binding {
             bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::Var(Ix(0)),
         }));
-        assert_eq!(id.beta_eq(&id), Ok(true));
+        assert_eq!(id.beta_eq(&e, &id), Ok(true));
 
         // (λx.x) (λx.x) = x
         let id_id = Tm::App(Box::new(id.clone()), Box::new(id.clone()));
-        assert_eq!(id_id.beta_eq(&id), Ok(true));
+        assert_eq!(id_id.beta_eq(&e, &id), Ok(true));
 
         // (λx.(λy.y) x) = (λx.x)
         let id_eta = Tm::Abs(Box::new(Binding {
             bound_ty: Tm::U(univ_lvl::Var(0).into()),
             body: Tm::App(Box::new(id.clone()), Box::new(Tm::Var(Ix(0)))),
         }));
-        assert_eq!(id_eta.beta_eq(&id), Ok(true));
+        assert_eq!(id_eta.beta_eq(&e, &id), Ok(true));
     }
 
     #[test]
     fn induction() {
+        let e = GlobalEnv::new();
+
         // ℕ := μX.[X; X → X]
         let n = Tm::OldFix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
@@ -1157,8 +1180,8 @@ mod tests {
         );
         assert_eq!(
             add_two_three
-                .eval(&Default::default())
-                .and_then(|v| v.reify(Lvl(0))),
+                .eval(&e, &Default::default())
+                .and_then(|v| v.reify(&e, Lvl(0))),
             Ok(five)
         );
     }
@@ -1361,6 +1384,6 @@ mod tests {
             })),
         }));
 
-        assert_eq!(proof.ty(&e).unwrap().beta_eq(&statement), Ok(true));
+        assert_eq!(proof.ty(&e).unwrap().beta_eq(&e, &statement), Ok(true));
     }
 }
