@@ -11,10 +11,13 @@
       <a class="Button" href="//editor.endiveonline.fr/">À vous de jouer !</a>
     </div>
     <div class="Menu">
-      <div class="Submenu" id="gen" onclick="Show_Hide('gen')">
+      <div class="Submenu" id="intro" onclick="Show_Hide('intro')">
         Introduction
       </div>
-      <div class="Submenu" id="lemma" onclick="Show_Hide('lemma')">
+      <div class="Submenu" id="fonc" onclick="Show_Hide('fonc')">
+        Fonctionnalités
+      </div>
+      <div class="Submenu" id="imp" onclick="Show_Hide('imp')">
         Implication
       </div>
       <div class="Submenu" id="or" onclick="Show_Hide('or')">
@@ -25,12 +28,15 @@
       </div>
     </div>
     <div class="Content">
-      <div class="BoxContent" id="gen_c">
-        <p>Bienvenue sur le tutoriel d'Endive !</p>
+      <div class="BoxContent" id="intro_c">
+        <p style="width: auto;">Bienvenue sur le tutoriel d'Endive !</p>
         <p>
           Endive est un assistant de preuve à visée pédagogique. La version
           présentée sur ce tutoriel est une version type "Scratch", utilisant
           des blocs pour construire les énoncés et les preuves.
+        </p>
+        <p>
+          Un assistant de preuve, c'est comme un professeur de mathématiques très gentil, qui lit ce que vous faites par dessus votre épaule, et vous dit si c'est bon ou pas, et parfois même vous aide un peu :)
         </p>
         <p>
           Dans ce tutoriel, vous trouverez des explications sur les
@@ -39,12 +45,61 @@
           menu sur votre gauche vous permet d'explorer les différents chapitres
           du tutoriel. Bonne découverte !
         </p>
-        <p style="text-align: center">
-          <img src="assets/images/logo.png" width="250" height="250" />
-        </p>
+        <img src="images/logot.png" id="endive" width="150" height="140" />
       </div>
-      <div class="BoxContent" id="lemma_c" style="display: none">
-        Contenu super chouette
+      <div class="BoxContent" id="fonc_c" style="display: none">
+        Contenu super chouette des fonc
+      </div>
+      <div class="BoxContent" id="imp_c" style="display: none">
+        <p>
+          Endive fournit un bloc Implication (⇒) que vous trouverez dans l'onglet formule. 
+          Ce bloc attend qu'on lui fournisse deux autres blocs, notons les B1 et B2. 
+          Le bloc complété signifie "Si B1, alors B2". 
+        </p>
+        <p>
+          Regardons un premier exemple afin que ceci soit plus parlant. 
+        </p>
+        Ici on insère une image de Théoreme pour tout P, P->P.
+        </p>
+        <p>
+          Le théorème ci-dessus énonce ceci : "Pour toute proposition P, si P, alors P". 
+          Cela semble parfaitement vrai, mais comment le prouver formellement ? Avec Endive évidemment !
+          Voici la preuve :
+        </p>
+        Insérer preuve P->P
+        <p> 
+          L'énoncé commence par "Pour toute proposition P". On introduit donc une telle proposition avec le bloc "Soit P dans Prop".
+          On veut montrer : "Si P, alors P". Il faut donc supposer que l'on a P et c'est ce qui est fait avec le bloc "Supposons P".
+          Enfin, on peut conclure que l'on a P avec le bloc "Alors P".
+        </p>
+        <p>
+          Regardons un autre exemple un peu plus complexe : 
+        </p>
+        Insérer image ((P -> Q) -> (Q -> R) -> P -> R)
+        <p>
+          Ici, on veut montrer que :
+        </p>
+        <p style="width: auto;">
+          Pour toutes propositions P, Q et R, ((P ⇒ Q) ⇒ (Q ⇒ R) ⇒ (P ⇒ R))
+        </p>
+        <p>
+          On commence par introduire les 3 propositions P, Q et R ave les blocs "Soit".
+          On suppose P⇒Q puis Q⇒R avec le bloc "Supposons". 
+          On veut donc maintenant montrer P⇒R. Pour ce faire, on suppose P et on montre R. 
+          <br/> Étant donné que l'on a comme hypothèses P⇒Q et P, on peut conclure que l'on a Q ! C'est ce que fait ici le bloc "Alors, Q".
+          Q est alors ajoutée aux hypothèses que l'on a. Maintenant, on peut conclure car on a dans les hypothèses Q⇒R et Q. 
+          C'est ce que fait le bloc "Alors, R" !
+        </p>
+        <p>
+          Avec ce dernier exemple, on voit que les énoncés avec des implications peuvent vite être très longs.
+          Endive propose un autre affichage plus compact. Il suffit de double-cliquer sur le symbole ⇒ du bloc.
+          Voici une petite vidéo démonstrative :
+        </p>
+        Ici, on insère une vidéo montrant comment on adapte l'affichage de ⇒
+
+          
+
+    
       </div>
       <div class="BoxContent" id="or_c" style="display: none">
         Contenu super chouette du or
@@ -61,15 +116,14 @@
 
       let to_show = document.getElementById(param_c);
 
-      let gen_c = document.getElementById("gen_c");
-      let lemma_c = document.getElementById("lemma_c");
 
-      gen_c.style.display = "none";
-      lemma_c.style.display = "none";
+      intro_c.style.display = "none";
+      fonc_c.style.display = "none";
+      imp_c.style.display = "none";
       or_c.style.display = "none";
       and_c.style.display = "none";
 
-      to_show.style.display = "block";
+      to_show.style.display = "flex";
       window.scroll(0, 0);
     }
   </script>
