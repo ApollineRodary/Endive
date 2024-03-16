@@ -208,9 +208,7 @@ impl InductiveTypeFamily {
                 let mut c = body.c.clone();
                 let mut expected_param_count = 0;
                 for (ctor_arg, ctor_param) in ctor_args.iter().zip(ctor.params.iter()) {
-                    let is_induction_hypothesis = ctor_param.tele.0.is_empty()
-                        && matches!(ctor_param.last, CtorParamLast::This { .. });
-                    if is_induction_hypothesis {
+                    if ctor_param.is_self() {
                         c = c.push(self.induction_principle(
                             e,
                             inductive_idx,
@@ -299,6 +297,11 @@ pub struct CtorParam {
 }
 
 impl CtorParam {
+    /// Returns whether the parameter type is the inductive type family being defined.
+    fn is_self(&self) -> bool {
+        self.tele.0.is_empty() && matches!(&self.last, CtorParamLast::This { .. })
+    }
+
     /// Validates the constructor parameter type and returns a value that represents it.
     fn validate(
         &self,
