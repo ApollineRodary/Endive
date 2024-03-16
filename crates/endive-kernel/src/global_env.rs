@@ -3,7 +3,7 @@ use crate::{Error, InductiveTypeFamily};
 /// Global environment, which stores inducive type families.
 pub struct GlobalEnv {
     /// Inductive type families.
-    inductives: Vec<InductiveTypeFamily>,
+    pub(crate) inductives: Vec<InductiveTypeFamily>,
 }
 
 impl GlobalEnv {

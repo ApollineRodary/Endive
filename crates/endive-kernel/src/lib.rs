@@ -150,6 +150,7 @@ pub enum Tm {
 pub enum Error {
     IxOverflow,
     TyMismatch,
+    InductiveOutOfBound,
 }
 
 impl Tm {
@@ -202,17 +203,16 @@ impl Tm {
                 motive,
                 cases,
                 val,
-            } => Ok(Val::Induction {
-                inductive_idx: *inductive_idx,
-                inductive_args: inductive_args
+            } => {
+                let inductive_args = inductive_args
                     .iter()
                     .map(|arg| arg.eval(e, c))
-                    .collect::<Result<_, _>>()?,
-                motive: Box::new(Closure {
+                    .collect::<Result<_, _>>()?;
+                let motive = Closure {
                     body: (**motive).clone(),
                     c: c.clone(),
-                }),
-                cases: cases
+                };
+                let cases = cases
                     .iter()
                     .map(|case| {
                         if let Some(param_count) = NonZeroUsize::new(case.param_count) {
@@ -227,9 +227,11 @@ impl Tm {
                             Ok(CaseVal::Constant(case.body.eval(e, c)?))
                         }
                     })
-                    .collect::<Result<_, _>>()?,
-                val: Box::new(val.eval(e, c)?),
-            }),
+                    .collect::<Result<_, _>>()?;
+                let val = val.eval(e, c)?;
+                let inductive = e.inductives.get(*inductive_idx).ok_or(Error::InductiveOutOfBound)?;
+                inductive.induction_principle(e, *inductive_idx, inductive_args, motive, cases, val)
+            }
             Tm::OldFix { ty, ctors } => Ok(Val::OldFix {
                 ty: ty.eval(e, c)?.into(),
                 ctors: ctors
