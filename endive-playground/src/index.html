@@ -28,16 +28,21 @@ Endive generated code goes here</textarea>-->
       <div id="mathDisplayDiv" style="display: none"></div>
     </main>
     <div class="bottom_menu">
-      <div class="Button footer_button pressed" id="automatic">
-        Vérification automatique
-      </div>
-      <div class="Button footer_button" style="display: none" id="verifyproof">
-        Vérifier la preuve
+      <div>
+        <div class="Button footer_button pressed" id="toggleAutomaticVerif">
+          Vérification automatique
+        </div>
+        <div
+          class="Button footer_button"
+          style="display: none"
+          id="verifyProof"
+        >
+          Vérifier la preuve
+        </div>
       </div>
       <div class="Button footer_button" id="toggleMathDisplay">
         Math display
       </div>
-
     </div>
     <script>
       MathJax = {
