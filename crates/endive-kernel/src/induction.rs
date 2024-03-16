@@ -159,13 +159,83 @@ impl InductiveTypeFamily {
         cases: Vec<CaseVal>,
         val: Val,
     ) -> Result<Val, Error> {
-        Ok(Val::Induction {
-            inductive_idx,
-            inductive_args,
-            motive: Box::new(motive),
-            cases,
-            val: Box::new(val),
-        })
+        let Val::Ctor {
+            inductive_idx: ctor_inductive_idx,
+            ctor_idx,
+            ctor_args,
+            ..
+        } = &val
+        else {
+            return Ok(Val::Induction {
+                inductive_idx,
+                inductive_args,
+                motive: Box::new(motive),
+                cases,
+                val: Box::new(val),
+            });
+        };
+        if *ctor_inductive_idx != inductive_idx || cases.len() != self.ctors.len() {
+            return Ok(Val::Induction {
+                inductive_idx,
+                inductive_args,
+                motive: Box::new(motive),
+                cases,
+                val: Box::new(val),
+            });
+        }
+        let Some(ctor) = self.ctors.get(*ctor_idx) else {
+            return Ok(Val::Induction {
+                inductive_idx,
+                inductive_args,
+                motive: Box::new(motive),
+                cases,
+                val: Box::new(val),
+            });
+        };
+        if ctor_args.len() != ctor.params.len() {
+            return Ok(Val::Induction {
+                inductive_idx,
+                inductive_args,
+                motive: Box::new(motive),
+                cases,
+                val: Box::new(val),
+            });
+        }
+        let case = &cases[*ctor_idx];
+        match case {
+            CaseVal::Constant(val) => Ok(val.clone()),
+            CaseVal::Closure { param_count, body } => {
+                let mut c = body.c.clone();
+                let mut expected_param_count = 0;
+                for (ctor_arg, ctor_param) in ctor_args.iter().zip(ctor.params.iter()) {
+                    let is_induction_hypothesis = ctor_param.tele.0.is_empty()
+                        && matches!(ctor_param.last, CtorParamLast::This { .. });
+                    if is_induction_hypothesis {
+                        c = c.push(self.induction_principle(
+                            e,
+                            inductive_idx,
+                            inductive_args.clone(),
+                            motive.clone(),
+                            cases.clone(),
+                            ctor_arg.clone(),
+                        )?);
+                        expected_param_count += 1;
+                    }
+                    c = c.push(ctor_arg.clone());
+                    expected_param_count += 1;
+                }
+                if param_count.get() != expected_param_count {
+                    return Ok(Val::Induction {
+                        inductive_idx,
+                        inductive_args,
+                        motive: Box::new(motive),
+                        cases,
+                        val: Box::new(val),
+                    });
+                }
+                body.body.eval(e, &c)
+            }
+        }
     }
 
     /// Validates the inductive type family.

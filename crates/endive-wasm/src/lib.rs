@@ -287,7 +287,9 @@ fn kernel_error_to_js_error(err: endive_kernel::Error) -> JsValue {
     match err {
         endive_kernel::Error::IxOverflow => Error::new("Index overflow").into(),
         endive_kernel::Error::TyMismatch => Error::new("Type mismatch").into(),
-        endive_kernel::Error::InductiveOutOfBound => Error::new("Inductive index out of bounds").into(),
+        endive_kernel::Error::InductiveOutOfBound => {
+            Error::new("Inductive index out of bounds").into()
+        }
     }
 }
 

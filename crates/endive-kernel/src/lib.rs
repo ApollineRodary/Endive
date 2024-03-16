@@ -229,7 +229,10 @@ impl Tm {
                     })
                     .collect::<Result<_, _>>()?;
                 let val = val.eval(e, c)?;
-                let inductive = e.inductives.get(*inductive_idx).ok_or(Error::InductiveOutOfBound)?;
+                let inductive = e
+                    .inductives
+                    .get(*inductive_idx)
+                    .ok_or(Error::InductiveOutOfBound)?;
                 inductive.induction_principle(e, *inductive_idx, inductive_args, motive, cases, val)
             }
             Tm::OldFix { ty, ctors } => Ok(Val::OldFix {
