@@ -27,6 +27,9 @@
       <div class="Submenu" id="and" onclick="Show_Hide('and')">
         Constructeur 'et'
       </div>
+      <div class="Submenu" id="verif" onclick="Show_Hide('verif')">
+        La vérification
+      </div>
     </div>
     <div class="Content">
       <div class="BoxContent" id="intro_c">
@@ -49,6 +52,9 @@
           du tutoriel. Bonne découverte !
         </p>
         <img src="images/logot.png" id="endive" width="150" height="140" />
+        <div class="Submenu" style="padding-left:10px; padding-right:10px"; onclick="Show_Hide('fonc')">
+          Découvrir les fonctionnalités
+        </div>
       </div>
       <div class="BoxContent" id="fonc_c" style="display: none">
         <p>Voici à quoi ressemble la page lorsque vous arrivez sur Endive !</p>
@@ -119,6 +125,10 @@
           "Mathématiques".
         </p>
         Insérer photo avec preuve latex
+
+        <div class="Submenu" style="padding-left:10px; padding-right:10px"; onclick="Show_Hide('bloc')">
+          En apprendre plus sur les blocs
+        </div>
       </div>
 
       <div class="BoxContent" id="bloc_c" style="display: none">
@@ -183,6 +193,9 @@
           Des utilisations concrètes de ces blocs seront présentées au chapitre
           suivant.
         </p>
+        <div class="Submenu" style="padding-left:10px; padding-right:10px"; onclick="Show_Hide('imp')">
+          Découvrir l'implication
+        </div>
       </div>
 
       <div class="BoxContent" id="imp_c" style="display: none">
@@ -235,16 +248,43 @@
           Et voilà, vous avez désormais tous les outils nécessaires pour faire
           de belles preuves d'énoncés à base d'implication !
         </p>
+        <div class="Submenu" style="padding-left:10px; padding-right:10px"; onclick="Show_Hide('verif')">
+          Découvrir la vérification
+        </div>
       </div>
       <div class="BoxContent" id="or_c" style="display: none">
         <p>
           Contenu à venir !
+          <div class="Submenu" style="padding-left:10px; padding-right:10px"; onclick="Show_Hide('intro')">
+            Revenir à l'accueil
+          </div>
         </p>
       </div>
       <div class="BoxContent" id="and_c" style="display: none">
         <p>
           Contenu à venir !
+          <div class="Submenu" style="padding-left:10px; padding-right:10px"; onclick="Show_Hide('intro')">
+            Revenir à l'accueil
+          </div>
         </p>
+      </div>
+      <div class="BoxContent" id="verif_c" style="display: none">
+<p>
+  Endive est un assistant de preuve. Cela signifie qu'il vérifie à chaque étape que votre preuve est bien formulée, valide, et que vous prouvez bien ce que vous aviez annoncé. 
+</p>
+<p>
+  Par défaut, la vérification automatique est activée. Cela signifie qu'Endive vérifie en permanence que tout est correct. Si ce n'est pas le cas, le bloc s'affiche en rouge, et Endive vous propose des petits messages d'explication pour comprendre ce qui ne va pas. Pas de panique si le bloc est rouge dès le début, cela signifie juste que vous n'avez pas fini d'écrire votre énoncé.
+</p>
+  Insérer image de bloc rouge
+<p>
+  Lorsque tout est bon, votre bloc s'illumine en vert, bravo !
+</p>
+  Insérer image de bloc vert
+
+
+          <a class="Submenu" style="padding-left:10px; padding-right:10px"; href="//editor.endiveonline.fr/">
+            Tester moi-même !
+          </a>
       </div>
     </div>
   </body>
@@ -255,12 +295,14 @@
 
       let to_show = document.getElementById(param_c);
 
-      intro_c.style.display = "none";
-      fonc_c.style.display = "none";
-      bloc_c.style.display = "none";
-      imp_c.style.display = "none";
-      or_c.style.display = "none";
-      and_c.style.display = "none";
+      sections = ["intro", "fonc", "bloc", "imp", "or", "and", "verif"];
+      for (let i = 0; i < sections.length; i++) {
+        let section = sections[i] + "_c";
+        if (section != param_c) {
+          let to_hide = document.getElementById(section);
+          to_hide.style.display = "none";
+        }
+      }
 
       to_show.style.display = "flex";
       window.scroll(0, 0);
