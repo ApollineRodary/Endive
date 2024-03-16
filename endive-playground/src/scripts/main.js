@@ -1,5 +1,5 @@
 import { endiveGenerator } from "./generators/endive.js";
-import { latexGenerator } from "./generators/latex.js";
+import { htmlGenerator } from "./generators/html.js";
 import { verifyTheorems } from "./verify.js";
 
 globalThis.automaticVerif = true;
@@ -18,10 +18,10 @@ function updateCode(event) {
   if (workspace.isDragging()) return;
   if (!updateCodeEvents.has(event.type)) return;
 
-  const latexCode = latexGenerator.workspaceToCode(workspace);
-  const latexDiv = document.getElementById("latexcodearea");
-  latexDiv.innerHTML = latexCode;
-  MathJax.typesetPromise([latexDiv]);
+  const htmlCode = htmlGenerator.workspaceToCode(workspace);
+  const mathDisplayDiv = document.getElementById("mathDisplayDiv");
+  mathDisplayDiv.innerHTML = htmlCode;
+  MathJax.typesetPromise([mathDisplayDiv]);
 
   if (globalThis.automaticVerif) verifyProofs();
 
@@ -133,17 +133,17 @@ defaultVariableNames.forEach(function (variableName) {
   workspace.createVariable(variableName);
 });
 
-function togglelatex() {
-  var x = document.getElementById("latexcodearea");
+function toggleMathDisplay() {
+  var x = document.getElementById("mathDisplayDiv");
   if (x.style.display === "none") {
     x.style.display = "block";
     document.getElementById("blocklyDiv").style.width = "70%";
-    document.getElementById("togglelatex").classList.add("pressed");
+    document.getElementById("toggleMathDisplay").classList.add("pressed");
     resize();
   } else {
     x.style.display = "none";
     document.getElementById("blocklyDiv").style.width = "100%";
-    document.getElementById("togglelatex").classList.remove("pressed");
+    document.getElementById("toggleMathDisplay").classList.remove("pressed");
     resize();
   }
 }

@@ -1,0 +1,17 @@
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+.cm-content {
+  font-size: 25px;
+}
+
+.cm-editor .cm-gutters {
+  background-color: #fff;
+  border-right: 0;
+}
+
+.cm-editor .cm-gutterElement {
+  font-size: 20px;
+}
+/*# sourceMappingURL=endive.6a6a173c.css.map */

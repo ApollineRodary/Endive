@@ -1,0 +1,1 @@
+{"mappings":"AAAA,IAAI,OAAO;IACT,MAAM;IACN,OAAO,CAAC;AACV;AAEA,cAAc;IAAC;QAAC;QAAQ;KAAK;CAAC","sources":["src/scripts/definitions.js"],"sourcesContent":["let prop = {\n  type: \"universe\",\n  level: {},\n};\n\ncustomTypes = [[\"Prop\", prop]];\n"],"names":[],"version":3,"file":"index.19bf1e23.js.map","sourceRoot":"/__parcel_source_root/"}

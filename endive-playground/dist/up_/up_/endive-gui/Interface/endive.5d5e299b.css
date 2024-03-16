@@ -1,0 +1,126 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+.example-card {
+  background-color: #add8e6;
+  border-radius: 10px;
+  flex-direction: column;
+  width: fit-content;
+  margin: 10px;
+  padding: 4px 10px 10px;
+  display: flex;
+}
+
+.cm-editor {
+  height: 100%;
+  margin: 40px 60px 40px 40px;
+}
+
+em {
+  font-style: normal;
+  text-decoration: underline;
+}
+
+#header {
+  cursor: pointer;
+  z-index: 2;
+  padding: 5px;
+  position: fixed;
+  top: 10px;
+  right: 10px;
+}
+
+.menu {
+  opacity: 0;
+  visibility: hidden;
+  z-index: 1;
+  background-color: #dcdcdc;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transition: visibility .3s linear, opacity .3s linear;
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.menu-open {
+  visibility: visible;
+  opacity: 1;
+}
+
+#main-content {
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+#left-panel {
+  flex: 1;
+  padding: 20px;
+}
+
+#buttons {
+  text-align: center;
+  background-color: #fff;
+  height: 100%;
+  padding-top: 150px;
+  padding-left: 20px;
+  padding-right: 20px;
+  display: inline-flex;
+}
+
+.button {
+  text-align: center;
+  color: #333;
+  border-radius: 5px;
+  width: 200px;
+  margin: 20px 10px 10px;
+  padding: 10px 20px;
+  font: 20px Roboto;
+  text-decoration: none;
+  transition: background-color .3s;
+  display: block;
+}
+
+.button:hover {
+  font-weight: bold;
+}
+
+.hint-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+.hb {
+  color: #fff;
+  cursor: pointer;
+  background-color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 16px;
+  display: none;
+  box-shadow: 0 0 10px #00000080;
+}
+
+#suggest_box {
+  overflow-wrap: break-word;
+  text-align: justify;
+  max-width: 30%;
+  min-height: 26px;
+  padding: 4px;
+  font-family: monospace;
+  font-size: 18px;
+  display: none;
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  box-shadow: 0 0 10px #00000080;
+}
+/*# sourceMappingURL=endive.5d5e299b.css.map */
