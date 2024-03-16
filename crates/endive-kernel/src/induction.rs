@@ -281,7 +281,7 @@ pub struct Ctor {
     /// The indices for the constructed value.
     ///
     /// For example, if the inductive type family is `F` with parameters `p : A, q : B` and indices
-    /// `i : I, j : J`, then constructor `C : (p : A) -> (q : B) -> (i : I) -> C i t`, then
+    /// `i : I, j : J`, then for constructor `C : (p : A) -> (q : B) -> (i : I) -> C i t`,
     /// `indices` contains the terms `i` and `t`.
     pub indices: Vec<Tm>,
 }
@@ -371,8 +371,8 @@ pub struct Case {
 /// A case in an application of the induction principle, with the body represented as a closure.
 #[derive(Clone, Debug)]
 pub(crate) enum CaseVal {
-    /// A case that is directly a value, for example when the corresponding constructor does not
-    /// take any argument.
+    /// A case that is directly a value when the corresponding constructor does not take any
+    /// argument.
     Constant(Val),
 
     /// A case that is a closure.
