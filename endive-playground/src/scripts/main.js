@@ -8,18 +8,21 @@ const updateCodeEvents = new Set([
   Blockly.Events.BLOCK_DELETE,
   Blockly.Events.BLOCK_MOVE,
 ]);
+export function resize() {
+  Blockly.svgResize(workspace);
+}
 
 function updateCode(event) {
   if (workspace.isDragging()) return;
   if (!updateCodeEvents.has(event.type)) return;
 
   const latexCode = latexGenerator.workspaceToCode(workspace);
-  const latexDiv = document.getElementById('latexcodearea')
+  const latexDiv = document.getElementById("latexcodearea");
   latexDiv.innerHTML = latexCode;
   MathJax.typesetPromise([latexDiv]);
 
-  const endiveCode = endiveGenerator.workspaceToCode(workspace);
-  document.getElementById("endivecodearea").value = endiveCode;
+  //const endiveCode = endiveGenerator.workspaceToCode(workspace);
+  //document.getElementById("endivecodearea").value = endiveCode;
 }
 
 const verifyProofs = function (button) {
@@ -115,5 +118,23 @@ let defaultVariableNames = ["x", "y", "z", "P", "Q"];
 defaultVariableNames.forEach(function (variableName) {
   workspace.createVariable(variableName);
 });
+
+function togglelatex() {
+  var x = document.getElementById("latexcodearea");
+  if (x.style.display === "none") {
+    x.style.display = "block";
+    document.getElementById("blocklyDiv").style.width = "70%";
+    document.getElementById("togglelatex").classList.add("pressed");
+    resize();
+  } else {
+    x.style.display = "none";
+    document.getElementById("blocklyDiv").style.width = "100%";
+    document.getElementById("togglelatex").classList.remove("pressed");
+    resize();
+  }
+}
+
+let button = document.getElementById("togglelatex");
+button.addEventListener("click", togglelatex);
 
 endiveGenerator.init(workspace);

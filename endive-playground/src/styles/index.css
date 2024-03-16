@@ -1,3 +1,97 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  font-family: "Roboto", sans-serif;
+  font-size: 16px;
+  height: 100vh;
+  --menu-height: 12vh;
+  --footer-height: 7vh;
+  font-family: monospace;
+}
+h1 {
+  margin: 20px;
+  color: white;
+
+  font-size: 40px;
+}
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.top_menu {
+  width: 100vw;
+  height: var(--menu-height);
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(45deg, #4fc0d6, #5ad64f);
+  background-size: 200% 200%;
+  animation: gradientAnimation 20s ease infinite;
+  padding-right: 4em;
+  box-sizing: border-box;
+  box-shadow: 0px 0px 20px grey;
+  z-index: 2;
+}
+.bottom_menu {
+  background-color: white;
+  position: fixed;
+  min-height: var(--footer-height);
+  z-index: 100;
+  box-sizing: content-box;
+  left: 0;
+  bottom: 0;
+  width: 100vw;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-content: center;
+  bottom: 0;
+}
+
+.Button {
+  background-color: white;
+  color: black;
+  border: 2px solid black;
+  text-decoration: none;
+  padding: 20px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  width: fit-content;
+}
+.footer_button {
+  margin: 10px;
+}
+.pressed {
+  background-color: lightgreen;
+}
+#blocklyDiv {
+  width: 100%;
+}
+#latexcodearea {
+  width: 30%;
+  padding: 20px;
+}
+
+main {
+  display: flex;
+  flex-direction: row;
+  height: calc(100% - var(--menu-height) - var(--footer-height));
+  bottom: 0;
+}
+
 .mode-blockly {
   display: block;
 }

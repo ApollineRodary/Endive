@@ -7,8 +7,6 @@
 
     <title>Endive en dev</title>
 
-
-
     <link
       rel="stylesheet"
       href="https://code.getmdl.io/1.2.1/material.indigo-pink.min.css"
@@ -17,25 +15,34 @@
   </head>
 
   <body>
+    <div class="top_menu">
+      <h1>Endive Playground</h1>
+      <a class="Button" href="../../endive-gui/Interface/tutorial.html"
+        >Go to the tutorial</a
+      >
+    </div>
     <main>
-      <div id="blocklyDiv" style="height: 50vh; width: 99%"></div>
-
-      <textarea id="endivecodearea" style="height: 45vh; width: 49.3%">
-Endive generated code goes here</textarea
-      >
-      <div id="latexcodearea" style="height: 45vh; width: 49.3%">
-LaTeX generated code goes here</div
-      >
+      <div id="blocklyDiv"></div>
+      <!-- <textarea id="endivecodearea" style="height: 45vh; width: 49.3%">
+Endive generated code goes here</textarea>-->
+      <div id="latexcodearea" style="display: none"></div>
     </main>
-
+    <div class="bottom_menu">
+      <div class="Button footer_button" id="togglelatex">Latex</div>
+    </div>
     <script>
       MathJax = {
         tex: {
-          inlineMath: [['$', '$']]
-        }
+          inlineMath: [["$", "$"]],
+        },
       };
     </script>
-    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script
+      type="text/javascript"
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
     <script src="https://unpkg.com/blockly"></script>
     <script src="scripts/definitions.js"></script>
     <script src="scripts/blocks.js"></script>

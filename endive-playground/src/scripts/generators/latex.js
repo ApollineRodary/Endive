@@ -1,4 +1,3 @@
-
 export const latexGenerator = new Blockly.Generator("Endive");
 
 latexGenerator.RESERVED_WORDS_ = "let,lemma,example,ohno";
@@ -22,16 +21,14 @@ latexGenerator["theorem"] = function (block, generator) {
   var proofBlock = block.getInput("PROOF").connection.targetBlock();
 
   while (proofBlock) {
-    var tactic =
-      generator.blockToCode(proofBlock).replace(/^/gm, "  ") +
-      "\n";
+    var tactic = generator.blockToCode(proofBlock).replace(/^/gm, "  ") + "\n";
     proof += tactic;
     proofBlock = proofBlock.getNextBlock();
   }
   if (statement === "") {
-    return ""
+    return "";
   }
-  const code = `Théorème : $${statement}$<br/> Proof : <br/>${proof} <br/>`;
+  const code = `Théorème : $${statement}$<br/><br/> Preuve : <br/>${proof} <br/>`;
   return code;
 };
 
@@ -43,19 +40,16 @@ latexGenerator["lemma"] = function (block, generator) {
   var proofBlock = block.getInput("PROOF").connection.targetBlock();
 
   while (proofBlock) {
-    var tactic =
-      generator.blockToCode(proofBlock).replace(/^/gm, "  ") +
-      "\n";
+    var tactic = generator.blockToCode(proofBlock).replace(/^/gm, "  ") + "\n";
     alert(tactic);
     proof += tactic;
     proofBlock = proofBlock.getNextBlock();
   }
 
   if (statement === "") {
-
   }
 
-  const code = `Lemme ${name} : $${statement}$<br/> Proof : <br/>${proof} <br/>`;
+  const code = `Lemme ${name} : $${statement}$<br/><br/> Preuve : <br/>${proof} <br/>`;
   return code;
 };
 

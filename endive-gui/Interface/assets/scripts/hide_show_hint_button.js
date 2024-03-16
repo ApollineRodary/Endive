@@ -21,4 +21,3 @@ function set_suggestion(text) {
 }
 
 jQuery("#hb_suggest").hover(in_hb, out_hb);
-
