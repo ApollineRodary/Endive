@@ -388,8 +388,63 @@ impl Tm {
                     indices,
                 })
             }
-            Tm::Induction { .. } => {
-                todo!()
+            Tm::Induction {
+                inductive_idx,
+                inductive_args,
+                motive,
+                cases,
+                val,
+            } => {
+                let inductive = e
+                    .inductives
+                    .get(*inductive_idx)
+                    .ok_or(Error::InductiveOutOfBound)?;
+
+                let (inductive_args, _inductive_c) = inductive.params.validate_apply(
+                    e,
+                    Rc::new(Ctx::Nil),
+                    &inductive_args,
+                    c,
+                    tc,
+                )?;
+
+                let (motive_c, motive_tc) = inductive.add_motive_telescope_to_ctx(
+                    e,
+                    *inductive_idx,
+                    inductive_args.clone(),
+                    c.clone(),
+                    tc.clone(),
+                )?;
+
+                // Check that the type of the motive is of the form `Πx1. ... Πxk.(F x1 ... xk) → U(l)`.
+                match motive.ty_internal(e, &motive_c, &motive_tc)? {
+                    Val::U(_) => {}
+                    _ => return Err(Error::TyMismatch),
+                }
+
+                let val_ty = val.ty_internal(e, c, tc)?;
+
+                // Construct the output type of the induction by applying the motive to the value.
+                match val_ty {
+                    Val::Inductive { idx, args, indices } if idx == *inductive_idx => {
+                        // Verify that the arguments to the inductive type family are the same as the
+                        // ones given to the induction.
+                        for (arg, val_arg) in inductive_args.iter().zip(args.iter()) {
+                            if !arg.beta_eq(e, l, val_arg, l)? {
+                                return Err(Error::TyMismatch);
+                            }
+                        }
+
+                        let mut motive_c = c.clone();
+                        for index in indices {
+                            motive_c = motive_c.push(index);
+                        }
+                        motive_c = motive_c.push(val.eval(e, c)?);
+
+                        motive.eval(e, &motive_c)
+                    }
+                    _ => Err(Error::TyMismatch),
+                }
             }
             Tm::OldFix { ty, ctors } => {
                 ty.ty_internal(e, c, tc)?;
