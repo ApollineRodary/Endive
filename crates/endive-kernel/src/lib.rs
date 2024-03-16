@@ -150,8 +150,34 @@ impl Tm {
             }
             Tm::Pi(abs) => Ok(Val::Pi(Box::new(abs.eval(c)?))),
             Tm::U(n) => Ok(Val::U(n.clone())),
-            Tm::Inductive { .. } => todo!(),
-            Tm::Ctor { .. } => todo!(),
+            Tm::Inductive { idx, args, indices } => Ok(Val::Inductive {
+                idx: *idx,
+                args: args
+                    .iter()
+                    .map(|arg| arg.eval(c))
+                    .collect::<Result<_, _>>()?,
+                indices: indices
+                    .iter()
+                    .map(|index| index.eval(c))
+                    .collect::<Result<_, _>>()?,
+            }),
+            Tm::Ctor {
+                inductive_idx,
+                inductive_args,
+                ctor_idx,
+                ctor_args,
+            } => Ok(Val::Ctor {
+                inductive_idx: *inductive_idx,
+                inductive_args: inductive_args
+                    .iter()
+                    .map(|arg| arg.eval(c))
+                    .collect::<Result<_, _>>()?,
+                ctor_idx: *ctor_idx,
+                ctor_args: ctor_args
+                    .iter()
+                    .map(|arg| arg.eval(c))
+                    .collect::<Result<_, _>>()?,
+            }),
             Tm::OldFix { ty, ctors } => Ok(Val::OldFix {
                 ty: ty.eval(c)?.into(),
                 ctors: ctors
@@ -574,6 +600,21 @@ enum Val {
         indices: Vec<Val>,
     },
 
+    /// Constructor of an inductive type.
+    Ctor {
+        /// Index of the inductive type family in the global environment.
+        inductive_idx: usize,
+
+        /// Arguments to the inductive type family.
+        inductive_args: Vec<Val>,
+
+        /// Index of the constructor.
+        ctor_idx: usize,
+
+        /// Arguments to the constructor.
+        ctor_args: Vec<Val>,
+    },
+
     /// Inductive type family.
     OldFix {
         /// Type.
@@ -630,6 +671,23 @@ impl Val {
                 indices: indices
                     .iter()
                     .map(|index| index.reify(l))
+                    .collect::<Result<_, _>>()?,
+            }),
+            Val::Ctor {
+                inductive_idx,
+                inductive_args,
+                ctor_idx,
+                ctor_args,
+            } => Ok(Tm::Ctor {
+                inductive_idx: *inductive_idx,
+                inductive_args: inductive_args
+                    .iter()
+                    .map(|arg| arg.reify(l))
+                    .collect::<Result<_, _>>()?,
+                ctor_idx: *ctor_idx,
+                ctor_args: ctor_args
+                    .iter()
+                    .map(|arg| arg.reify(l))
                     .collect::<Result<_, _>>()?,
             }),
             Val::OldFix { ty, ctors } => Ok(Tm::OldFix {
@@ -821,6 +879,20 @@ impl Val {
                 }
                 for index in indices {
                     has_var = has_var || index.has_var(l, var_l)?;
+                }
+                Ok(has_var)
+            }
+            Val::Ctor {
+                inductive_args,
+                ctor_args,
+                ..
+            } => {
+                let mut has_var = false;
+                for arg in inductive_args {
+                    has_var = has_var || arg.has_var(l, var_l)?;
+                }
+                for arg in ctor_args {
+                    has_var = has_var || arg.has_var(l, var_l)?;
                 }
                 Ok(has_var)
             }
