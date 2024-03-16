@@ -16,9 +16,9 @@
 
   <body>
     <div class="top_menu">
-      <h1>Endive Playground</h1>
+      <h1>Endive Blockly</h1>
       <a class="Button" href="../../endive-gui/Interface/tutorial.html"
-        >Go to the tutorial</a
+        >Voir le tutoriel</a
       >
     </div>
     <main>
@@ -28,7 +28,13 @@ Endive generated code goes here</textarea>-->
       <div id="latexcodearea" style="display: none"></div>
     </main>
     <div class="bottom_menu">
-      <div class="Button footer_button" id="togglelatex">Latex</div>
+      <div class="Button footer_button pressed" id="automatic">
+        Vérification automatique
+      </div>
+      <div class="Button footer_button" style="display: none" id="verifyproof">
+        Vérifier la preuve
+      </div>
+      <div class="Button footer_button" id="togglelatex">Mathématiques</div>
     </div>
     <script>
       MathJax = {

@@ -44,6 +44,7 @@ h1 {
 }
 .bottom_menu {
   background-color: white;
+  border-top: gainsboro 1px solid;
   position: fixed;
   min-height: var(--footer-height);
   z-index: 100;
@@ -73,6 +74,7 @@ h1 {
 }
 .footer_button {
   margin: 10px;
+  cursor: pointer;
 }
 .pressed {
   background-color: lightgreen;

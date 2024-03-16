@@ -2,6 +2,8 @@ import { endiveGenerator } from "./generators/endive.js";
 import { latexGenerator } from "./generators/latex.js";
 import { verifyTheorems } from "./verify.js";
 
+globalThis.automaticVerif = true;
+
 const updateCodeEvents = new Set([
   Blockly.Events.BLOCK_CHANGE,
   Blockly.Events.BLOCK_CREATE,
@@ -20,6 +22,8 @@ function updateCode(event) {
   const latexDiv = document.getElementById("latexcodearea");
   latexDiv.innerHTML = latexCode;
   MathJax.typesetPromise([latexDiv]);
+
+  if (globalThis.automaticVerif) verifyProofs();
 
   //const endiveCode = endiveGenerator.workspaceToCode(workspace);
   //document.getElementById("endivecodearea").value = endiveCode;
@@ -105,6 +109,16 @@ let toolbox = {
 let workspace = Blockly.inject("blocklyDiv", {
   toolbox: toolbox,
   scrollbars: false,
+  zoom: {
+    controls: true,
+    wheel: true,
+    startScale: 1.0,
+    maxScale: 3,
+    minScale: 0.3,
+    scaleSpeed: 1.05,
+    pinch: true,
+  },
+
   horizontalLayout: false,
   toolboxPosition: "start",
 });
@@ -134,7 +148,20 @@ function togglelatex() {
   }
 }
 
-let button = document.getElementById("togglelatex");
-button.addEventListener("click", togglelatex);
+function toggleautomatic() {
+  if (globalThis.automaticVerif) {
+    document.getElementById("automatic").classList.remove("pressed");
+    document.getElementById("verifyproof").style.display = "block";
+  } else {
+    document.getElementById("automatic").classList.add("pressed");
+    document.getElementById("verifyproof").style.display = "none";
+  }
+  globalThis.automaticVerif = !globalThis.automaticVerif;
+}
+
+document.getElementById("togglelatex").addEventListener("click", togglelatex);
+document.getElementById("verifyproof").addEventListener("click", verifyProofs);
+document.getElementById("automatic").addEventListener("click", toggleautomatic);
 
 endiveGenerator.init(workspace);
+latexGenerator.init(workspace);

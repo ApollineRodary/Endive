@@ -309,7 +309,7 @@ export async function verifyTheorems(workspace) {
     if (verifyTheorem(block)) {
       addGlow(block, "green", "#00ff00");
     } else {
-      addGlow(block, "red", "#ff0000");
+      //addGlow(block, "red", "#ff0000");
     }
   }
 }
