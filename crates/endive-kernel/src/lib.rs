@@ -339,31 +339,14 @@ impl Tm {
             Tm::U(u) => Ok(Val::U(u.clone() + 1)),
             Tm::Inductive { idx, args, indices } => {
                 let inductive = e.inductives.get(*idx).ok_or(Error::InductiveOutOfBound)?;
-
-                let params_and_indices = Telescope(
+                let (_args, inductive_c) =
                     inductive
                         .params
-                        .0
-                        .iter()
-                        .cloned()
-                        .chain(inductive.indices.0.iter().cloned())
-                        .collect::<Vec<_>>(),
-                );
-
-                let args_and_indices = args
-                    .iter()
-                    .cloned()
-                    .chain(indices.iter().cloned())
-                    .collect::<Vec<_>>();
-
-                params_and_indices.validate_apply(
-                    e,
-                    &Rc::new(Ctx::Nil),
-                    &args_and_indices,
-                    c,
-                    tc,
-                )?;
-
+                        .validate_apply(e, Rc::new(Ctx::Nil), &args, c, tc)?;
+                let (_indices, _inductive_c) =
+                    inductive
+                        .indices
+                        .validate_apply(e, inductive_c, indices, c, tc)?;
                 Ok(Val::U(inductive.univ_lvl.clone()))
             }
             Tm::Ctor {
@@ -376,16 +359,25 @@ impl Tm {
                     .inductives
                     .get(*inductive_idx)
                     .ok_or(Error::InductiveOutOfBound)?;
-
                 let ctor = inductive
                     .ctors
                     .get(*ctor_idx)
                     .ok_or(Error::CtorOutOfBound)?;
 
-                let inductive_args = inductive.params.validate_apply_and_return_evaluated_args(
+                let (inductive_args, inductive_c) = inductive.params.validate_apply(
                     e,
-                    &Rc::new(Ctx::Nil),
+                    Rc::new(Ctx::Nil),
                     &inductive_args,
+                    c,
+                    tc,
+                )?;
+                let indices = ctor.validate_apply(
+                    e,
+                    *inductive_idx,
+                    &inductive_args,
+                    &inductive.indices,
+                    inductive_c,
+                    &ctor_args,
                     c,
                     tc,
                 )?;
@@ -393,7 +385,7 @@ impl Tm {
                 Ok(Val::Inductive {
                     idx: *inductive_idx,
                     args: inductive_args,
-                    indices: todo!(),
+                    indices,
                 })
             }
             Tm::Induction { .. } => {
