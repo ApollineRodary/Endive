@@ -85,7 +85,7 @@ fn js_tm_to_kernel_tm(value: &JsValue) -> Result<Tm, JsValue> {
                 .iter()
                 .map(|ctor| js_tm_to_kernel_tm(&ctor))
                 .collect::<Result<Vec<_>, _>>()?;
-            Ok(Tm::Fix {
+            Ok(Tm::OldFix {
                 ty: Box::new(ty),
                 ctors,
             })
@@ -102,7 +102,7 @@ fn js_tm_to_kernel_tm(value: &JsValue) -> Result<Tm, JsValue> {
                 .iter()
                 .map(|ctor| js_tm_to_kernel_tm(&ctor))
                 .collect::<Result<Vec<_>, _>>()?;
-            Ok(Tm::Ctor {
+            Ok(Tm::OldCtor {
                 fix: Box::new(fix),
                 i,
                 args,
@@ -117,7 +117,7 @@ fn js_tm_to_kernel_tm(value: &JsValue) -> Result<Tm, JsValue> {
                 .iter()
                 .map(|ctor| js_tm_to_kernel_tm(&ctor))
                 .collect::<Result<Vec<_>, _>>()?;
-            Ok(Tm::Ind {
+            Ok(Tm::OldInd {
                 val: Box::new(val),
                 motive: Box::new(motive),
                 cases,
@@ -212,7 +212,7 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
             .unwrap();
             obj.into()
         }
-        Tm::Fix { ty, ctors } => {
+        Tm::OldFix { ty, ctors } => {
             let obj = Object::new();
             Reflect::set(
                 &obj,
@@ -228,7 +228,7 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
             Reflect::set(&obj, &JsValue::from_str("constructors"), &ctors).unwrap();
             obj.into()
         }
-        Tm::Ctor { fix, i, args } => {
+        Tm::OldCtor { fix, i, args } => {
             let obj = Object::new();
             Reflect::set(
                 &obj,
@@ -255,7 +255,7 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
             Reflect::set(&obj, &JsValue::from_str("arguments"), &args).unwrap();
             obj.into()
         }
-        Tm::Ind { val, motive, cases } => {
+        Tm::OldInd { val, motive, cases } => {
             let obj = Object::new();
             Reflect::set(
                 &obj,

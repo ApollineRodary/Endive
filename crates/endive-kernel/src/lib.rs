@@ -65,7 +65,7 @@ pub enum Tm {
     U(univ_lvl::Expr),
 
     /// Inductive type family.
-    Fix {
+    OldFix {
         /// Type.
         ty: Box<Tm>,
 
@@ -74,7 +74,7 @@ pub enum Tm {
     },
 
     /// The `i`-th constructor of the inductive type family.
-    Ctor {
+    OldCtor {
         /// The inductive type family.
         fix: Box<Tm>,
 
@@ -86,7 +86,7 @@ pub enum Tm {
     },
 
     /// Principle of induction.
-    Ind {
+    OldInd {
         /// Value on which to perform the induction.
         val: Box<Tm>,
 
@@ -172,14 +172,14 @@ impl Tm {
             }
             Tm::Pi(abs) => Ok(Val::Pi(Box::new(abs.eval(c)?))),
             Tm::U(n) => Ok(Val::U(n.clone())),
-            Tm::Fix { ty, ctors } => Ok(Val::Fix {
+            Tm::OldFix { ty, ctors } => Ok(Val::Fix {
                 ty: ty.eval(c)?.into(),
                 ctors: ctors
                     .iter()
                     .map(|ctor| ctor.eval(c))
                     .collect::<Result<_, _>>()?,
             }),
-            Tm::Ctor { fix, i, args } => Ok(Val::Ctor {
+            Tm::OldCtor { fix, i, args } => Ok(Val::Ctor {
                 fix: Box::new(fix.eval(c)?),
                 i: *i,
                 args: args
@@ -187,7 +187,7 @@ impl Tm {
                     .map(|arg| arg.eval(c))
                     .collect::<Result<_, _>>()?,
             }),
-            Tm::Ind { motive, cases, val } => {
+            Tm::OldInd { motive, cases, val } => {
                 let motive = motive.eval(c)?;
                 let cases = cases
                     .iter()
@@ -272,7 +272,7 @@ impl Tm {
                 Ok(Val::U(ty_u.max(&body_u)))
             }
             Tm::U(u) => Ok(Val::U(u.clone() + 1)),
-            Tm::Fix { ty, ctors } => {
+            Tm::OldFix { ty, ctors } => {
                 ty.ty_internal(e, c, tc)?;
 
                 let ty = ty.clone().eval(c)?;
@@ -325,7 +325,7 @@ impl Tm {
 
                 Ok(ty)
             }
-            Tm::Ctor { fix, i, args } => {
+            Tm::OldCtor { fix, i, args } => {
                 fix.ty_internal(e, c, tc)?;
 
                 let mut ctor = match fix.eval(c)? {
@@ -358,7 +358,7 @@ impl Tm {
 
                 Ok(ctor)
             }
-            Tm::Ind { motive, cases, val } => {
+            Tm::OldInd { motive, cases, val } => {
                 // Part 1: check that the motive is of the form `Πx1. ... Πxk.(F x1 ... xk) → U n`.
 
                 let motive_uncurrified = motive.ty_internal(e, c, tc)?.uncurrify_pi(l)?;
@@ -533,14 +533,14 @@ impl Tm {
                 body: abs.body.unlift(k + 1, by)?,
             }))),
             Tm::U(n) => Ok(Tm::U(n.clone())),
-            Tm::Fix { ty, ctors } => Ok(Tm::Fix {
+            Tm::OldFix { ty, ctors } => Ok(Tm::OldFix {
                 ty: Box::new(ty.unlift(k, by)?),
                 ctors: ctors
                     .iter()
                     .map(|ctor| ctor.unlift(k, by))
                     .collect::<Result<_, _>>()?,
             }),
-            Tm::Ctor { fix, i, args } => Ok(Tm::Ctor {
+            Tm::OldCtor { fix, i, args } => Ok(Tm::OldCtor {
                 fix: Box::new(fix.unlift(k, by)?),
                 i: *i,
                 args: args
@@ -548,7 +548,7 @@ impl Tm {
                     .map(|arg| arg.unlift(k, by))
                     .collect::<Result<_, _>>()?,
             }),
-            Tm::Ind { motive, cases, val } => Ok(Tm::Ind {
+            Tm::OldInd { motive, cases, val } => Ok(Tm::OldInd {
                 motive: Box::new(motive.unlift(k, by)?),
                 cases: cases
                     .iter()
@@ -625,14 +625,14 @@ impl Val {
             Val::App(n, m) => Ok(Tm::App(Box::new(n.reify(l)?), Box::new(m.reify(l)?))),
             Val::Pi(closure) => Ok(Tm::Pi(Box::new(closure.reify(l)?))),
             Val::U(n) => Ok(Tm::U(n.clone())),
-            Val::Fix { ty, ctors } => Ok(Tm::Fix {
+            Val::Fix { ty, ctors } => Ok(Tm::OldFix {
                 ty: Box::new(ty.reify(l)?),
                 ctors: ctors
                     .iter()
                     .map(|ctor| ctor.reify(l))
                     .collect::<Result<_, _>>()?,
             }),
-            Val::Ctor { fix, i, args } => Ok(Tm::Ctor {
+            Val::Ctor { fix, i, args } => Ok(Tm::OldCtor {
                 fix: Box::new(fix.reify(l)?),
                 i: *i,
                 args: args
@@ -640,7 +640,7 @@ impl Val {
                     .map(|arg| arg.reify(l))
                     .collect::<Result<_, _>>()?,
             }),
-            Val::Ind { motive, cases, val } => Ok(Tm::Ind {
+            Val::Ind { motive, cases, val } => Ok(Tm::OldInd {
                 motive: Box::new(motive.reify(l)?),
                 cases: cases
                     .iter()
@@ -982,7 +982,7 @@ mod tests {
     #[test]
     fn induction() {
         // ℕ := μX.[X; X → X]
-        let n = Tm::Fix {
+        let n = Tm::OldFix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
                 Tm::Abs(Box::new(Binding {
@@ -1000,13 +1000,13 @@ mod tests {
         };
 
         // 2 : ℕ
-        let two = Tm::Ctor {
+        let two = Tm::OldCtor {
             fix: Box::new(n.clone()),
             i: 1,
-            args: vec![Tm::Ctor {
+            args: vec![Tm::OldCtor {
                 fix: Box::new(n.clone()),
                 i: 1,
-                args: vec![Tm::Ctor {
+                args: vec![Tm::OldCtor {
                     fix: Box::new(n.clone()),
                     i: 0,
                     args: vec![],
@@ -1015,17 +1015,17 @@ mod tests {
         };
 
         // 3 : ℕ
-        let three = Tm::Ctor {
+        let three = Tm::OldCtor {
             fix: Box::new(n.clone()),
             i: 1,
             args: vec![two.clone()],
         };
 
         // 5 : ℕ
-        let five = Tm::Ctor {
+        let five = Tm::OldCtor {
             fix: Box::new(n.clone()),
             i: 1,
-            args: vec![Tm::Ctor {
+            args: vec![Tm::OldCtor {
                 fix: Box::new(n.clone()),
                 i: 1,
                 args: vec![three.clone()],
@@ -1037,7 +1037,7 @@ mod tests {
             bound_ty: n.clone(),
             body: Tm::Abs(Box::new(Binding {
                 bound_ty: n.clone(),
-                body: Tm::Ind {
+                body: Tm::OldInd {
                     motive: Box::new(Tm::Abs(Box::new(Binding {
                         bound_ty: n.clone(),
                         body: n.clone(),
@@ -1048,7 +1048,7 @@ mod tests {
                             bound_ty: n.clone(),
                             body: Tm::Abs(Box::new(Binding {
                                 bound_ty: n.clone(),
-                                body: Tm::Ctor {
+                                body: Tm::OldCtor {
                                     fix: Box::new(n.clone()),
                                     i: 1,
                                     args: vec![Tm::Var(Ix(0))],
@@ -1111,7 +1111,7 @@ mod tests {
         let e = GlobalEnv::new();
 
         // ℕ := μX.[X; X → X]
-        let n = Tm::Fix {
+        let n = Tm::OldFix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
                 Tm::Abs(Box::new(Binding {
@@ -1132,10 +1132,10 @@ mod tests {
         assert_eq!(n.ty(&e), Ok(Tm::U(univ_lvl::Var(0).into())));
 
         // S 0 : ℕ
-        let one = Tm::Ctor {
+        let one = Tm::OldCtor {
             fix: Box::new(n.clone()),
             i: 1,
-            args: vec![Tm::Ctor {
+            args: vec![Tm::OldCtor {
                 fix: Box::new(n.clone()),
                 i: 0,
                 args: vec![],
@@ -1149,7 +1149,7 @@ mod tests {
         let e = GlobalEnv::new();
 
         // ℕ := μX.[X; X → X]
-        let n = Tm::Fix {
+        let n = Tm::OldFix {
             ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
             ctors: vec![
                 Tm::Abs(Box::new(Binding {
@@ -1171,7 +1171,7 @@ mod tests {
             bound_ty: n.clone(),
             body: Tm::Abs(Box::new(Binding {
                 bound_ty: n.clone(),
-                body: Tm::Ind {
+                body: Tm::OldInd {
                     motive: Box::new(Tm::Abs(Box::new(Binding {
                         bound_ty: n.clone(),
                         body: n.clone(),
@@ -1182,7 +1182,7 @@ mod tests {
                             bound_ty: n.clone(),
                             body: Tm::Abs(Box::new(Binding {
                                 bound_ty: n.clone(),
-                                body: Tm::Ctor {
+                                body: Tm::OldCtor {
                                     fix: Box::new(n.clone()),
                                     i: 1,
                                     args: vec![Tm::Var(Ix(0))],
