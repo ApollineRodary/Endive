@@ -16,11 +16,13 @@ impl Telescope {
         mut c: Rc<Ctx>,
         mut tc: Rc<TyCtx>,
     ) -> Result<(Rc<Ctx>, Rc<TyCtx>), Error> {
-        for (l, ty) in self.0.iter().enumerate() {
+        let mut l = Lvl(c.len());
+        for (i, ty) in self.0.iter().enumerate() {
             ty.univ_lvl(e, &c, &tc)?;
             let ty = ty.eval(&e, &c)?;
-            c = Rc::new(Ctx::Cons(Val::Var(Lvl(l)), c));
-            tc = Rc::new(TyCtx::Cons(ty, tc));
+            c = c.push(Val::Var(l));
+            tc = tc.push(ty);
+            l = Lvl(l.0 + 1);
         }
         Ok((c, tc))
     }
