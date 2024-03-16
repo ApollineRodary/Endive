@@ -20,6 +20,10 @@ p {
   width: 100%;
 }
 
+ul {
+  margin: 0;
+}
+
 #endive {
   filter: brightness(0.8);
   filter: saturate(2);

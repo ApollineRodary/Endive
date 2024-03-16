@@ -17,6 +17,9 @@
       <div class="Submenu" id="fonc" onclick="Show_Hide('fonc')">
         Fonctionnalités
       </div>
+      <div class="Submenu" id="bloc" onclick="Show_Hide('bloc')">
+        Blocs de base
+      </div>
       <div class="Submenu" id="imp" onclick="Show_Hide('imp')">Implication</div>
       <div class="Submenu" id="or" onclick="Show_Hide('or')">
         Constructeur 'ou'
@@ -54,7 +57,7 @@
         Insérer image du site
         <p>
           Un menu sur votre gauche vous permet d'accéder aux différents blocs
-          disponibles. L'onglet Théorèmes fournit les blocs Théoème et Lemme qui
+          disponibles. L'onglet Théorèmes fournit les blocs Théorème et Lemme qui
           sont les blocs de base qui vont permettre de relier un énoncé et sa
           preuve mathématique. L'onglet Formules contient différents blocs qui
           vont permettre la construction d'un énoncé. Enfin, l'onglet Preuve
@@ -69,12 +72,80 @@
           vous le souhaitez dans l'espace à votre disposition, il suffit de
           rester appuyer sur le clic gauche et de le déplacer, puis relâcher le
           bouton lorsqu'il se trouve à l'endroit souhaité. Pour assembler les
-          différents blocs ensemble, encoche blabla TODO Voici une petite vidéo
-          démonstrative :
+          différents blocs ensemble, il suffit d'imbriquer les blocs en faisant correspondre les encoches. 
         </p>
-        Insérer petite vidéo démo de drag and drop
-        <p></p>
+        <p>
+          Voici une petite vidéo démonstrative :
+        </p>
+        
+        <video autoplay loop>
+          <source src="images/Videotest.webm" type="video/webm">  
+        </video>
+
+        <p>
+          Il est également possible de supprimer un bloc ou un assemblage de bloc en faisant glisser la structure sur l'icône poubelle en bas à gauche de la zone.
+          Le raccourci clavier "suppr" permet la même chose.
+        </p>
+        Insérer vidéo poubelle
+
+        <p>
+          Le raccourci clavier "Ctrl c - Ctrl v" vous permet de dupliquer le bloc ou l'assemblage de bloc sélectionner. "Ctrl z" permet d'annuler la dernière action faite.
+        </p>
+        Insérer vidéo ctrl c ctrl v ?
+
+        <p>
+          Les icône "+" et "-" au dessus de l'icône poubelle vous permette de zoomer ou dezoomer et l'icône cible vous permet de revenir à la taille initiale.
+        </p>
+        Insérer vidéo zoom / dezoom cible ?
+
+        <p>
+          Le bouton en bas à droite "Mathématiques", lorsqu'il est cliqué, crée un espace à droite de l'espace de création. 
+          Le texte mathématiques de la construction en cours est alors affiché dans cette zone. 
+          Pour enlever cette zone, il suffit de cliquer de nouveau sur le bouton "Mathématiques".
+        </p>
+        Insérer photo avec preuve latex
+        
       </div>
+
+      <div class="BoxContent" id="bloc_c" style="display: none">
+        <p>
+          Dans cette section, les blocs de bases pour énoncer et prouver une proposition mathématique vont être présentés.
+        </p>
+        <p>
+          Dans l'onglet Théorème du menu à gauche, vous trouverez le bloc Théorème. Pour ce bloc, l'encoche à droite du mot Théorème est dédié à la construction d'un énoncé mathématique.
+          L'espace en dessous du mot "Preuve" est consacré à la construction de la preuve de l'énoncé.
+        </p>
+        Insérer image bloc Théorème
+        <p>
+          Dans l'onglet Formules, vous trouverez tous les blocs nécessaires à la construction d'un énoncé mathématique. 
+          Le bloc Pour tout item dans Prop (TODO MODIFIER SI PAS CA) permet d'énoncer des énoncés mathématiques contenant le quantificateur universel ∀.
+          Plus concrètement, il permet d'énoncer des phrases comme "Pour tout nombre x plus grand que 1, x est plus grand que 0".
+          <br/> Vous pouvez renommer item (ou tout autre nom) en le nom que vous souhaitez en cliquant sur le nom actuel, puis "Rename variable...". 
+          Vous pouvez alors entrer le nouveau nom que vous souhaitez. Un certain nombre de noms de variables sont déjà disponibles.
+        </p>
+        Insérer video bloc Pour tout, rename variable ?
+        <p>
+          On trouve également le bloc "x" qui est le bloc variable. De même, il est possible de renommer la variable comme indiqué précédemment.
+        </p>
+        Insérer image bloc x tout mignon tout petit
+        <p>
+          Enfin, on trouve le bloc Implication (⇒), expliqué plus en détail dans le chapitre suivant.
+        </p>
+        Insérer image bloc implication
+        <p>
+          L'onglet Preuve contient 3 blocs différents : 
+          <ul>
+            <li>le bloc "Soit x dans Prop" qui permet d'introduire une proposition</li>
+            <li>le bloc "Supposons", qui nécessite d'être complété avec un autre bloc et qui permet d'ajouter une proposition aux hypothèses</li>
+            <li>le bloc "Alors" qui nécessite également d'être complété avec un autre bloc qui permet de déduire automatiquement des hypothèses une proposition</li>
+          </ul>
+        </p>
+        Insérer image des 3 blocs
+        <p>
+          Des utilisations concrètes de ces blocs seront présentées au chapitre suivant.
+        </p>
+      </div>
+
       <div class="BoxContent" id="imp_c" style="display: none">
         <p>
           Endive fournit un bloc Implication (⇒) que vous trouverez dans
@@ -82,7 +153,7 @@
           blocs, notons les A et B. Le bloc complété signifie "Si A, alors B".
         </p>
         <p>Regardons un premier exemple afin que ceci soit plus parlant.</p>
-        Ici on insère une image de Théoreme pour tout P, P->P.
+        <img src="images/th_imp1.png"/>
         <p>
           Le théorème ci-dessus énonce ceci : "Pour toute proposition P, si P,
           alors P". Cela semble parfaitement vrai, mais comment le prouver
@@ -141,6 +212,7 @@
 
       intro_c.style.display = "none";
       fonc_c.style.display = "none";
+      bloc_c.style.display = "none";
       imp_c.style.display = "none";
       or_c.style.display = "none";
       and_c.style.display = "none";
