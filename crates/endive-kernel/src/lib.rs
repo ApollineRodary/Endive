@@ -66,6 +66,18 @@ pub enum Tm {
     /// Type universe.
     U(univ_lvl::Expr),
 
+    /// Inductive type family.
+    Inductive {
+        /// Index of the inductive type family in the global environment.
+        idx: usize,
+
+        /// Arguments to the inductive type family.
+        args: Vec<Tm>,
+
+        /// Indices of the inductive type.
+        indices: Vec<Tm>,
+    },
+
     /// Constructor of an inductive type.
     Ctor {
         /// Index of the inductive type family in the global environment.
@@ -138,6 +150,7 @@ impl Tm {
             }
             Tm::Pi(abs) => Ok(Val::Pi(Box::new(abs.eval(c)?))),
             Tm::U(n) => Ok(Val::U(n.clone())),
+            Tm::Inductive { .. } => todo!(),
             Tm::Ctor { .. } => todo!(),
             Tm::OldFix { ty, ctors } => Ok(Val::OldFix {
                 ty: ty.eval(c)?.into(),
@@ -239,6 +252,7 @@ impl Tm {
                 Ok(Val::U(ty_u.max(&body_u)))
             }
             Tm::U(u) => Ok(Val::U(u.clone() + 1)),
+            Tm::Inductive { .. } => todo!(),
             Tm::Ctor { .. } => todo!(),
             Tm::OldFix { ty, ctors } => {
                 ty.ty_internal(e, c, tc)?;
@@ -501,6 +515,7 @@ impl Tm {
                 body: abs.body.unlift(k + 1, by)?,
             }))),
             Tm::U(n) => Ok(Tm::U(n.clone())),
+            Tm::Inductive { .. } => todo!(),
             Tm::Ctor { .. } => todo!(),
             Tm::OldFix { ty, ctors } => Ok(Tm::OldFix {
                 ty: Box::new(ty.unlift(k, by)?),
@@ -546,6 +561,18 @@ enum Val {
 
     /// Type universe.
     U(univ_lvl::Expr),
+
+    /// Inductive type family.
+    Inductive {
+        /// Index of the inductive type family in the global environment.
+        idx: usize,
+
+        /// Arguments to the inductive type family.
+        args: Vec<Val>,
+
+        /// Indices of the inductive type.
+        indices: Vec<Val>,
+    },
 
     /// Inductive type family.
     OldFix {
@@ -594,6 +621,17 @@ impl Val {
             Val::App(n, m) => Ok(Tm::App(Box::new(n.reify(l)?), Box::new(m.reify(l)?))),
             Val::Pi(closure) => Ok(Tm::Pi(Box::new(closure.reify(l)?))),
             Val::U(n) => Ok(Tm::U(n.clone())),
+            Val::Inductive { idx, args, indices } => Ok(Tm::Inductive {
+                idx: *idx,
+                args: args
+                    .iter()
+                    .map(|arg| arg.reify(l))
+                    .collect::<Result<_, _>>()?,
+                indices: indices
+                    .iter()
+                    .map(|index| index.reify(l))
+                    .collect::<Result<_, _>>()?,
+            }),
             Val::OldFix { ty, ctors } => Ok(Tm::OldFix {
                 ty: Box::new(ty.reify(l)?),
                 ctors: ctors
@@ -776,6 +814,16 @@ impl Val {
             Val::Pi(closure) => Ok(closure.ty.has_var(l, var_l)?
                 || closure.apply(Val::Var(l))?.has_var(Lvl(l.0 + 1), var_l)?),
             Val::U(_) => Ok(false),
+            Val::Inductive { idx, args, indices } => {
+                let mut has_var = false;
+                for arg in args {
+                    has_var = has_var || arg.has_var(l, var_l)?;
+                }
+                for index in indices {
+                    has_var = has_var || index.has_var(l, var_l)?;
+                }
+                Ok(has_var)
+            }
             Val::OldFix { ty, ctors } => {
                 let mut has_var = ty.has_var(l, var_l)?;
                 for ctor in ctors {

@@ -212,6 +212,7 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
             .unwrap();
             obj.into()
         }
+        Tm::Inductive { .. } => todo!(),
         Tm::Ctor { .. } => todo!(),
         Tm::OldFix { ty, ctors } => {
             let obj = Object::new();
