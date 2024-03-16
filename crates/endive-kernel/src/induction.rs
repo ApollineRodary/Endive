@@ -95,7 +95,7 @@ impl Telescope {
 
     /// Validates a currified application of the telescope to the arguments, and returns the evaluated
     /// arguments.
-    fn validate_apply_and_return_evaluated_args(
+    pub(crate) fn validate_apply_and_return_evaluated_args(
         &self,
         e: &GlobalEnv,
         c: &Rc<Ctx>,
