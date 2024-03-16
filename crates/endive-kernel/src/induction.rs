@@ -312,7 +312,7 @@ impl CtorParam {
         inductive_indices: &Telescope,
         inductive_c: &Rc<Ctx>,
         max_univ_lvl: &univ_lvl::Expr,
-        idx: usize,
+        inductive_idx: usize,
     ) -> Result<Val, Error> {
         let tail = match &self.last {
             CtorParamLast::This { indices } => {
@@ -328,7 +328,7 @@ impl CtorParam {
                     &tc,
                 )?;
                 Val::Inductive {
-                    idx,
+                    idx: inductive_idx,
                     args: inductive_args.to_vec(),
                     indices,
                 }
