@@ -228,7 +228,13 @@ function convertTactics(block, environment, hypotheses) {
     block.setWarningText(
       "Vos hypothèses ne permettent pas d'arriver à cette conclusion.",
     );
+    throw new Error("Illicit conclusion in then");
   }
+}
+
+function addGlow(block, name, color) {
+  let blockSvg = block.getSvgRoot();
+  blockSvg.style.filter = `drop-shadow(0px 0px 5px ${color})`;
 }
 
 function verifyTheorem(block) {
@@ -240,10 +246,13 @@ function verifyTheorem(block) {
     block.setWarningText("Vous n'avez pas précisé d'énoncé pour ce théorème.");
     return false;
   }
-  let statement = convertStatement(statementBlock, [], []);
-  document.getElementById("latexcodearea").value = JSON.stringify(statement);
+  let statement;
+  try {
+    statement = convertStatement(statementBlock, [], []);
+  } catch (e) {
+    return false;
+  }
 
-  console.log("Inferring statement type");
   let statementType = endive.inferType(statement);
   if (statementType.type !== "universe") {
     console.error("Ill-typed statement");
@@ -258,10 +267,12 @@ function verifyTheorem(block) {
     return false;
   }
   console.log("Converting proof");
-  let proof = convertTactics(proofBlock, [], []);
-
-  document.getElementById("latexcodearea").value =
-    `Statement: ${JSON.stringify(statement)}\n\nProof: ${JSON.stringify(proof)}`;
+  let proof;
+  try {
+    proof = convertTactics(proofBlock, [], []);
+  } catch (e) {
+    return false;
+  }
 
   // Verify beta-equivalence
   console.log("Testing for beta-equivalence");
@@ -269,17 +280,15 @@ function verifyTheorem(block) {
     endive.inferType(proof),
     statement,
   );
-  console.log("Beta equivalence:");
-  console.log(statement);
-  console.log(endive.inferType(proof));
-  console.log(isBetaEquivalent);
 
   if (!isBetaEquivalent) {
-    block.setWarningText("Cette preuve est valide, mais ne prouve pas ce que vous avez énoncé :(");
-  }
-  else {
+    block.setWarningText(
+      "Cette preuve est valide, mais ne prouve pas ce que vous avez énoncé :(",
+    );
+    return false;
+  } else {
     block.setTooltip("Preuve valide :D");
-    block.setColour(120);
+    return true;
   }
 }
 
@@ -288,12 +297,19 @@ export async function verifyTheorems(workspace) {
   let blocks = workspace.getAllBlocks();
 
   // Reset warnings for all blocks
-  for (let i = 0; i < blocks.length; ++i) blocks[i].setWarningText("");
+  for (let i = 0; i < blocks.length; ++i) {
+    blocks[i].setWarningText("");
+  }
 
   // Verify theorems
   for (let i = 0; i < blocks.length; ++i) {
     let block = blocks[i];
     if (block.type !== "theorem") continue;
-    verifyTheorem(block);
+    block.getSvgRoot().style.filter = "";
+    if (verifyTheorem(block)) {
+      addGlow(block, "green", "#00ff00");
+    } else {
+      addGlow(block, "red", "#ff0000");
+    }
   }
 }
