@@ -188,14 +188,14 @@ impl Tm {
             Tm::Pi(abs) => Ok(Val::Pi(Box::new(abs.eval(c)?))),
             Tm::U(n) => Ok(Val::U(n.clone())),
             Tm::Ctor { .. } => todo!(),
-            Tm::OldFix { ty, ctors } => Ok(Val::Fix {
+            Tm::OldFix { ty, ctors } => Ok(Val::OldFix {
                 ty: ty.eval(c)?.into(),
                 ctors: ctors
                     .iter()
                     .map(|ctor| ctor.eval(c))
                     .collect::<Result<_, _>>()?,
             }),
-            Tm::OldCtor { fix, i, args } => Ok(Val::Ctor {
+            Tm::OldCtor { fix, i, args } => Ok(Val::OldCtor {
                 fix: Box::new(fix.eval(c)?),
                 i: *i,
                 args: args
@@ -346,11 +346,11 @@ impl Tm {
                 fix.ty_internal(e, c, tc)?;
 
                 let mut ctor = match fix.eval(c)? {
-                    Val::Fix { ty, ctors } => ctors
+                    Val::OldFix { ty, ctors } => ctors
                         .get(*i)
                         .cloned()
                         .ok_or(Error::TyMismatch)?
-                        .apply(Val::Fix { ty, ctors })?,
+                        .apply(Val::OldFix { ty, ctors })?,
                     _ => return Err(Error::TyMismatch),
                 };
 
@@ -403,7 +403,7 @@ impl Tm {
                     .unlift(0, index_count)?;
 
                 let (fix_ty, fix_ctors) = match &fix_indexed_uncurrified.f {
-                    Val::Fix { ty, ctors } => (ty, ctors),
+                    Val::OldFix { ty, ctors } => (ty, ctors),
                     _ => return Err(Error::TyMismatch),
                 };
 
@@ -498,7 +498,7 @@ impl Tm {
 
                     // Part 3.3: check that the case's return type is of the form `P (C x1 ... xk)`.
 
-                    let expected_out = motive.apply(Val::Ctor {
+                    let expected_out = motive.apply(Val::OldCtor {
                         fix: Box::new(fix_val.clone()),
                         i,
                         args: out_ctor_args,
@@ -597,7 +597,7 @@ enum Val {
     U(univ_lvl::Expr),
 
     /// Inductive type family.
-    Fix {
+    OldFix {
         /// Type.
         ty: Box<Val>,
 
@@ -606,7 +606,7 @@ enum Val {
     },
 
     /// The `i`-th constructor of the inductive type family.
-    Ctor {
+    OldCtor {
         /// The inductive type family.
         fix: Box<Val>,
 
@@ -618,7 +618,7 @@ enum Val {
     },
 
     /// Principle of induction.
-    Ind {
+    OldInd {
         /// Value on which to perform the induction.
         val: Box<Val>,
 
@@ -643,14 +643,14 @@ impl Val {
             Val::App(n, m) => Ok(Tm::App(Box::new(n.reify(l)?), Box::new(m.reify(l)?))),
             Val::Pi(closure) => Ok(Tm::Pi(Box::new(closure.reify(l)?))),
             Val::U(n) => Ok(Tm::U(n.clone())),
-            Val::Fix { ty, ctors } => Ok(Tm::OldFix {
+            Val::OldFix { ty, ctors } => Ok(Tm::OldFix {
                 ty: Box::new(ty.reify(l)?),
                 ctors: ctors
                     .iter()
                     .map(|ctor| ctor.reify(l))
                     .collect::<Result<_, _>>()?,
             }),
-            Val::Ctor { fix, i, args } => Ok(Tm::OldCtor {
+            Val::OldCtor { fix, i, args } => Ok(Tm::OldCtor {
                 fix: Box::new(fix.reify(l)?),
                 i: *i,
                 args: args
@@ -658,7 +658,7 @@ impl Val {
                     .map(|arg| arg.reify(l))
                     .collect::<Result<_, _>>()?,
             }),
-            Val::Ind { motive, cases, val } => Ok(Tm::OldInd {
+            Val::OldInd { motive, cases, val } => Ok(Tm::OldInd {
                 motive: Box::new(motive.reify(l)?),
                 cases: cases
                     .iter()
@@ -679,29 +679,29 @@ impl Val {
 
     /// Applies the principle of induction to the value.
     fn induction(&self, motive: Val, cases: Vec<Val>, l: Lvl) -> Result<Val, Error> {
-        let Val::Ctor { fix, i, args } = self else {
-            return Ok(Val::Ind {
+        let Val::OldCtor { fix, i, args } = self else {
+            return Ok(Val::OldInd {
                 motive: Box::new(motive),
                 cases,
                 val: Box::new(self.clone()),
             });
         };
-        let Val::Fix { ty: _, ctors } = &**fix else {
-            return Ok(Val::Ind {
+        let Val::OldFix { ty: _, ctors } = &**fix else {
+            return Ok(Val::OldInd {
                 motive: Box::new(motive),
                 cases,
                 val: Box::new(self.clone()),
             });
         };
         let Some(ctor) = ctors.get(*i) else {
-            return Ok(Val::Ind {
+            return Ok(Val::OldInd {
                 motive: Box::new(motive),
                 cases,
                 val: Box::new(self.clone()),
             });
         };
         let Val::Abs(closure) = ctor else {
-            return Ok(Val::Ind {
+            return Ok(Val::OldInd {
                 motive: Box::new(motive),
                 cases,
                 val: Box::new(self.clone()),
@@ -709,7 +709,7 @@ impl Val {
         };
         let mut ctor = closure.apply(Val::Var(l))?;
         let Some(mut case) = cases.get(*i).cloned() else {
-            return Ok(Val::Ind {
+            return Ok(Val::OldInd {
                 motive: Box::new(motive),
                 cases,
                 val: Box::new(self.clone()),
@@ -718,7 +718,7 @@ impl Val {
         let mut args = args.iter().enumerate();
         while let Val::Pi(closure) = &ctor {
             let Some((j, arg)) = args.next() else {
-                return Ok(Val::Ind {
+                return Ok(Val::OldInd {
                     motive: Box::new(motive),
                     cases,
                     val: Box::new(self.clone()),
@@ -825,21 +825,21 @@ impl Val {
             Val::Pi(closure) => Ok(closure.ty.has_var(l, var_l)?
                 || closure.apply(Val::Var(l))?.has_var(Lvl(l.0 + 1), var_l)?),
             Val::U(_) => Ok(false),
-            Val::Fix { ty, ctors } => {
+            Val::OldFix { ty, ctors } => {
                 let mut has_var = ty.has_var(l, var_l)?;
                 for ctor in ctors {
                     has_var = has_var || ctor.has_var(l, var_l)?;
                 }
                 Ok(has_var)
             }
-            Val::Ctor { fix, i: _, args } => {
+            Val::OldCtor { fix, i: _, args } => {
                 let mut has_var = fix.has_var(l, var_l)?;
                 for arg in args {
                     has_var = has_var || arg.has_var(l, var_l)?;
                 }
                 Ok(has_var)
             }
-            Val::Ind { motive, cases, val } => {
+            Val::OldInd { motive, cases, val } => {
                 let mut has_var = motive.has_var(l, var_l)?;
                 for case in cases {
                     has_var = has_var || case.has_var(l, var_l)?;
@@ -873,8 +873,8 @@ impl Val {
             }
             (Val::U(n), Val::U(other_n)) => Ok(n == other_n),
             (
-                Val::Fix { ty, ctors },
-                Val::Fix {
+                Val::OldFix { ty, ctors },
+                Val::OldFix {
                     ty: other_ty,
                     ctors: other_ctors,
                 },
@@ -893,8 +893,8 @@ impl Val {
                 Ok(true)
             }
             (
-                Val::Ctor { fix, i, args },
-                Val::Ctor {
+                Val::OldCtor { fix, i, args },
+                Val::OldCtor {
                     fix: other_fix,
                     i: other_i,
                     args: other_args,
@@ -917,8 +917,8 @@ impl Val {
                 Ok(true)
             }
             (
-                Val::Ind { motive, cases, val },
-                Val::Ind {
+                Val::OldInd { motive, cases, val },
+                Val::OldInd {
                     motive: other_motive,
                     cases: other_cases,
                     val: other_val,
