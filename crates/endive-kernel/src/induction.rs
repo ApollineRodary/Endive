@@ -241,6 +241,33 @@ impl InductiveTypeFamily {
         }
         Ok(())
     }
+
+    pub(crate) fn add_motive_telescope_to_ctx(
+        &self,
+        e: &GlobalEnv,
+        inductive_idx: usize,
+        inductive_args: Vec<Val>,
+        mut c: Rc<Ctx>,
+        mut tc: Rc<TyCtx>,
+    ) -> Result<(Rc<Ctx>, Rc<TyCtx>), Error> {
+        let mut l = Lvl(c.len());
+        let mut indices = Vec::new();
+        for ty in self.indices.0.iter() {
+            ty.univ_lvl(e, &c, &tc)?;
+            let ty = ty.eval(&e, &c)?;
+            let var = Val::Var(l);
+            indices.push(var.clone());
+            c = c.push(var);
+            tc = tc.push(ty);
+            l = Lvl(l.0 + 1);
+        }
+        let tc = tc.push(Val::Inductive {
+            idx: inductive_idx,
+            args: inductive_args,
+            indices,
+        });
+        Ok((c, tc))
+    }
 }
 
 /// A constructor of an inductive type family.
