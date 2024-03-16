@@ -210,7 +210,7 @@ impl InductiveTypeFamily {
     ///
     /// The validation requires the family to already be added to the global environment at the
     /// index `idx`.
-    pub(crate) fn validate(&self, e: &GlobalEnv, idx: usize) -> Result<(), Error> {
+    pub(crate) fn validate(&self, e: &GlobalEnv, inductive_idx: usize) -> Result<(), Error> {
         let (inductive_c, inductive_tc) =
             self.params
                 .add_to_ctx(e, Rc::new(Ctx::Nil), Rc::new(TyCtx::Nil))?;
@@ -233,7 +233,7 @@ impl InductiveTypeFamily {
                     &self.indices,
                     &inductive_c,
                     &self.univ_lvl,
-                    idx,
+                    inductive_idx,
                 )?);
             }
             self.indices
