@@ -11,7 +11,7 @@
 
 /endive-lsp-server/lsp-ws-proxy/
 
-/editor/dist/
-/editor2/dist/
-/endive-vscode/out/
-/website/dist/
+/packages/editor/dist/
+/packages/editor2/dist/
+/packages/vscode-plugin/out/
+/packages/website/dist/
