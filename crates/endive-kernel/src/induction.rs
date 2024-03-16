@@ -66,7 +66,7 @@ impl Telescope {
     }
 
     /// Validates a currified application of the telescope to the arguments.
-    fn validate_apply(
+    pub(crate) fn validate_apply(
         &self,
         e: &GlobalEnv,
         c: &Rc<Ctx>,

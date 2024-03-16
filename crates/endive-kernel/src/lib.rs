@@ -336,7 +336,35 @@ impl Tm {
                 Ok(Val::U(ty_u.max(&body_u)))
             }
             Tm::U(u) => Ok(Val::U(u.clone() + 1)),
-            Tm::Inductive { .. } => todo!(),
+            Tm::Inductive { idx, args, indices } => {
+                let inductive = e.inductives.get(*idx).ok_or(Error::InductiveOutOfBound)?;
+
+                let params_and_indices = Telescope(
+                    inductive
+                        .params
+                        .0
+                        .iter()
+                        .cloned()
+                        .chain(inductive.indices.0.iter().cloned())
+                        .collect::<Vec<_>>(),
+                );
+
+                let args_and_indices = args
+                    .iter()
+                    .cloned()
+                    .chain(indices.iter().cloned())
+                    .collect::<Vec<_>>();
+
+                params_and_indices.validate_apply(
+                    e,
+                    &Rc::new(Ctx::Nil),
+                    &args_and_indices,
+                    c,
+                    tc,
+                )?;
+
+                Ok(Val::U(inductive.univ_lvl.clone()))
+            }
             Tm::Ctor { .. } => todo!(),
             Tm::Induction { .. } => todo!(),
             Tm::OldFix { ty, ctors } => {
