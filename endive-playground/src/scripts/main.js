@@ -1,4 +1,5 @@
 import { endiveGenerator } from "./generators/endive.js";
+import { latexGenerator } from "./generators/latex.js";
 import { verifyTheorems } from "./verify.js";
 
 const updateCodeEvents = new Set([
@@ -12,9 +13,13 @@ function updateCode(event) {
   if (workspace.isDragging()) return;
   if (!updateCodeEvents.has(event.type)) return;
 
+  const latexCode = latexGenerator.workspaceToCode(workspace);
+  const latexDiv = document.getElementById('latexcodearea')
+  latexDiv.innerHTML = latexCode;
+  MathJax.typesetPromise([latexDiv]);
+
   const endiveCode = endiveGenerator.workspaceToCode(workspace);
   document.getElementById("endivecodearea").value = endiveCode;
-  // document.getElementById('latexcodearea').value = latexCode;
 }
 
 const verifyProofs = function (button) {

@@ -7,6 +7,8 @@
 
     <title>Endive en dev</title>
 
+
+
     <link
       rel="stylesheet"
       href="https://code.getmdl.io/1.2.1/material.indigo-pink.min.css"
@@ -21,11 +23,19 @@
       <textarea id="endivecodearea" style="height: 45vh; width: 49.3%">
 Endive generated code goes here</textarea
       >
-      <textarea id="latexcodearea" style="height: 45vh; width: 49.3%">
-LaTeX generated code goes here</textarea
+      <div id="latexcodearea" style="height: 45vh; width: 49.3%">
+LaTeX generated code goes here</div
       >
     </main>
 
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$']]
+        }
+      };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://unpkg.com/blockly"></script>
     <script src="scripts/definitions.js"></script>
     <script src="scripts/blocks.js"></script>
