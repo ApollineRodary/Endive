@@ -59,26 +59,27 @@ htmlGenerator["tactic_then"] = function (block, generator) {
   return `Alors $${conclusion}$.<br/>`;
 };
 
-htmlGenerator["definition_inductive_type"] = function (block, generator) {
-  return "";
-};
+const unsupportedBlocks = [
+  "definition_inductive_type",
+  "definition_simple_constructor",
+  "definition_arrow_constructor",
+  "definition_arrow_param",
+  "definition_arrow_end",
+  "definition_unary_predicate",
+  "definition_binary_predicate",
+  "definition_predicate_rule",
+  "definition_predicate_forall",
+  "definition_predicate_implies",
+  "definition_unary_predicate_true",
+  "definition_binary_predicate_true",
+  "constructor_simple",
+  "constructor_simple_final",
+  "constructor_arrow",
+  "constructor_arrow_final",
+];
 
-htmlGenerator["definition_simple_constructor"] = function (block, generator) {
-  return "";
-};
-
-htmlGenerator["definition_arrow_constructor"] = function (block, generator) {
-  return "";
-};
-
-htmlGenerator["definition_arrow_param"] = function (block, generator) {
-  return ["", 0];
-};
-
-htmlGenerator["definition_arrow_end"] = function (block, generator) {
-  return ["", 0];
-};
-
-htmlGenerator["definition_unary_predicate"] = function (block, generator) {
-  return "";
-};
+unsupportedBlocks.forEach(function (blockName) {
+  htmlGenerator[blockName] = function (block, generator) {
+    return "";
+  }
+});
