@@ -13,7 +13,7 @@ const createWindow = () => {
   //win.removeMenu(); //Disable that to show menu used for debug of javascript (~developer tools)
 
   //Keep in mind that if the structure changes in editor we should update this link
-  win.loadFile("../editor/dist/browser/index.html");
+  win.loadFile("../editor/dist/index.html");
 };
 
 //Make Electron-side functions available as Interface-side javascript

@@ -6,24 +6,7 @@
     "build": "parcel build",
     "serve": "parcel serve"
   },
-  "targets": {
-    "app": {
-      "context": "electron-renderer",
-      "distDir": "dist/app",
-      "publicUrl": ".",
-      "includeNodeModules": true
-    },
-    "browser": {
-      "context": "browser",
-      "distDir": "dist/browser",
-      "publicUrl": ".",
-      "includeNodeModules": true
-    }
-  },
   "source": "src/index.html",
-  "browser": {
-    "scripts/files.js": "scripts/files_browser.js"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ApollineRodary/Endive.git"
