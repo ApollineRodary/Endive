@@ -1,6 +1,7 @@
-import { endiveGenerator } from "./generators/endive.js";
-import { htmlGenerator } from "./generators/html.js";
-import { verifyTheorems } from "./verify.js";
+/*import { endiveGenerator } from "./generators/endive.js";
+import { latexGenerator } from "./generators/latex.js";
+import { htmlGenerator } from "./generators/html.js";*/
+import { validate } from "./verify.js";
 
 globalThis.automaticVerif = true;
 
@@ -19,10 +20,10 @@ function updateCode(event) {
   if (workspace.isDragging()) return;
   if (!updateCodeEvents.has(event.type)) return;
 
-  const htmlCode = htmlGenerator.workspaceToCode(workspace);
+  /*const htmlCode = htmlGenerator.workspaceToCode(workspace);
   const mathDisplayDiv = document.getElementById("mathDisplayDiv");
   mathDisplayDiv.innerHTML = htmlCode;
-  MathJax.typesetPromise([mathDisplayDiv]);
+  MathJax.typesetPromise([mathDisplayDiv]);*/
 
   if (globalThis.automaticVerif) verifyProofs();
 
@@ -31,7 +32,7 @@ function updateCode(event) {
 }
 
 const verifyProofs = function (button) {
-  console.log(verifyTheorems(workspace));
+  console.log(validate(workspace));
 };
 
 let toolbox = {
@@ -45,10 +46,6 @@ let toolbox = {
           kind: "block",
           type: "theorem",
         },
-        {
-          kind: "block",
-          type: "lemma",
-        },
       ],
     },
     {
@@ -58,18 +55,6 @@ let toolbox = {
         {
           kind: "block",
           type: "proposition_forall",
-        },
-        {
-          kind: "block",
-          type: "proposition_exists",
-        },
-        {
-          kind: "block",
-          type: "proposition_or",
-        },
-        {
-          kind: "block",
-          type: "proposition_and",
         },
         {
           kind: "block",
@@ -101,6 +86,32 @@ let toolbox = {
           kind: "button",
           text: "Vérifier",
           callbackKey: "verifyProofs",
+        },
+      ],
+    },
+    {
+      kind: "category",
+      name: "Définitions",
+      contents: [
+        {
+          kind: "block",
+          type: "definition_inductive_type",
+        },
+        {
+          kind: "block",
+          type: "definition_simple_constructor",
+        },
+        {
+          kind: "block",
+          type: "definition_arrow_constructor",
+        },
+        {
+          kind: "block",
+          type: "definition_arrow_param",
+        },
+        {
+          kind: "block",
+          type: "definition_arrow_end",
         },
       ],
     },
@@ -168,5 +179,8 @@ document
   .getElementById("toggleAutomaticVerif")
   .addEventListener("click", toggleautomatic);
 
+/*
 endiveGenerator.init(workspace);
+latexGenerator.init(workspace);
 htmlGenerator.init(workspace);
+*/
