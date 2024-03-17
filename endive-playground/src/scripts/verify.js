@@ -24,7 +24,7 @@ function deBruijnIndex(environment, name) {
   return environment.length - index - 1;
 }
 
-function offsetIndices(lterm) {
+function lift(lterm) {
   if (lterm.type == "variable") {
     return {
       type: "variable",
@@ -35,8 +35,8 @@ function offsetIndices(lterm) {
   if (lterm.type == "abstraction" || lterm.type == "pi") {
     return {
       type: lterm.type,
-      variable: offsetIndices(lterm.variable),
-      body: offsetIndices(lterm.body),
+      variable: lift(lterm.variable),
+      body: lift(lterm.body),
     };
   }
 
@@ -51,6 +51,7 @@ function convertStatement(block, environment) {
 
   if (block.type === "proposition_forall") {
     let name = block.getField("VARIABLE").getText();
+    let type = block.getField("TYPE").getText();
 
     let propositionBlock = block
       .getInput("PROPOSITION")
@@ -62,9 +63,7 @@ function convertStatement(block, environment) {
 
     let proposition = convertStatement(
       propositionBlock,
-      environment
-        .concat([[name, prop]])
-        .map((x) => [x[0], offsetIndices(x[1])]),
+      environment.concat([[name, prop]]).map((x) => [x[0], lift(x[1])]),
     );
 
     return {
@@ -87,7 +86,7 @@ function convertStatement(block, environment) {
       consequentBlock,
       environment
         .concat([[makeFreshVariable(environment), antecedent]])
-        .map((x) => [x[0], offsetIndices(x[1])]),
+        .map((x) => [x[0], lift(x[1])]),
     );
 
     return {
@@ -127,10 +126,8 @@ function convertTactics(block, environment, hypotheses) {
     let name = block.getField("VARIABLE").getText();
     let restOfProof = convertTactics(
       block.nextConnection.targetBlock(),
-      environment
-        .concat([[name, prop]])
-        .map((x) => [x[0], offsetIndices(x[1])]),
-      hypotheses.map((x) => [offsetIndices(x[0]), offsetIndices(x[1])]),
+      environment.concat([[name, prop]]).map((x) => [x[0], lift(x[1])]),
+      hypotheses.map((x) => [lift(x[0]), lift(x[1])]),
     );
     return {
       type: "abstraction",
@@ -149,16 +146,16 @@ function convertTactics(block, environment, hypotheses) {
     }
 
     let hypothesis = convertStatement(hypothesisBlock, environment, hypotheses);
-    let offsetHypothesis = offsetIndices(hypothesis);
+    let offsetHypothesis = lift(hypothesis);
     let hypothesisName = makeFreshVariable(environment);
 
     let restOfProof = convertTactics(
       block.nextConnection.targetBlock(),
       environment
-        .map((x) => [x[0], offsetIndices(x[1])])
+        .map((x) => [x[0], lift(x[1])])
         .concat([[hypothesisName, offsetHypothesis]]),
       hypotheses
-        .map((x) => [offsetIndices(x[0]), offsetIndices(x[1])])
+        .map((x) => [lift(x[0]), lift(x[1])])
         .concat([
           [
             {
@@ -205,7 +202,7 @@ function convertTactics(block, environment, hypotheses) {
           _.isEqual(hypotheses[i][1], {
             type: "pi",
             variable: hypotheses[j][1],
-            body: offsetIndices(conclusion),
+            body: lift(conclusion),
           })
         ) {
           lterm = {
@@ -232,9 +229,47 @@ function convertTactics(block, environment, hypotheses) {
   }
 }
 
-function addGlow(block, name, color) {
+function addGlow(block, color) {
   let blockSvg = block.getSvgRoot();
   blockSvg.style.filter = `drop-shadow(0px 0px 5px ${color})`;
+}
+
+function getTopologicalOrder(dag) {
+  /**
+   * Returns the topological order of a directed acyclic graph
+   * Fails if the provided graph is not acyclic
+   * dag is a list of objects each with a name (obj.name) and an array of predecessors (obj.prev)
+   */
+  console.log("Ze dag is:");
+  console.log(dag);
+
+  let visited = {};
+  let order = [];
+
+  function visit(vertex) {
+    if (visited[vertex.name] == "visiting") {
+      throw new Error("Circular definition");
+    }
+    if (!visited[vertex.name]) {
+      visited[vertex.name] = "visiting";
+      vertex.prev.forEach((predecessorName) => {
+        const predecessor = dag.find((obj) => obj.name == predecessorName);
+        if (predecessor) {
+          visit(predecessor);
+        }
+      });
+      visited[vertex.name] = "visited";
+      order.push(vertex.name);
+    }
+  }
+
+  dag.forEach((vertex) => {
+    if (!visited[vertex.name]) {
+      visit(vertex);
+    }
+  });
+
+  return order;
 }
 
 function verifyTheorem(block) {
@@ -266,7 +301,6 @@ function verifyTheorem(block) {
     block.setWarningText("Vous n'avez pas prouvé ce théorème.");
     return false;
   }
-  console.log("Converting proof");
   let proof;
   try {
     proof = convertTactics(proofBlock, [], []);
@@ -275,7 +309,6 @@ function verifyTheorem(block) {
   }
 
   // Verify beta-equivalence
-  console.log("Testing for beta-equivalence");
   let isBetaEquivalent = endive.betaEquivalent(
     endive.inferType(proof),
     statement,
@@ -292,7 +325,157 @@ function verifyTheorem(block) {
   }
 }
 
-export async function verifyTheorems(workspace) {
+function getDependencies(block) {
+  /**
+   * Takes a top-level definition block for an inductive type and predicate and
+   * returns the names of definitions it depends on
+   * Fails if the block is incomplete or invalid
+   */
+
+  const definitionBlocks = ["definition_inductive_type"];
+  if (!definitionBlocks.includes(block.type)) {
+    throw new Error("Not a definition block");
+  }
+
+  let dependencies = [];
+  let name = block.getField("NAME").getText();
+  let constructorBlock = block
+    .getInput("CONSTRUCTORS")
+    .connection.targetBlock();
+  while (constructorBlock !== null) {
+    let constructorName;
+    if (constructorBlock.type == "definition_arrow_constructor") {
+      let parameterBlock = constructorBlock
+        .getInput("PARAMETERS")
+        .connection.targetBlock();
+      while (parameterBlock.type == "definition_arrow_param") {
+        let parameterName = parameterBlock.getField("PARAMETER").getText();
+        if (parameterName !== name && !dependencies.includes(parameterName)) {
+          dependencies.push(parameterName);
+        }
+        parameterBlock = parameterBlock
+          .getInput("NEXT")
+          .connection.targetBlock();
+      }
+    }
+    constructorBlock = constructorBlock.nextConnection.targetBlock();
+  }
+  return dependencies;
+}
+
+function registerDefinition(block, types, constructors) {
+  let typeName = block.getField("NAME").getText();
+  if (typeName in types || typeName in constructors) {
+    block.setWarning(`${typeName} est déjà défini`);
+    throw new Error("Unavailable name for custom type");
+  }
+
+  let fixpoint = {
+    type: "fixpoint",
+    target: {
+      type: "universe",
+      level: {},
+    },
+    constructors: [],
+  };
+
+  let constructorBlock = block
+    .getInput("CONSTRUCTORS")
+    .connection.targetBlock();
+  while (constructorBlock !== null) {
+    let constructorBody = {};
+    let constructorName;
+
+    if (constructorBlock.type == "definition_simple_constructor") {
+      constructorBody = {
+        type: "variable",
+        index: 0,
+      };
+    } else if (constructorBlock.type == "definition_arrow_constructor") {
+      constructorBody = {
+        type: "variable",
+        index: 0,
+      };
+      let parameterBlock = constructorBlock
+        .getInput("PARAMETERS")
+        .connection.targetBlock();
+      if (parameterBlock == null) {
+        constructorBlock.setWarningText(
+          "Il manque un paramètre pour ce constructeur.",
+        );
+        throw new Error("Missing parameter for constructor");
+      }
+      while (parameterBlock.type == "definition_arrow_param") {
+        let parameterName = parameterBlock.getField("PARAMETER").getText();
+        if (parameterName == typeName) {
+          constructorBody = {
+            type: "pi",
+            variable: {
+              type: "variable",
+              index: 0,
+            },
+            body: lift(constructorBody),
+          };
+        } else if (parameterName in types) {
+          constructorBody = {
+            type: "pi",
+            variable: types[parameterName],
+            body: lift(constructorBody),
+          };
+        } else {
+          parameterBlock.setWarningText(
+            `Le type ${parameterName} n'est pas défini.`,
+          );
+          throw new Error("Unbound type in constructor parameter");
+        }
+
+        parameterBlock = parameterBlock
+          .getInput("NEXT")
+          .connection.targetBlock();
+      }
+    } else {
+      constructorBlock.setWarningText(
+        "Seuls les constructeurs sont autorisés ici.",
+      );
+      throw new Error("Not a constructor");
+    }
+
+    // Add this constructor to the type's constructors
+    let constructor = {
+      type: "abstraction",
+      variable: {
+        type: "universe",
+        level: {},
+      },
+      body: constructorBody,
+    };
+    fixpoint.constructors.push(constructor);
+
+    // Register this constructor under the provided name
+    constructorName = constructorBlock.getField("NAME").getText();
+    if (constructorName in types || constructorName in constructors) {
+      constructorBlock.setWarningText(`${constructorName} est déjà défini.`);
+      throw new Error("Unavailable name for custom constructor");
+    }
+    constructors[constructorName] = {
+      type: typeName,
+      index: fixpoint.constructors.length - 1,
+    };
+
+    constructorBlock = constructorBlock.nextConnection.targetBlock();
+  }
+
+  // Register this type under the provided name
+  types[typeName] = fixpoint;
+
+  return fixpoint;
+}
+
+export async function validate(workspace) {
+  /**
+   * Attempts to validate theorems and type definitions in the provided workspace
+   */
+
   await intialize(url);
   let blocks = workspace.getAllBlocks();
 
@@ -300,16 +483,65 @@ export async function verifyTheorems(workspace) {
   for (let i = 0; i < blocks.length; ++i) {
     blocks[i].setWarningText("");
   }
+  
+  // Get definition order
+  let dag = [];
+  let definitionOrder = [];
+  for (let i = 0; i < blocks.length; ++i) {
+    let block = blocks[i];
+    try {
+      let blockDependencies = getDependencies(block);
+      let name = block.getField("NAME").getText();
+      dag.push({
+        name: name,
+        prev: blockDependencies,
+      });
+    } catch (e) {}
+  }
+  try {
+    definitionOrder = getTopologicalOrder(dag);
+  } catch (e) {
+    for (let i = 0; i < blocks.length; ++i) {
+      let block = blocks[i];
+      if (block.type.startsWith("definition")) {
+        block.setWarningText(
+          "L'espace de travail inclut des définitions cycliques.",
+        );
+      }
+    }
+  }
+
+  let types = {
+    Prop: prop,
+  };
+  let constructors = {};
+
+  definitionOrder.forEach(function (definitionName) {
+    let block = blocks.find(
+      (bl) =>
+        bl.type.startsWith("definition") &&
+        bl.getField("NAME").getText() == definitionName,
+    );
+    if (block) {
+      registerDefinition(block, types, constructors);
+    }
+  });
 
   // Verify theorems
   for (let i = 0; i < blocks.length; ++i) {
     let block = blocks[i];
-    if (block.type !== "theorem") continue;
-    block.getSvgRoot().style.filter = "";
-    if (verifyTheorem(block)) {
-      addGlow(block, "green", "#00ff00");
-    } else {
-      //addGlow(block, "red", "#ff0000");
+
+    if (block.type == "theorem") {
+      block.getSvgRoot().style.filter = "";
+      if (verifyTheorem(block)) {
+        addGlow(block, "#00ff00");
+      } else {
+        addGlow(block, "#bb0000");
+      }
     }
   }
+
+  // Show types and constructors
+  console.log(constructors);
+  console.log(JSON.stringify(types, null, 2));
 }

@@ -1,4 +1,4 @@
-export const htmlGenerator = new Blockly.Generator("Endive");
+export const htmlGenerator = new Blockly.Generator("HTML");
 
 htmlGenerator.RESERVED_WORDS_ = "Théorème,Preuve";
 htmlGenerator.init = function (workspace) {
@@ -16,7 +16,7 @@ htmlGenerator["theorem"] = function (block, generator) {
     proof += tactic;
     proofBlock = proofBlock.getNextBlock();
   }
-  
+
   const code = `<b>Théorème :</b> $${statement}$ <br/><br/> <i>Preuve :</i> <br/> ${proof} <br/>`;
   return code;
 };
