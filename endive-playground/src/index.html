@@ -37,6 +37,13 @@ Endive generated code goes here</textarea>-->
         <div class="Button footer_button pressed" id="toggleAutomaticVerif">
           Vérification automatique
         </div>
+        <div class="Button footer_button" id="saveWorkspace" style="display:none">
+          <!-- Utile pour sauvegarder des exemples :) -->
+          Save
+        </div>
+        <div class="Button footer_button" id="example" onclick="show_examples()">
+          Exemples
+        </div>
         <div
           class="Button footer_button"
           style="display: none"
@@ -49,12 +56,36 @@ Endive generated code goes here</textarea>-->
         Math display
       </div>
     </div>
+    <div class="popup-back" id="popupExamples" onclick="hide_examples()" style="display:none">
+    <div class="popup">
+      <div class="Button footer_button" id="example-identity" onclick="hide_examples()">
+        Identité
+      </div>
+      <div class="Button footer_button" id="example-transitivity" onclick="hide_examples()">
+        Transitivité
+      </div>
+      <div class="Button footer_button" id="example-inductive" onclick="hide_examples()">
+        Types inductifs
+      </div>
+    </div>
+  </div>
+    </div>
     <script>
       MathJax = {
         tex: {
           inlineMath: [["$", "$"]],
         },
       };
+      function show_examples(){
+        document.getElementById("popupExamples").style.display = "flex";
+      }
+      function hide_examples(){
+        document.getElementById("popupExamples").style.display = "none";
+      }
+      function select_example(ex){
+        globalThis.load_example(ex);
+        hide_examples();
+      }
     </script>
     <script
       type="text/javascript"
