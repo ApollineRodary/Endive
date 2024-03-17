@@ -82,9 +82,16 @@ h1 {
 #blocklyDiv {
   width: 100%;
 }
-#latexcodearea {
+#mathDisplayDiv {
   width: 30%;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: end;
+}
+#mathDisplay {
+  width: 100%;
 }
 
 main {

@@ -25,9 +25,7 @@ htmlGenerator["proposition_forall"] = function (block, generator) {
   const variable = htmlGenerator.getVariableName(
     block.getFieldValue("VARIABLE"),
   );
-  const type = htmlGenerator.getVariableName(
-    block.getFieldValue("TYPE"),
-  );
+  const type = htmlGenerator.getVariableName(block.getFieldValue("TYPE"));
   const proposition = generator.valueToCode(block, "PROPOSITION", 0);
   return [`\\forall ${variable} \\in ${type}, ${proposition}`, 0];
 };
@@ -47,9 +45,7 @@ htmlGenerator["tactic_let"] = function (block, generator) {
   const variable = htmlGenerator.getVariableName(
     block.getFieldValue("VARIABLE"),
   );
-  const type = htmlGenerator.getVariableName(
-    block.getFieldValue("TYPE"),
-  );
+  const type = htmlGenerator.getVariableName(block.getFieldValue("TYPE"));
   return `Soit $${variable} \\in ${type}$.<br/>`;
 };
 
@@ -63,26 +59,26 @@ htmlGenerator["tactic_then"] = function (block, generator) {
   return `Alors $${conclusion}$.<br/>`;
 };
 
-htmlGenerator["definition_inductive_type"] = function(block, generator) {
+htmlGenerator["definition_inductive_type"] = function (block, generator) {
   return "";
-}
+};
 
-htmlGenerator["definition_simple_constructor"] = function(block, generator) {
+htmlGenerator["definition_simple_constructor"] = function (block, generator) {
   return "";
-}
+};
 
-htmlGenerator["definition_arrow_constructor"] = function(block, generator) {
+htmlGenerator["definition_arrow_constructor"] = function (block, generator) {
   return "";
-}
+};
 
-htmlGenerator["definition_arrow_param"] = function(block, generator) {
+htmlGenerator["definition_arrow_param"] = function (block, generator) {
   return ["", 0];
-}
+};
 
-htmlGenerator["definition_arrow_end"] = function(block, generator) {
+htmlGenerator["definition_arrow_end"] = function (block, generator) {
   return ["", 0];
-}
+};
 
-htmlGenerator["definition_unary_predicate"] = function(block, generator) {
+htmlGenerator["definition_unary_predicate"] = function (block, generator) {
   return "";
-}
+};

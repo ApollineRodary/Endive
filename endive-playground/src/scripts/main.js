@@ -1,9 +1,10 @@
-/*import { endiveGenerator } from "./generators/endive.js";
-import { latexGenerator } from "./generators/latex.js";*/
+/*import { endiveGenerator } from "./generators/endive.js";*/
+import { latexGenerator } from "./generators/latex.js";
 import { htmlGenerator } from "./generators/html.js";
 import { validate } from "./verify.js";
 
 globalThis.automaticVerif = true;
+globalThis.compileLatex = true;
 
 const updateCodeEvents = new Set([
   Blockly.Events.BLOCK_CHANGE,
@@ -16,14 +17,23 @@ export function resize() {
   Blockly.svgResize(workspace);
 }
 
+function updateMathDisplay() {
+  if (globalThis.compileLatex) {
+    const htmlCode = htmlGenerator.workspaceToCode(workspace);
+    const mathDisplayDiv = document.getElementById("mathDisplay");
+    mathDisplayDiv.innerHTML = htmlCode;
+    MathJax.typesetPromise([mathDisplayDiv]);
+  } else {
+    const latexCode = latexGenerator.workspaceToCode(workspace);
+    document.getElementById("mathDisplay").innerHTML = latexCode;
+  }
+}
+
 function updateCode(event) {
   if (workspace.isDragging()) return;
   if (!updateCodeEvents.has(event.type)) return;
 
-  const htmlCode = htmlGenerator.workspaceToCode(workspace);
-  const mathDisplayDiv = document.getElementById("mathDisplayDiv");
-  mathDisplayDiv.innerHTML = htmlCode;
-  MathJax.typesetPromise([mathDisplayDiv]);
+  updateMathDisplay();
 
   if (globalThis.automaticVerif) verifyProofs();
 
@@ -141,11 +151,11 @@ workspace.addChangeListener(updateCode);
 workspace.registerButtonCallback("verifyProofs", verifyProofs);
 
 const defaultVariableNames = {
-  "x": "MathObject",
-  "y": "MathObject",
-  "z": "MathObject",
-  "P": "MathObject",
-  "Q": "MathObject"
+  x: "MathObject",
+  y: "MathObject",
+  z: "MathObject",
+  P: "MathObject",
+  Q: "MathObject",
 };
 for (const [key, value] of Object.entries(defaultVariableNames)) {
   workspace.createVariable(key, value);
@@ -154,7 +164,7 @@ for (const [key, value] of Object.entries(defaultVariableNames)) {
 function toggleMathDisplay() {
   var x = document.getElementById("mathDisplayDiv");
   if (x.style.display === "none") {
-    x.style.display = "block";
+    x.style.display = "flex";
     document.getElementById("blocklyDiv").style.width = "70%";
     document.getElementById("toggleMathDisplay").classList.add("pressed");
     resize();
@@ -177,6 +187,16 @@ function toggleautomatic() {
   globalThis.automaticVerif = !globalThis.automaticVerif;
 }
 
+function toggleLatexCompil() {
+  if (globalThis.compileLatex) {
+    document.getElementById("toggleLatexCompil").classList.remove("pressed");
+  } else {
+    document.getElementById("toggleLatexCompil").classList.add("pressed");
+  }
+  globalThis.compileLatex = !globalThis.compileLatex;
+  updateMathDisplay();
+}
+
 document
   .getElementById("toggleMathDisplay")
   .addEventListener("click", toggleMathDisplay);
@@ -185,9 +205,12 @@ document
   .getElementById("toggleAutomaticVerif")
   .addEventListener("click", toggleautomatic);
 
+document
+  .getElementById("toggleLatexCompil")
+  .addEventListener("click", toggleLatexCompil);
+
 /*
 endiveGenerator.init(workspace);
 latexGenerator.init(workspace);
 */
 htmlGenerator.init(workspace);
-
