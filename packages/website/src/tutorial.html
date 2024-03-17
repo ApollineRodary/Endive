@@ -72,7 +72,7 @@
           théorèmes. Pour placer un bloc dans cette zone, vous pouvez simplement
           cliquer dessus avec le clic gauche de votre souris. Pour le placer où
           vous le souhaitez dans l'espace à votre disposition, il suffit de
-          rester appuyer sur le clic gauche et de le déplacer, puis relâcher le
+          rester appuyé sur le clic gauche et de le déplacer, puis relâcher le
           bouton lorsqu'il se trouve à l'endroit souhaité. Pour assembler les
           différents blocs ensemble, il suffit d'imbriquer les blocs en faisant
           correspondre les encoches.
@@ -102,8 +102,8 @@
 
         <p>
           Le raccourci clavier "Ctrl c - Ctrl v" vous permet de dupliquer le
-          bloc ou l'assemblage de bloc sélectionner. "Ctrl z" permet d'annuler
-          la dernière action faite.
+          bloc ou l'assemblage de bloc sélectionné. "Ctrl z" permet d'annuler la
+          dernière action faite.
         </p>
         <video autoplay loop>
           <source src="images/Shortcuts.webm" type="video/webm" />
@@ -137,13 +137,13 @@
 
       <div class="BoxContent" id="bloc_c" style="display: none">
         <p>
-          Dans cette section, les blocs de bases pour énoncer et prouver une
+          Dans cette section, les blocs de base pour énoncer et prouver une
           proposition mathématique vont être présentés.
         </p>
         <p>
           Dans l'onglet Théorème du menu à gauche, vous trouverez le bloc
-          Théorème. Pour ce bloc, l'encoche à droite du mot Théorème est dédié à
-          la construction d'un énoncé mathématique. L'espace en dessous du mot
+          Théorème. Pour ce bloc, l'encoche à droite du mot Théorème est dédiée
+          à la construction d'un énoncé mathématique. L'espace en dessous du mot
           "Preuve" est consacré à la construction de la preuve de l'énoncé.
         </p>
         <img src="images/thm.png" />
@@ -161,7 +161,7 @@
           <source src="images/Renamebis.webm" type="video/webm" />
         </video>
         <p>
-          Le bloc "Pour tout item dans Prop" permet d'énoncer des énoncés
+          Le bloc "Pour tout x dans Prop" permet d'écrire des énoncés
           mathématiques contenant le quantificateur universel ∀. Plus
           concrètement, il permet d'énoncer des phrases comme "Pour tout nombre
           x plus grand que 1, x est plus grand que 0". De même, il est possible
@@ -180,11 +180,11 @@
           </li>
           <li>
             le bloc "Supposons", qui nécessite d'être complété avec un autre
-            bloc et qui permet d'ajouter une proposition aux hypothèses
+            bloc, qui permet d'ajouter une proposition aux hypothèses
           </li>
           <li>
-            le bloc "Alors" qui nécessite également d'être complété avec un
-            autre bloc qui permet de déduire automatiquement des hypothèses une
+            le bloc "Alors", qui nécessite également d'être complété avec un
+            autre bloc, qui permet de déduire automatiquement des hypothèses une
             proposition
           </li>
         </ul>
@@ -275,7 +275,7 @@
         <p>
           Par défaut, la vérification automatique est activée. Cela signifie
           qu'Endive vérifie en permanence que tout est correct. Si ce n'est pas
-          le cas, le bloc s'affiche en rouge, et Endive vous propose des petits
+          le cas, le bloc s'affiche en rouge et Endive vous propose des petits
           messages d'explication pour comprendre ce qui ne va pas. Pas de
           panique si le bloc est rouge dès le début, cela signifie juste que
           vous n'avez pas fini d'écrire votre énoncé.
@@ -290,6 +290,14 @@
         <img src="images/verif_error3.png" />
         <p>Lorsque tout est bon, votre bloc s'illumine en vert, bravo !</p>
         <img src="images/verif_green.png" />
+        <p>
+          Si vous préférez ne pas avoir la vérification automatique, vous pouvez
+          appuyer sur le bouton vert "Vérification automatique", qui devient
+          alors blanc. Vous pouvez alors appuyer sur le bouton "Vérifier la
+          preuve" qui est apparu en bas pour vérifier la preuve seulement quand
+          vous le souhaitez. Pour réactiver la vérification automatique, il
+          suffit d'appuyer de nouveau sur le bouton "Vérification automatique".
+        </p>
 
         <a
           class="Submenu"
@@ -319,7 +327,9 @@
       }
 
       to_show.style.display = "flex";
-      window.scroll(0, 0);
+      setTimeout(function () {
+        window.scroll(0, 0);
+      }, 50);
     }
   </script>
 </html>
