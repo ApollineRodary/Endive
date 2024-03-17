@@ -182,6 +182,7 @@ impl InductiveTypeFamily {
                 let mut c = body.c.clone();
                 let mut expected_param_count = 0;
                 for (ctor_arg, ctor_param) in ctor_args.iter().zip(ctor.params.iter()) {
+                    c = c.push(ctor_arg.clone());
                     if ctor_param.is_self() {
                         c = c.push(self.induction_principle(
                             e,
@@ -193,7 +194,6 @@ impl InductiveTypeFamily {
                         )?);
                         expected_param_count += 1;
                     }
-                    c = c.push(ctor_arg.clone());
                     expected_param_count += 1;
                 }
                 if param_count.get() != expected_param_count {
