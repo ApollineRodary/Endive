@@ -1,20 +1,20 @@
-function show_hb() {
+window.show_hb = function() {
   $(".hb").fadeIn(400);
 }
 
-function hide_hb() {
+window.hide_hb = function() {
   $(".hb").fadeOut(400);
 }
 
-function in_hb() {
+window.in_hb = function() {
   $("#suggest_box").fadeIn(200);
 }
 
-function out_hb() {
+window.out_hb = function() {
   $("#suggest_box").fadeOut(200);
 }
 
-function set_suggestion(text) {
+window.set_suggestion = function(text) {
   $("#suggestion_text").replaceWith(
     "<div id=" + '"suggestion_text">' + text + "</div>",
   );

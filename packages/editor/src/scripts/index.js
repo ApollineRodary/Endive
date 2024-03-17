@@ -4,7 +4,7 @@ window.onload = function (e) {
 
 globalThis.menu_open = false; //Keep track of the state of the menu
 
-function toggleMenu() {
+window.toggleMenu = function() {
   //show/hide the menu
   var menu = document.getElementById("menu");
   globalThis.menu_open = menu.classList.toggle("menu-open");

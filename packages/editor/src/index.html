@@ -59,7 +59,7 @@
     </div>
 
     <script>
-      function paste_example(n) {
+      window.paste_example = function(n) {
         examples = [
           "Lemma demo : forall P:Prop, P -> P.\n/Demonstration goes here\nQed.",
           "Lemma demo : forall P:Prop, P -> P.\nlet P:Prop. /Equivalent to Coq's intro\nlet p:P.\nexact p.\nQed.",
