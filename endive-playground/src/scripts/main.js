@@ -1,6 +1,6 @@
 /*import { endiveGenerator } from "./generators/endive.js";
-import { latexGenerator } from "./generators/latex.js";
-import { htmlGenerator } from "./generators/html.js";*/
+import { latexGenerator } from "./generators/latex.js";*/
+import { htmlGenerator } from "./generators/html.js";
 import { validate } from "./verify.js";
 
 globalThis.automaticVerif = true;
@@ -20,10 +20,10 @@ function updateCode(event) {
   if (workspace.isDragging()) return;
   if (!updateCodeEvents.has(event.type)) return;
 
-  /*const htmlCode = htmlGenerator.workspaceToCode(workspace);
+  const htmlCode = htmlGenerator.workspaceToCode(workspace);
   const mathDisplayDiv = document.getElementById("mathDisplayDiv");
   mathDisplayDiv.innerHTML = htmlCode;
-  MathJax.typesetPromise([mathDisplayDiv]);*/
+  MathJax.typesetPromise([mathDisplayDiv]);
 
   if (globalThis.automaticVerif) verifyProofs();
 
@@ -182,5 +182,6 @@ document
 /*
 endiveGenerator.init(workspace);
 latexGenerator.init(workspace);
-htmlGenerator.init(workspace);
 */
+htmlGenerator.init(workspace);
+
