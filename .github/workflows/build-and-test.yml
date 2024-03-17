@@ -1,14 +1,13 @@
-name: CI
+name: Build and test
 
 on:
   pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   build:
-    name: Build
+    name: Build and test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -42,6 +41,8 @@ jobs:
         run: npm run build --workspace=packages/editor
       - name: Build editor2
         run: npm run build --workspace=packages/editor2
+      - name: Build endive-playground
+        run: npm run build --workspace=endive-playground
       - name: Build website
         run: npm run build --workspace=packages/website
       - name: Check VS Code extension linting
