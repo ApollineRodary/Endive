@@ -722,7 +722,7 @@ impl Tm {
                 abs.bound_ty.lift(by);
                 abs.body.lift(by);
             }
-            Tm::U(n) => {}
+            Tm::U(_n) => {}
             Tm::Inductive { args, indices, .. } => {
                 for arg in args {
                     arg.lift(by);
