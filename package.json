@@ -1,8 +1,9 @@
 {
   "name": "endive",
   "workspaces": [
-    "packags/app",
     "crates/endive-wasm/pkg",
+    "endive-playground",
+    "packages/app",
     "packages/editor",
     "packages/editor2",
     "packages/vscode-plugin",

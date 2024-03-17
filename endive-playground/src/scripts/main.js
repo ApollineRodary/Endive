@@ -1,5 +1,9 @@
+import * as Blockly from "blockly/core";
+
 import { endiveGenerator } from "./generators/endive.js";
 import { verifyTheorems } from "./verify.js";
+
+import "./blocks.js";
 
 const updateCodeEvents = new Set([
   Blockly.Events.BLOCK_CHANGE,
