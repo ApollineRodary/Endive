@@ -17,7 +17,7 @@ impl Telescope {
         mut tc: Rc<TyCtx>,
     ) -> Result<(Rc<Ctx>, Rc<TyCtx>), Error> {
         let mut l = Lvl(c.len());
-        for (i, ty) in self.0.iter().enumerate() {
+        for ty in self.0.iter() {
             ty.univ_lvl(e, &c, &tc)?;
             let ty = ty.eval(&e, &c)?;
             c = c.push(Val::Var(l));
