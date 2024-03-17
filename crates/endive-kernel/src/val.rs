@@ -481,6 +481,166 @@ impl Val {
                 Ok(true)
             }
             (
+                Val::Inductive { idx, args, indices },
+                Val::Inductive {
+                    idx: other_idx,
+                    args: other_args,
+                    indices: other_indices,
+                },
+            ) => {
+                if idx != other_idx {
+                    return Ok(false);
+                }
+                if args.len() != other_args.len() {
+                    return Ok(false);
+                }
+                for (arg, other_arg) in args.iter().zip(other_args) {
+                    if !arg.beta_eq(e, l, other_arg, other_l)? {
+                        return Ok(false);
+                    }
+                }
+                if indices.len() != other_indices.len() {
+                    return Ok(false);
+                }
+                for (index, other_index) in indices.iter().zip(other_indices) {
+                    if !index.beta_eq(e, l, other_index, other_l)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            (
+                Val::Ctor {
+                    inductive_idx,
+                    inductive_args,
+                    ctor_idx,
+                    ctor_args,
+                },
+                Val::Ctor {
+                    inductive_idx: other_inductive_idx,
+                    inductive_args: other_inductive_args,
+                    ctor_idx: other_ctor_idx,
+                    ctor_args: other_ctor_args,
+                },
+            ) => {
+                if inductive_idx != other_inductive_idx {
+                    return Ok(false);
+                }
+                if ctor_idx != other_ctor_idx {
+                    return Ok(false);
+                }
+                if inductive_args.len() != other_inductive_args.len() {
+                    return Ok(false);
+                }
+                for (arg, other_arg) in inductive_args.iter().zip(other_inductive_args) {
+                    if !arg.beta_eq(e, l, other_arg, other_l)? {
+                        return Ok(false);
+                    }
+                }
+                if ctor_args.len() != other_ctor_args.len() {
+                    return Ok(false);
+                }
+                for (arg, other_arg) in ctor_args.iter().zip(other_ctor_args) {
+                    if !arg.beta_eq(e, l, other_arg, other_l)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
+            }
+            (
+                Val::Induction {
+                    inductive_idx,
+                    inductive_args,
+                    motive,
+                    cases,
+                    val,
+                },
+                Val::Induction {
+                    inductive_idx: other_inductive_idx,
+                    inductive_args: other_inductive_args,
+                    motive: other_motive,
+                    cases: other_cases,
+                    val: other_val,
+                },
+            ) => {
+                if inductive_idx != other_inductive_idx
+                    || inductive_args.len() != other_inductive_args.len()
+                    || cases.len() != other_cases.len()
+                {
+                    return Ok(false);
+                }
+
+                for (arg, other_arg) in inductive_args.iter().zip(other_inductive_args) {
+                    if !arg.beta_eq(e, l, other_arg, other_l)? {
+                        return Ok(false);
+                    }
+                }
+
+                let inductive = e
+                    .inductives
+                    .get(*inductive_idx)
+                    .ok_or(Error::InductiveOutOfBound)?;
+
+                let mut motive_c = motive.c.clone();
+                let mut motive_l = Lvl(motive_c.len());
+
+                let motive_param_count = inductive.indices.0.len() + 1;
+                for _ in 0..motive_param_count {
+                    motive_c = motive_c.push(Val::Var(motive_l));
+                    motive_l.0 += 1;
+                }
+
+                if !motive.body.eval(e, &motive_c)?.beta_eq(
+                    e,
+                    motive_l,
+                    &other_motive.body.eval(e, &motive_c)?,
+                    motive_l,
+                )? {
+                    return Ok(false);
+                }
+
+                for (case, other_case) in cases.iter().zip(other_cases) {
+                    match (case, other_case) {
+                        (CaseVal::Constant(val), CaseVal::Constant(other_val)) => {
+                            if !val.beta_eq(e, l, other_val, other_l)? {
+                                return Ok(false);
+                            }
+                        }
+                        (
+                            CaseVal::Closure { param_count, body },
+                            CaseVal::Closure {
+                                param_count: other_param_count,
+                                body: other_body,
+                            },
+                        ) => {
+                            if param_count != other_param_count {
+                                return Ok(false);
+                            }
+
+                            let mut case_c = body.c.clone();
+                            let mut case_l = Lvl(case_c.len());
+
+                            for _ in 0..param_count.get() {
+                                case_c = case_c.push(Val::Var(case_l));
+                                case_l.0 += 1;
+                            }
+
+                            if !body.body.eval(e, &case_c)?.beta_eq(
+                                e,
+                                case_l,
+                                &other_body.body.eval(e, &case_c)?,
+                                case_l,
+                            )? {
+                                return Ok(false);
+                            }
+                        }
+                        _ => return Ok(false),
+                    }
+                }
+
+                val.beta_eq(e, l, other_val, other_l)
+            }
+            (
                 Val::OldCtor { fix, i, args },
                 Val::OldCtor {
                     fix: other_fix,
