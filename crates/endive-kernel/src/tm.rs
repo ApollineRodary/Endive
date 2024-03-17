@@ -405,21 +405,39 @@ impl Tm {
 
                 // Type check the cases.
                 for (case, ctor) in cases.iter().zip(inductive.ctors.iter()) {
-                    let (case_c, case_tc, param_count) = ctor.add_case_telescope_to_ctx(
-                        e,
-                        *inductive_idx,
-                        &inductive_args,
-                        &inductive.indices,
-                        &inductive_c,
-                        &motive_closure,
-                        c.clone(),
-                        tc.clone(),
-                    )?;
+                    let (case_c, case_tc, constructed_value_indices, param_count) = ctor
+                        .add_case_telescope_to_ctx(
+                            e,
+                            *inductive_idx,
+                            &inductive_args,
+                            &inductive.indices,
+                            &inductive_c,
+                            &motive_closure,
+                            c.clone(),
+                            tc.clone(),
+                        )?;
+
                     if case.param_count != param_count {
                         return Err(Error::TyMismatch);
                     }
+
                     let case_ty = case.body.ty_internal(e, &case_c, &case_tc)?;
-                    todo!()
+
+                    let mut motive_c = c.clone();
+                    for index in &constructed_value_indices {
+                        motive_c = motive_c.push(index.clone());
+                    }
+                    motive_c = motive_c.push(Val::Inductive {
+                        idx: *inductive_idx,
+                        args: inductive_args.clone(),
+                        indices: constructed_value_indices,
+                    });
+
+                    let expected_ty = motive.eval(e, &motive_c)?;
+
+                    if !case_ty.beta_eq(e, Lvl(case_c.len()), &expected_ty, Lvl(case_c.len()))? {
+                        return Err(Error::TyMismatch);
+                    }
                 }
 
                 let val_ty = val.ty_internal(e, c, tc)?;

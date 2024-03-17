@@ -8,6 +8,7 @@ use crate::{
 };
 
 /// A sequence of types. For each type, an argument of that type is bound in every subsequent type.
+#[derive(Clone)]
 pub struct Telescope(pub Vec<Tm>);
 
 impl Telescope {
@@ -297,10 +298,16 @@ impl Ctor {
         motive: &Closure,
         mut c: Rc<Ctx>,
         mut tc: Rc<TyCtx>,
-    ) -> Result<(Rc<Ctx>, Rc<TyCtx>, usize), Error> {
+    ) -> Result<(Rc<Ctx>, Rc<TyCtx>, Vec<Val>, usize), Error> {
         let mut l = Lvl(c.len());
         let mut param_count = 0;
-        for param in &self.params {
+
+        let mut params = self.params.clone();
+        let mut constructed_value_indices = self.indices.clone();
+
+        for i in 0..params.len() {
+            let param = &params[i];
+
             c = c.push(Val::Var(l));
             tc = tc.push(param.eval(
                 e,
@@ -327,10 +334,26 @@ impl Ctor {
                     tc = tc.push(motive.body.eval(e, &motive_c)?);
                     l = Lvl(l.0 + 1);
                     param_count += 1;
+
+                    // At this point, we need to lift the de Bruijn indices in the next parameters
+                    // and in the indices for the constructed value because we are adding a new
+                    // parameter to the context.
+                    for param in &mut params[i + 1..] {
+                        param.lift(1);
+                    }
+                    for index in &mut constructed_value_indices {
+                        index.lift(1);
+                    }
                 }
             }
         }
-        Ok((c, tc, param_count))
+
+        let constructed_value_indices = constructed_value_indices
+            .iter()
+            .map(|index| index.eval(e, &c))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok((c, tc, constructed_value_indices, param_count))
     }
 
     /// Validates a constructor application and returns the indices of the returned inductive type.
@@ -373,6 +396,7 @@ impl Ctor {
 
 /// A constructor parameter type, which is a chain of zero or more dependent type products with
 /// additional constraints to ensure strict positivity.
+#[derive(Clone)]
 pub struct CtorParam {
     /// The telescope of the parameter type.
     pub tele: Telescope,
@@ -385,6 +409,21 @@ impl CtorParam {
     /// Returns whether the parameter type is the inductive type family being defined.
     fn is_self(&self) -> bool {
         self.tele.0.is_empty() && matches!(&self.last, CtorParamLast::This { .. })
+    }
+
+    /// Adds `by` to the de Bruijn indices in the parameter.
+    fn lift(&mut self, by: usize) {
+        for ty in &mut self.tele.0 {
+            ty.lift(by);
+        }
+        match &mut self.last {
+            CtorParamLast::This { indices } => {
+                for index in indices {
+                    index.lift(by);
+                }
+            }
+            CtorParamLast::Other(ty) => ty.lift(by),
+        }
     }
 
     /// Evaluates the constructor parameter type to a WHNF term.
@@ -463,6 +502,7 @@ impl CtorParam {
 /// The last type in the chain of dependent product types representing a constructor parameter.
 ///
 /// See [`CtorParam`].
+#[derive(Clone)]
 pub enum CtorParamLast {
     /// The inductive type family being defined, applied to the bound parameters and given indices,
     /// which must have the same length as the indices of the family (i.e the inductive type family
