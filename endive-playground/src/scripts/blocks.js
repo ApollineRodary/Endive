@@ -232,12 +232,12 @@ Blockly.defineBlocksWithJsonArray([
 
   {
     type: "definition_unary_predicate",
-    message0: "Prédicat : %1 sur %2 %3 Règles : %4 5",
+    message0: "Prédicat : %1 sur %2 %3 Règles : %4 %5",
     args0: [
       {
         type: "field_variable",
         name: "NAME",
-        variable: "eq",
+        variable: "pair",
         variableTypes: ["Predicate"],
         defaultType: "Predicate",
       },
@@ -257,10 +257,228 @@ Blockly.defineBlocksWithJsonArray([
       {
         type: "input_statement",
         name: "RULES",
+      },
+    ],
+    colour: 0,
+  },
+
+  {
+    type: "definition_binary_predicate",
+    message0: "Prédicat : %1 sur %2 et %3 %4 Règles : %5 %6",
+    args0: [
+      {
+        type: "field_variable",
+        name: "NAME",
+        variable: "eq",
+        variableTypes: ["Predicate"],
+        defaultType: "Predicate",
+      },
+      {
+        type: "field_variable",
+        name: "TYPE",
+        variable: "N",
         variableTypes: ["Type"],
         defaultType: "Type",
       },
+      {
+        type: "field_variable",
+        name: "TYPE",
+        variable: "N",
+        variableTypes: ["Type"],
+        defaultType: "Type",
+      },
+      {
+        type: "input_end_row",
+      },
+      {
+        type: "input_end_row",
+      },
+      {
+        type: "input_statement",
+        name: "RULES",
+      },
     ],
+    colour: 0,
+  },
+
+  {
+    type: "definition_predicate_rule",
+    message0: "Règle %1: %2",
+    args0: [
+      {
+        type: "field_variable",
+        name: "NAME",
+        variableTypes: ["PredicateRule"],
+        defaultType: "PredicateRule",
+      },
+      {
+        type: "input_value",
+        name: "PROPOSITION",
+      },
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    colour: 18,
+  },
+
+  {
+    type: "definition_predicate_forall",
+    message0: "Pour tout %1:%2, %3",
+    args0: [
+      {
+        type: "field_variable",
+        name: "VARIABLE",
+        variable: "x",
+        variableTypes: ["MathObject"],
+        defaultType: "MathObject",
+      },
+      {
+        type: "field_variable",
+        name: "TYPE",
+        variable: "Prop",
+        variableTypes: ["Type"],
+        defaultType: "Type",
+      },
+      {
+        type: "input_value",
+        name: "PROPOSITION",
+      },
+    ],
+    output: null,
+    colour: 18,
+    tooltip: "",
+    helpUrl: "",
+  },
+
+  {
+    type: "definition_predicate_implies",
+    message0: "Si %1 Alors %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "ANTECEDENT",
+        align: "RIGHT",
+      },
+      {
+        type: "input_value",
+        name: "CONSEQUENT",
+        align: "RIGHT",
+      },
+    ],
+    output: null,
+    colour: 18,
+    tooltip: "",
+    helpUrl: "",
+  },
+
+  {
+    type: "definition_unary_predicate_true",
+    message0: "vrai pour %1",
+    args0: [
+      {
+        type: "input_value",
+        name: "VALUE",
+      },
+    ],
+    output: null,
+    colour: 18,
+  },
+
+  {
+    type: "definition_binary_predicate_true",
+    message0: "vrai pour %1 et %2",
+    args0: [
+      {
+        type: "input_value",
+        name: "VALUE",
+      },
+      {
+        type: "input_value",
+        name: "VALUE",
+      },
+    ],
+    inputsInline: true,
+    output: null,
+    colour: 18,
+  },
+
+  // Constructors
+  {
+    type: "constructor_simple",
+    message0: "%1, %2",
+    args0: [
+      {
+        type: "field_variable",
+        name: "NAME",
+        variableTypes: ["Constructor", "MathObject"],
+        defaultType: "Constructor",
+      },
+      {
+        type: "input_value",
+        name: "NEXT",
+      },
+    ],
+    output: null,
+    colour: 25,
+  },
+
+  {
+    type: "constructor_simple_final",
+    message0: "%1",
+    args0: [
+      {
+        type: "field_variable",
+        name: "NAME",
+        variableTypes: ["Constructor", "MathObject"],
+        defaultType: "Constructor",
+      },
+    ],
+    output: null,
+    colour: 25,
+  },
+
+  {
+    type: "constructor_arrow",
+    message0: "%1 (%2), %3",
+    args0: [
+      {
+        type: "field_variable",
+        name: "NAME",
+        variableTypes: ["Constructor"],
+        defaultType: "Constructor",
+      },
+      {
+        type: "input_value",
+        name: "BODY",
+      },
+      {
+        type: "input_value",
+        name: "NEXT",
+      },
+    ],
+    output: null,
+    inputsInline: true,
+    colour: 25,
+  },
+
+  {
+    type: "constructor_arrow_final",
+    message0: "%1 (%2)",
+    args0: [
+      {
+        type: "field_variable",
+        name: "NAME",
+        variableTypes: ["Constructor"],
+        defaultType: "Constructor",
+      },
+      {
+        type: "input_value",
+        name: "BODY",
+      },
+    ],
+    output: null,
+    inputsInline: true,
+    colour: 25,
   },
 ]);
 
