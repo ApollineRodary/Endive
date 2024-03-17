@@ -24,7 +24,7 @@ ul {
   margin: 0;
 }
 
-#endive {
+.endive {
   filter: brightness(0.8);
   filter: saturate(2);
 }
@@ -44,6 +44,10 @@ ul {
   box-sizing: border-box;
   box-shadow: 0px 0px 20px grey;
   z-index: 2;
+}
+
+.filler {
+  flex-grow: 1;
 }
 
 @keyframes gradientAnimation {
