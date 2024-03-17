@@ -688,6 +688,81 @@ impl Tm {
         }
     }
 
+    /// Adds `by` to the de Bruijn indices in the lambda term.
+    pub(crate) fn lift(&mut self, by: usize) {
+        match self {
+            Tm::Var(i) => i.0 += by,
+            Tm::Abs(abs) => {
+                abs.bound_ty.lift(by);
+                abs.body.lift(by);
+            }
+            Tm::App(m, n) => {
+                m.lift(by);
+                n.lift(by);
+            }
+            Tm::Pi(abs) => {
+                abs.bound_ty.lift(by);
+                abs.body.lift(by);
+            }
+            Tm::U(n) => {}
+            Tm::Inductive { args, indices, .. } => {
+                for arg in args {
+                    arg.lift(by);
+                }
+                for index in indices {
+                    index.lift(by);
+                }
+            }
+            Tm::Ctor {
+                inductive_args,
+                ctor_args,
+                ..
+            } => {
+                for arg in inductive_args {
+                    arg.lift(by);
+                }
+                for arg in ctor_args {
+                    arg.lift(by);
+                }
+            }
+            Tm::Induction {
+                inductive_args,
+                motive,
+                cases,
+                val,
+                ..
+            } => {
+                for arg in inductive_args {
+                    arg.lift(by);
+                }
+                motive.lift(by);
+                for case in cases {
+                    case.body.lift(by);
+                }
+                val.lift(by);
+            }
+            Tm::OldFix { ty, ctors } => {
+                ty.lift(by);
+                for ctor in ctors {
+                    ctor.lift(by);
+                }
+            }
+            Tm::OldCtor { fix, args, .. } => {
+                fix.lift(by);
+                for arg in args {
+                    arg.lift(by);
+                }
+            }
+            Tm::OldInd { motive, cases, val } => {
+                motive.lift(by);
+                for case in cases {
+                    case.lift(by);
+                }
+                val.lift(by);
+            }
+        }
+    }
+
     /// Subtracts `by` from the de Bruijn indices greater or equal to `k` in the lambda term.
     fn unlift(&self, k: usize, by: usize) -> Result<Tm, Error> {
         match self {
