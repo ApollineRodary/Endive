@@ -589,8 +589,26 @@ function registerPredicateDefinition(
       throw new Error("Incorrect block type in predicate rule");
     }
 
-    // Placeholder: unary constructor that is true for all in the first input type
-    // Notably does not make sense for binary predicates
+    let convertConstructor = function(constructorBlock, environment) {
+      if (constructorBlock.type === "constructor_simple") {
+        if 
+      }
+    }
+
+    let convertRule = function(ruleComponentBlock, environment) {
+      if (ruleComponentBlock.type === "definition_unary_predicate_true") {
+        return {
+          type: "application",
+          f: {
+            type: "variable",
+            index: environment.length,
+          },
+          argument: {
+
+          }
+        }
+      }
+    }
     let constructor = {
       type: "abstraction",
       variable: target,
