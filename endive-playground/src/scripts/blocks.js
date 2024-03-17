@@ -282,7 +282,7 @@ Blockly.defineBlocksWithJsonArray([
       },
       {
         type: "field_variable",
-        name: "TYPE",
+        name: "OTHERTYPE",
         variable: "N",
         variableTypes: ["Type"],
         defaultType: "Type",
