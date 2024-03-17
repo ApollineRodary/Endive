@@ -3,7 +3,9 @@ use std::{num::NonZeroUsize, rc::Rc};
 use crate::{
     closure::{BindingClosure, Closure},
     ctx::{Ctx, TyCtx},
-    univ_lvl, Case, CaseVal, Error, GlobalEnv, Lvl, Val, Variance,
+    univ_lvl,
+    val::{Lvl, Val, Variance},
+    Case, CaseVal, Error, GlobalEnv,
 };
 
 /// de Bruijn index.
