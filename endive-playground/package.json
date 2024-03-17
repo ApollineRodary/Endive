@@ -1,20 +1,19 @@
 {
-  "name": "endive-playground",
-  "version": "0.1.0",
-  "description": "Visual programming interface for writing proofs with Endive",
-  "scripts": {
-    "build": "parcel build src/index.html",
-    "serve": "parcel serve src/index.html",
-    "format": "prettier --write \"src/**/*.{html,js}\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "devDependencies": {
-    "parcel": "^2.12.0",
-    "prettier": "^3.2.5"
-  },
-  "dependencies": {
-    "blockly": "^10.4.3",
-    "endive-wasm": "file:../crates/endive-wasm/pkg",
-    "lodash": "^4.17.21"
-  }
+    "name": "endive-playground",
+    "version": "0.1.0",
+    "description": "Visual programming interface for writing proofs with Endive",
+    "scripts": {
+        "build": "parcel build src/index.html",
+        "serve": "parcel serve src/index.html",
+        "format": "prettier --write \"src/**/*.{html,js}\"",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "devDependencies": {
+        "parcel": "^2.12.0",
+        "prettier": "^3.2.5"
+    },
+    "dependencies": {
+        "endive-wasm": "file:../crates/endive-wasm/pkg",
+        "lodash": "^4.17.21"
+    }
 }

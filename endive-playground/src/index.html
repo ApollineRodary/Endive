@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Endive en dev</title>
+    <title>Endive playground</title>
 
     <link
       rel="stylesheet"
@@ -15,17 +15,87 @@
   </head>
 
   <body>
+    <div class="top_menu">
+      <h1>Endive Playground</h1>
+      <a class="Button" href="../../endive-gui/Interface/tutorial.html"
+        >Voir le tutoriel</a
+      >
+    </div>
     <main>
-      <div id="blocklyDiv" style="height: 50vh; width: 99%"></div>
-
-      <textarea id="endivecodearea" style="height: 45vh; width: 49.3%">
-Endive generated code goes here</textarea
-      >
-      <textarea id="latexcodearea" style="height: 45vh; width: 49.3%">
-LaTeX generated code goes here</textarea
-      >
+      <div id="blocklyDiv"></div>
+      <!-- <textarea id="endivecodearea" style="height: 45vh; width: 49.3%">
+Endive generated code goes here</textarea>-->
+      <div id="mathDisplayDiv" style="display: none">
+        <div id="mathDisplay"></div>
+        <div class="Button footer_button pressed" id="toggleLatexCompil">
+          Compilé
+        </div>
+      </div>
     </main>
-
+    <div class="bottom_menu">
+      <div style="display: flex; flex-direction: row">
+        <div class="Button footer_button pressed" id="toggleAutomaticVerif">
+          Vérification automatique
+        </div>
+        <div class="Button footer_button" id="saveWorkspace" style="display:none">
+          <!-- Utile pour sauvegarder des exemples :) -->
+          Save
+        </div>
+        <div class="Button footer_button" id="example" onclick="show_examples()">
+          Exemples
+        </div>
+        <div
+          class="Button footer_button"
+          style="display: none"
+          id="verifyProof"
+        >
+          Vérifier la preuve
+        </div>
+      </div>
+      <div class="Button footer_button" id="toggleMathDisplay">
+        Mathématiques
+      </div>
+    </div>
+    <div class="popup-back" id="popupExamples" onclick="hide_examples()" style="display:none">
+    <div class="popup">
+      <div class="Button footer_button" id="example-identity" onclick="hide_examples()">
+        Identité
+      </div>
+      <div class="Button footer_button" id="example-transitivity" onclick="hide_examples()">
+        Transitivité
+      </div>
+      <div class="Button footer_button" id="example-inductive" onclick="hide_examples()">
+        Types inductifs
+      </div>
+    </div>
+  </div>
+    </div>
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [["$", "$"]],
+        },
+      };
+      function show_examples(){
+        document.getElementById("popupExamples").style.display = "flex";
+      }
+      function hide_examples(){
+        document.getElementById("popupExamples").style.display = "none";
+      }
+      function select_example(ex){
+        globalThis.load_example(ex);
+        hide_examples();
+      }
+    </script>
+    <script
+      type="text/javascript"
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <script src="https://unpkg.com/blockly"></script>
+    <script src="scripts/definitions.js"></script>
+    <script src="scripts/blocks.js"></script>
     <script src="scripts/main.js" type="module"></script>
   </body>
 </html>

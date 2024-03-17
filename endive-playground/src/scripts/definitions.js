@@ -1,6 +1,6 @@
-export const prop = {
+let prop = {
   type: "universe",
   level: {},
 };
 
-export const customTypes = [["Prop", prop]];
+customTypes = [["Prop", prop]];
