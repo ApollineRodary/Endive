@@ -43,7 +43,7 @@ function lift(lterm) {
   return lterm;
 }
 
-function convertStatement(block, environment) {
+function convertStatement(block, environment, types) {
   /** Converts a statement block into the corresponding lambda-term */
   if (block == null) {
     throw new Error("Incomplete statement");
@@ -51,7 +51,12 @@ function convertStatement(block, environment) {
 
   if (block.type === "proposition_forall") {
     let name = block.getField("VARIABLE").getText();
-    let type = block.getField("TYPE").getText();
+    let typeName = block.getField("TYPE").getText();
+    if (!(typeName in types)) {
+      block.setWarningText("Ce type n'est pas définient.");
+      throw new Error("Unbound type");
+    }
+    let type = types[typeName];
 
     let propositionBlock = block
       .getInput("PROPOSITION")
@@ -64,11 +69,12 @@ function convertStatement(block, environment) {
     let proposition = convertStatement(
       propositionBlock,
       environment.concat([[name, prop]]).map((x) => [x[0], lift(x[1])]),
+      types
     );
 
     return {
       type: "pi",
-      variable: prop,
+      variable: type,
       body: proposition,
     };
   }
@@ -81,12 +87,13 @@ function convertStatement(block, environment) {
       throw new Error("Incomplete statement");
     }
 
-    let antecedent = convertStatement(antecedentBlock, environment);
+    let antecedent = convertStatement(antecedentBlock, environment, types);
     let consequent = convertStatement(
       consequentBlock,
       environment
         .concat([[makeFreshVariable(environment), antecedent]])
         .map((x) => [x[0], lift(x[1])]),
+      types,
     );
 
     return {
@@ -113,7 +120,7 @@ function convertStatement(block, environment) {
   throw new Exception(`Unsupported block type ${block.type}`);
 }
 
-function convertTactics(block, environment, hypotheses) {
+function convertTactics(block, environment, hypotheses, types) {
   /** Converts a proof into the corresponding lambda-term
    * Environment: pairs of variable names and their types (used to compute de Bruijn indexes and to verify that nothing that is used is unbound)
    * Hypotheses: lambda-terms
@@ -124,14 +131,22 @@ function convertTactics(block, environment, hypotheses) {
 
   if (block.type === "tactic_let") {
     let name = block.getField("VARIABLE").getText();
+    let typeName = block.getField("TYPE").getText();
+    if (!(typeName in types)) {
+      block.setWarningText("Ce type n'est pas défini.");
+      throw new Error("Unbound type");
+    }
+    let type = types[typeName];
+
     let restOfProof = convertTactics(
       block.nextConnection.targetBlock(),
       environment.concat([[name, prop]]).map((x) => [x[0], lift(x[1])]),
       hypotheses.map((x) => [lift(x[0]), lift(x[1])]),
+      types
     );
     return {
       type: "abstraction",
-      variable: prop,
+      variable: type,
       body: restOfProof,
     };
   }
@@ -145,7 +160,7 @@ function convertTactics(block, environment, hypotheses) {
       throw new Error("Missing hypothesis");
     }
 
-    let hypothesis = convertStatement(hypothesisBlock, environment, hypotheses);
+    let hypothesis = convertStatement(hypothesisBlock, environment, hypotheses, types);
     let offsetHypothesis = lift(hypothesis);
     let hypothesisName = makeFreshVariable(environment);
 
@@ -165,6 +180,7 @@ function convertTactics(block, environment, hypotheses) {
             offsetHypothesis,
           ],
         ]),
+      types,
     );
     return {
       type: "abstraction",
@@ -182,7 +198,7 @@ function convertTactics(block, environment, hypotheses) {
       throw new Error("Missing conclusion");
     }
 
-    let conclusion = convertStatement(conclusionBlock, environment, hypotheses);
+    let conclusion = convertStatement(conclusionBlock, environment, hypotheses, types);
 
     // Look for conclusion in hypotheses
     let lterm = null;
@@ -220,6 +236,7 @@ function convertTactics(block, environment, hypotheses) {
         block.nextConnection.targetBlock(),
         environment,
         hypotheses.concat([[lterm, conclusion]]),
+        types,
       );
     }
     block.setWarningText(
@@ -240,8 +257,6 @@ function getTopologicalOrder(dag) {
    * Fails if the provided graph is not acyclic
    * dag is a list of objects each with a name (obj.name) and an array of predecessors (obj.prev)
    */
-  console.log("Ze dag is:");
-  console.log(dag);
 
   let visited = {};
   let order = [];
@@ -272,7 +287,7 @@ function getTopologicalOrder(dag) {
   return order;
 }
 
-function verifyTheorem(block) {
+function verifyTheorem(block, types) {
   /* Reads a theorem block and verifies that it is valid and that the proof is correct */
 
   // Read statement
@@ -282,16 +297,18 @@ function verifyTheorem(block) {
     return false;
   }
   let statement;
-  try {
-    statement = convertStatement(statementBlock, [], []);
+  try {  
+    statement = convertStatement(statementBlock, [], types);
   } catch (e) {
     return false;
   }
-
-  let statementType = endive.inferType(statement);
-  if (statementType.type !== "universe") {
-    console.error("Ill-typed statement");
-    console.log(statementType);
+  
+  try {
+    let statementType = endive.inferType(statement);
+    if (statementType.type !== "universe")
+      throw new Error("Not a universe type");
+  } catch(e) {
+    statementBlock.setWarningText("Cet énoncé est invalide :(");
     return false;
   }
 
@@ -303,7 +320,7 @@ function verifyTheorem(block) {
   }
   let proof;
   try {
-    proof = convertTactics(proofBlock, [], []);
+    proof = convertTactics(proofBlock, [], [], types);
   } catch (e) {
     return false;
   }
@@ -366,7 +383,7 @@ function getDependencies(block) {
 function registerDefinition(block, types, constructors) {
   let typeName = block.getField("NAME").getText();
   if (typeName in types || typeName in constructors) {
-    block.setWarning(`${typeName} est déjà défini`);
+    block.setWarningText(`${typeName} est déjà défini`);
     throw new Error("Unavailable name for custom type");
   }
 
@@ -533,15 +550,11 @@ export async function validate(workspace) {
 
     if (block.type == "theorem") {
       block.getSvgRoot().style.filter = "";
-      if (verifyTheorem(block)) {
+      if (verifyTheorem(block, types)) {
         addGlow(block, "#00ff00");
       } else {
         addGlow(block, "#bb0000");
       }
     }
   }
-
-  // Show types and constructors
-  console.log(constructors);
-  console.log(JSON.stringify(types, null, 2));
 }
