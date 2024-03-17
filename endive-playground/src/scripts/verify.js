@@ -48,7 +48,7 @@ function convertStatement(block, environment, types) {
     let name = block.getField("VARIABLE").getText();
     let typeName = block.getField("TYPE").getText();
     if (!(typeName in types)) {
-      block.setWarningText("Ce type n'est pas définient.");
+      block.setWarningText("Ce type n'est pas défini.");
       throw new Error("Unbound type");
     }
     let type = types[typeName];
@@ -120,6 +120,7 @@ function convertTactics(block, environment, hypotheses, types) {
    * Environment: pairs of variable names and their types (used to compute de Bruijn indexes and to verify that nothing that is used is unbound)
    * Hypotheses: lambda-terms
    */
+
   if (block == null) {
     return hypotheses[hypotheses.length - 1][0];
   }
@@ -154,11 +155,10 @@ function convertTactics(block, environment, hypotheses, types) {
       );
       throw new Error("Missing hypothesis");
     }
-
+    
     let hypothesis = convertStatement(
       hypothesisBlock,
       environment,
-      hypotheses,
       types,
     );
     let offsetHypothesis = lift(hypothesis);
