@@ -69,7 +69,7 @@ function convertStatement(block, environment, types) {
     let proposition = convertStatement(
       propositionBlock,
       environment.concat([[name, prop]]).map((x) => [x[0], lift(x[1])]),
-      types
+      types,
     );
 
     return {
@@ -142,7 +142,7 @@ function convertTactics(block, environment, hypotheses, types) {
       block.nextConnection.targetBlock(),
       environment.concat([[name, prop]]).map((x) => [x[0], lift(x[1])]),
       hypotheses.map((x) => [lift(x[0]), lift(x[1])]),
-      types
+      types,
     );
     return {
       type: "abstraction",
@@ -160,7 +160,12 @@ function convertTactics(block, environment, hypotheses, types) {
       throw new Error("Missing hypothesis");
     }
 
-    let hypothesis = convertStatement(hypothesisBlock, environment, hypotheses, types);
+    let hypothesis = convertStatement(
+      hypothesisBlock,
+      environment,
+      hypotheses,
+      types,
+    );
     let offsetHypothesis = lift(hypothesis);
     let hypothesisName = makeFreshVariable(environment);
 
@@ -198,7 +203,12 @@ function convertTactics(block, environment, hypotheses, types) {
       throw new Error("Missing conclusion");
     }
 
-    let conclusion = convertStatement(conclusionBlock, environment, hypotheses, types);
+    let conclusion = convertStatement(
+      conclusionBlock,
+      environment,
+      hypotheses,
+      types,
+    );
 
     // Look for conclusion in hypotheses
     let lterm = null;
@@ -297,17 +307,17 @@ function verifyTheorem(block, types) {
     return false;
   }
   let statement;
-  try {  
+  try {
     statement = convertStatement(statementBlock, [], types);
   } catch (e) {
     return false;
   }
-  
+
   try {
     let statementType = endive.inferType(statement);
     if (statementType.type !== "universe")
       throw new Error("Not a universe type");
-  } catch(e) {
+  } catch (e) {
     statementBlock.setWarningText("Cet énoncé est invalide :(");
     return false;
   }
@@ -500,7 +510,7 @@ export async function validate(workspace) {
   for (let i = 0; i < blocks.length; ++i) {
     blocks[i].setWarningText("");
   }
-  
+
   // Get definition order
   let dag = [];
   let definitionOrder = [];

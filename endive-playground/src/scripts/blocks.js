@@ -45,7 +45,7 @@ Blockly.defineBlocksWithJsonArray([
         name: "TYPE",
         variable: "Prop",
         variableTypes: ["Type"],
-        defaultType: "Type"
+        defaultType: "Type",
       },
       {
         type: "input_value",
