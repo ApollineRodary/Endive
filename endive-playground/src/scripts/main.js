@@ -140,10 +140,16 @@ workspace.userDefinedTypes = [["Prop"]];
 workspace.addChangeListener(updateCode);
 workspace.registerButtonCallback("verifyProofs", verifyProofs);
 
-let defaultVariableNames = ["x", "y", "z", "P", "Q"];
-defaultVariableNames.forEach(function (variableName) {
-  workspace.createVariable(variableName);
-});
+const defaultVariableNames = {
+  "x": "MathObject",
+  "y": "MathObject",
+  "z": "MathObject",
+  "P": "MathObject",
+  "Q": "MathObject"
+};
+for (const [key, value] of Object.entries(defaultVariableNames)) {
+  workspace.createVariable(key, value);
+}
 
 function toggleMathDisplay() {
   var x = document.getElementById("mathDisplayDiv");
