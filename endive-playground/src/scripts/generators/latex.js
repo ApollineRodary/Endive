@@ -17,7 +17,7 @@ latexGenerator["theorem"] = function (block, generator) {
     proofBlock = proofBlock.getNextBlock();
   }
 
-  const code = `\\begin{theorem}\n  ${statement}$\n\\end{theorem}\n\\begin{proof}${proof}\\end{proof}\n`;
+  const code = `\\begin{theorem}\n  ${statement}\n\\end{theorem}\n\\begin{proof}${proof}\\end{proof}\n`;
   return code;
 };
 
@@ -49,14 +49,40 @@ latexGenerator["tactic_let"] = function (block, generator) {
 
 latexGenerator["tactic_suppose"] = function (block, generator) {
   const hypothesis = latexGenerator.valueToCode(block, "HYPOTHESIS", 0);
-  if (hypothesis < 50) return `Supposons $${hypothesis}$.`;
+  if (hypothesis.length < 40) return `Supposons $${hypothesis}$.`;
   else
     return `Supposons \n\\begin{equation*}\n  ${hypothesis}\n\\end{equation*}\n\n`;
 };
 
 latexGenerator["tactic_then"] = function (block, generator) {
   const conclusion = latexGenerator.valueToCode(block, "CONCLUSION", 0);
-  if (hypothesis < 50) return `Alors, $${conclusion}$.\n\n`;
+  if (conclusion.length < 40) return `Alors, $${conclusion}$.\n\n`;
   else
     return `Alors, \n\\begin{equation*}\n  ${conclusion}\n\\end{equation*}\n\n`;
 };
+
+const unsupportedBlocks = [
+  "definition_inductive_type",
+  "definition_simple_constructor",
+  "definition_arrow_constructor",
+  "definition_arrow_param",
+  "definition_arrow_end",
+  "definition_unary_predicate",
+  "definition_binary_predicate",
+  "definition_predicate_rule",
+  "definition_predicate_forall",
+  "definition_predicate_implies",
+  "definition_unary_predicate_true",
+  "definition_binary_predicate_true",
+  "constructor_simple",
+  "constructor_simple_final",
+  "constructor_arrow",
+  "constructor_arrow_final",
+];
+
+unsupportedBlocks.forEach(function (blockName) {
+  latexGenerator[blockName] = function (block, generator) {
+    return "";
+  }
+});
+
