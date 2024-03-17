@@ -67,17 +67,6 @@ const unsupportedBlocks = [
   "definition_arrow_constructor",
   "definition_arrow_param",
   "definition_arrow_end",
-  "definition_unary_predicate",
-  "definition_binary_predicate",
-  "definition_predicate_rule",
-  "definition_predicate_forall",
-  "definition_predicate_implies",
-  "definition_unary_predicate_true",
-  "definition_binary_predicate_true",
-  "constructor_simple",
-  "constructor_simple_final",
-  "constructor_arrow",
-  "constructor_arrow_final",
 ];
 
 unsupportedBlocks.forEach(function (blockName) {
