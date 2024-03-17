@@ -113,6 +113,56 @@ let toolbox = {
           kind: "block",
           type: "definition_arrow_end",
         },
+        {
+          kind: "block",
+          type: "definition_unary_predicate",
+        },
+        {
+          kind: "block",
+          type: "definition_binary_predicate",
+        },
+        {
+          kind: "block",
+          type: "definition_predicate_rule",
+        },
+        {
+          kind: "block",
+          type: "definition_predicate_implies",
+        },
+        {
+          kind: "block",
+          type: "definition_predicate_forall",
+        },
+        {
+          kind: "block",
+          type: "definition_unary_predicate_true",
+        },
+        {
+          kind: "block",
+          type: "definition_binary_predicate_true",
+        },
+      ],
+    },
+    {
+      kind: "category",
+      name: "Constructeurs",
+      contents: [
+        {
+          kind: "block",
+          type: "constructor_simple",
+        },
+        {
+          kind: "block",
+          type: "constructor_simple_final",
+        },
+        {
+          kind: "block",
+          type: "constructor_arrow",
+        },
+        {
+          kind: "block",
+          type: "constructor_arrow_final",
+        },
       ],
     },
   ],
@@ -141,11 +191,11 @@ workspace.addChangeListener(updateCode);
 workspace.registerButtonCallback("verifyProofs", verifyProofs);
 
 const defaultVariableNames = {
-  "x": "MathObject",
-  "y": "MathObject",
-  "z": "MathObject",
-  "P": "MathObject",
-  "Q": "MathObject"
+  x: "MathObject",
+  y: "MathObject",
+  z: "MathObject",
+  P: "MathObject",
+  Q: "MathObject",
 };
 for (const [key, value] of Object.entries(defaultVariableNames)) {
   workspace.createVariable(key, value);
@@ -190,4 +240,3 @@ endiveGenerator.init(workspace);
 latexGenerator.init(workspace);
 */
 htmlGenerator.init(workspace);
-
