@@ -3,11 +3,6 @@ import url from "url:endive-wasm/endive_wasm_bg.wasm";
 
 const _ = require("lodash");
 
-const prop = {
-  type: "universe",
-  level: {},
-};
-
 function makeFreshVariable(environment) {
   let len = environment.length;
   return `h${len}`;
@@ -68,7 +63,7 @@ function convertStatement(block, environment, types) {
 
     let proposition = convertStatement(
       propositionBlock,
-      environment.concat([[name, prop]]).map((x) => [x[0], lift(x[1])]),
+      environment.concat([[name, type]]).map((x) => [x[0], lift(x[1])]),
       types,
     );
 
@@ -140,7 +135,7 @@ function convertTactics(block, environment, hypotheses, types) {
 
     let restOfProof = convertTactics(
       block.nextConnection.targetBlock(),
-      environment.concat([[name, prop]]).map((x) => [x[0], lift(x[1])]),
+      environment.concat([[name, type]]).map((x) => [x[0], lift(x[1])]),
       hypotheses.map((x) => [lift(x[0]), lift(x[1])]),
       types,
     );
@@ -352,15 +347,15 @@ function verifyTheorem(block, types) {
   }
 }
 
-function getDependencies(block) {
+function getInductiveTypeDependencies(block) {
   /**
-   * Takes a top-level definition block for an inductive type and predicate and
-   * returns the names of definitions it depends on
+   * Takes a top-level definition block for an inductive type and returns the
+   * names of definitions it depends on
    * Fails if the block is incomplete or invalid
    */
 
   const definitionBlocks = ["definition_inductive_type"];
-  if (!definitionBlocks.includes(block.type)) {
+  if (block.type !== "definition_inductive_type") {
     throw new Error("Not a definition block");
   }
 
@@ -390,7 +385,7 @@ function getDependencies(block) {
   return dependencies;
 }
 
-function registerDefinition(block, types, constructors) {
+function registerInductiveTypeDefinition(block, types, constructors) {
   let typeName = block.getField("NAME").getText();
   if (typeName in types || typeName in constructors) {
     block.setWarningText(`${typeName} est déjà défini`);
@@ -401,7 +396,9 @@ function registerDefinition(block, types, constructors) {
     type: "fixpoint",
     target: {
       type: "universe",
-      level: {},
+      level: {
+        0: 0,
+      },
     },
     constructors: [],
   };
@@ -498,6 +495,34 @@ function registerDefinition(block, types, constructors) {
   return fixpoint;
 }
 
+function registerPredicateDefinition(block, predicates, types, constructors) {
+  let predicateName = block.getField("NAME").getText();
+  if (
+    predicateName in predicates ||
+    predicateName in types ||
+    predicateName in constructors
+  ) {
+    block.setWarningText(`${typeName} est déjà défini`);
+    throw new Error("Unavailable name for custom predicate");
+  }
+
+  let fixpoint = {
+    type: "fixpoint",
+    target: {
+      type: "universe",
+      level: {
+        1: 0,
+      },
+    },
+    constructors: [],
+  };
+
+  // Register this predicate under the provided name
+  predicates[predicateName] = fixpoint;
+
+  return fixpoint;
+}
+
 export async function validate(workspace) {
   /**
    * Attempts to validate theorems and type definitions in the provided workspace
@@ -511,22 +536,22 @@ export async function validate(workspace) {
     blocks[i].setWarningText("");
   }
 
-  // Get definition order
-  let dag = [];
-  let definitionOrder = [];
+  // Get definition order for inductive types
+  let inductiveTypesDAG = [];
+  let inductiveTypeDefinitionOrder = [];
   for (let i = 0; i < blocks.length; ++i) {
     let block = blocks[i];
     try {
-      let blockDependencies = getDependencies(block);
+      let blockDependencies = getInductiveTypeDependencies(block);
       let name = block.getField("NAME").getText();
-      dag.push({
+      inductiveTypesDAG.push({
         name: name,
         prev: blockDependencies,
       });
     } catch (e) {}
   }
   try {
-    definitionOrder = getTopologicalOrder(dag);
+    inductiveTypeDefinitionOrder = getTopologicalOrder(inductiveTypesDAG);
   } catch (e) {
     for (let i = 0; i < blocks.length; ++i) {
       let block = blocks[i];
@@ -538,21 +563,35 @@ export async function validate(workspace) {
     }
   }
 
+  // Define inductive types
   let types = {
-    Prop: prop,
+    Prop: {
+      type: "universe",
+      level: {},
+    },
   };
   let constructors = {};
 
-  definitionOrder.forEach(function (definitionName) {
+  inductiveTypeDefinitionOrder.forEach(function (definitionName) {
     let block = blocks.find(
       (bl) =>
-        bl.type.startsWith("definition") &&
+        bl.type == "definition_inductive_type" &&
         bl.getField("NAME").getText() == definitionName,
     );
     if (block) {
-      registerDefinition(block, types, constructors);
+      registerInductiveTypeDefinition(block, types, constructors);
     }
   });
+
+  // Define predicates
+  let unaryPredicates = {};
+  let binaryPredicates = {};
+  for (let i = 0; i < blocks.length; ++i) {
+    let block = blocks[i];
+    if (block.type == "definition_unary_predicate") {
+      registerPredicateDefinition(block, predicates, types, constructors);
+    }
+  }
 
   // Verify theorems
   for (let i = 0; i < blocks.length; ++i) {
