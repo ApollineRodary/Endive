@@ -1,6 +1,6 @@
 //! WebAssembly interface to Endive.
 
-use endive_kernel::{univ_lvl, Binding, GlobalEnv, Ix, Tm};
+use endive_kernel::{univ_lvl, Binding, Case, GlobalEnv, Ix, Tm};
 use js_sys::{Array, Error, Object, Reflect, TypeError};
 use wasm_bindgen::prelude::*;
 
@@ -77,50 +77,88 @@ fn js_tm_to_kernel_tm(value: &JsValue) -> Result<Tm, JsValue> {
             )?)?;
             Ok(Tm::U(level))
         }
-        "fixpoint" => {
-            let ty = js_tm_to_kernel_tm(&Reflect::get(&value, &JsValue::from_str("target"))?)?;
-            let ctors = Reflect::get(&value, &JsValue::from_str("constructors"))?
-                .dyn_ref::<Array>()
-                .ok_or_else(|| TypeError::new("Fixpoint constructors must be an array"))?
-                .iter()
-                .map(|ctor| js_tm_to_kernel_tm(&ctor))
-                .collect::<Result<Vec<_>, _>>()?;
-            Ok(Tm::OldFix {
-                ty: Box::new(ty),
-                ctors,
-            })
-        }
-        "constructor" => {
-            let fix = js_tm_to_kernel_tm(&Reflect::get(&value, &JsValue::from_str("fixpoint"))?)?;
-            let i = Reflect::get(&value, &JsValue::from_str("index"))?
+        "inductive" => {
+            let idx = Reflect::get(&value, &JsValue::from_str("index"))?
                 .as_f64()
-                .ok_or_else(|| TypeError::new("Constructor index must be a number"))?
+                .ok_or_else(|| TypeError::new("Inductive index must be a number"))?
                 as usize;
             let args = Reflect::get(&value, &JsValue::from_str("arguments"))?
                 .dyn_ref::<Array>()
-                .ok_or_else(|| TypeError::new("Constructor arguments must be an array"))?
+                .ok_or_else(|| TypeError::new("Inductive arguments must be an array"))?
                 .iter()
                 .map(|ctor| js_tm_to_kernel_tm(&ctor))
                 .collect::<Result<Vec<_>, _>>()?;
-            Ok(Tm::OldCtor {
-                fix: Box::new(fix),
-                i,
-                args,
+            let indices = Reflect::get(&value, &JsValue::from_str("arguments"))?
+                .dyn_ref::<Array>()
+                .ok_or_else(|| TypeError::new("Inductive indices must be an array"))?
+                .iter()
+                .map(|ctor| js_tm_to_kernel_tm(&ctor))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(Tm::Inductive { idx, args, indices })
+        }
+        "constructor" => {
+            let inductive_idx = Reflect::get(&value, &JsValue::from_str("inductiveIndex"))?
+                .as_f64()
+                .ok_or_else(|| TypeError::new("Inductive index must be a number"))?
+                as usize;
+            let inductive_args = Reflect::get(&value, &JsValue::from_str("inductiveArguments"))?
+                .dyn_ref::<Array>()
+                .ok_or_else(|| TypeError::new("Inductive arguments must be an array"))?
+                .iter()
+                .map(|ctor| js_tm_to_kernel_tm(&ctor))
+                .collect::<Result<Vec<_>, _>>()?;
+            let ctor_idx = Reflect::get(&value, &JsValue::from_str("constructorIndex"))?
+                .as_f64()
+                .ok_or_else(|| TypeError::new("Constructor index must be a number"))?
+                as usize;
+            let ctor_args = Reflect::get(&value, &JsValue::from_str("inductiveArguments"))?
+                .dyn_ref::<Array>()
+                .ok_or_else(|| TypeError::new("Inductive arguments must be an array"))?
+                .iter()
+                .map(|ctor| js_tm_to_kernel_tm(&ctor))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(Tm::Ctor {
+                inductive_idx,
+                inductive_args,
+                ctor_idx,
+                ctor_args,
             })
         }
         "induction" => {
-            let val = js_tm_to_kernel_tm(&Reflect::get(&value, &JsValue::from_str("value"))?)?;
+            let inductive_idx = Reflect::get(&value, &JsValue::from_str("inductiveIndex"))?
+                .as_f64()
+                .ok_or_else(|| TypeError::new("Inductive index must be a number"))?
+                as usize;
+            let inductive_args = Reflect::get(&value, &JsValue::from_str("inductiveArguments"))?
+                .dyn_ref::<Array>()
+                .ok_or_else(|| TypeError::new("Inductive arguments must be an array"))?
+                .iter()
+                .map(|ctor| js_tm_to_kernel_tm(&ctor))
+                .collect::<Result<Vec<_>, _>>()?;
             let motive = js_tm_to_kernel_tm(&Reflect::get(&value, &JsValue::from_str("motive"))?)?;
             let cases = Reflect::get(&value, &JsValue::from_str("cases"))?
                 .dyn_ref::<Array>()
                 .ok_or_else(|| TypeError::new("Induction cases must be an array"))?
                 .iter()
-                .map(|ctor| js_tm_to_kernel_tm(&ctor))
+                .map(|case| {
+                    let param_count = Reflect::get(&case, &JsValue::from_str("parameterCount"))?
+                        .as_f64()
+                        .ok_or_else(|| TypeError::new("Case parameter count must be a number"))?
+                        as usize;
+                    let body = Reflect::get(&case, &JsValue::from_str("body"))?;
+                    Ok::<_, JsValue>(Case {
+                        param_count,
+                        body: js_tm_to_kernel_tm(&body)?,
+                    })
+                })
                 .collect::<Result<Vec<_>, _>>()?;
-            Ok(Tm::OldInd {
-                val: Box::new(val),
+            let val = js_tm_to_kernel_tm(&Reflect::get(&value, &JsValue::from_str("value"))?)?;
+            Ok(Tm::Induction {
+                inductive_idx,
+                inductive_args,
                 motive: Box::new(motive),
                 cases,
+                val: Box::new(val),
             })
         }
         _ => Err(TypeError::new("Unknown term type").into()),
@@ -212,26 +250,38 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
             .unwrap();
             obj.into()
         }
-        Tm::Inductive { .. } => todo!(),
-        Tm::Ctor { .. } => todo!(),
-        Tm::Induction { .. } => todo!(),
-        Tm::OldFix { ty, ctors } => {
+        Tm::Inductive { idx, args, indices } => {
             let obj = Object::new();
             Reflect::set(
                 &obj,
                 &JsValue::from_str("type"),
-                &JsValue::from_str("fixpoint"),
+                &JsValue::from_str("inductive"),
             )
             .unwrap();
-            Reflect::set(&obj, &JsValue::from_str("target"), &kernel_tm_to_js_tm(ty)).unwrap();
-            let ctors = ctors
+            Reflect::set(
+                &obj,
+                &JsValue::from_str("index"),
+                &JsValue::from_f64(*idx as f64),
+            )
+            .unwrap();
+            let args = args
                 .iter()
-                .map(|ctor| kernel_tm_to_js_tm(ctor))
+                .map(|arg| kernel_tm_to_js_tm(arg))
                 .collect::<Array>();
-            Reflect::set(&obj, &JsValue::from_str("constructors"), &ctors).unwrap();
+            Reflect::set(&obj, &JsValue::from_str("arguments"), &args).unwrap();
+            let indices = indices
+                .iter()
+                .map(|idx| kernel_tm_to_js_tm(idx))
+                .collect::<Array>();
+            Reflect::set(&obj, &JsValue::from_str("indices"), &indices).unwrap();
             obj.into()
         }
-        Tm::OldCtor { fix, i, args } => {
+        Tm::Ctor {
+            inductive_idx,
+            inductive_args,
+            ctor_idx,
+            ctor_args,
+        } => {
             let obj = Object::new();
             Reflect::set(
                 &obj,
@@ -241,24 +291,40 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
             .unwrap();
             Reflect::set(
                 &obj,
-                &JsValue::from_str("fixpoint"),
-                &kernel_tm_to_js_tm(fix),
+                &JsValue::from_str("inductiveIndex"),
+                &JsValue::from_f64(*inductive_idx as f64),
+            )
+            .unwrap();
+            let inductive_args = inductive_args
+                .iter()
+                .map(|arg| kernel_tm_to_js_tm(arg))
+                .collect::<Array>();
+            Reflect::set(
+                &obj,
+                &JsValue::from_str("inductiveArguments"),
+                &inductive_args,
             )
             .unwrap();
             Reflect::set(
                 &obj,
-                &JsValue::from_str("index"),
-                &JsValue::from_f64(*i as f64),
+                &JsValue::from_str("constructorIndex"),
+                &JsValue::from_f64(*ctor_idx as f64),
             )
             .unwrap();
-            let args = args
+            let ctor_args = ctor_args
                 .iter()
                 .map(|arg| kernel_tm_to_js_tm(arg))
                 .collect::<Array>();
-            Reflect::set(&obj, &JsValue::from_str("arguments"), &args).unwrap();
+            Reflect::set(&obj, &JsValue::from_str("constructorArguments"), &ctor_args).unwrap();
             obj.into()
         }
-        Tm::OldInd { val, motive, cases } => {
+        Tm::Induction {
+            inductive_idx,
+            inductive_args,
+            motive,
+            cases,
+            val,
+        } => {
             let obj = Object::new();
             Reflect::set(
                 &obj,
@@ -266,7 +332,22 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
                 &JsValue::from_str("induction"),
             )
             .unwrap();
-            Reflect::set(&obj, &JsValue::from_str("value"), &kernel_tm_to_js_tm(val)).unwrap();
+            Reflect::set(
+                &obj,
+                &JsValue::from_str("inductiveIndex"),
+                &JsValue::from_f64(*inductive_idx as f64),
+            )
+            .unwrap();
+            let inductive_args = inductive_args
+                .iter()
+                .map(|arg| kernel_tm_to_js_tm(arg))
+                .collect::<Array>();
+            Reflect::set(
+                &obj,
+                &JsValue::from_str("inductiveArguments"),
+                &inductive_args,
+            )
+            .unwrap();
             Reflect::set(
                 &obj,
                 &JsValue::from_str("motive"),
@@ -275,9 +356,25 @@ fn kernel_tm_to_js_tm(tm: &Tm) -> JsValue {
             .unwrap();
             let cases = cases
                 .iter()
-                .map(|case| kernel_tm_to_js_tm(case))
+                .map(|case| {
+                    let obj = Object::new();
+                    Reflect::set(
+                        &obj,
+                        &JsValue::from_str("parameterCount"),
+                        &JsValue::from_f64(case.param_count as f64),
+                    )
+                    .unwrap();
+                    Reflect::set(
+                        &obj,
+                        &JsValue::from_str("body"),
+                        &kernel_tm_to_js_tm(&case.body),
+                    )
+                    .unwrap();
+                    JsValue::from(obj)
+                })
                 .collect::<Array>();
             Reflect::set(&obj, &JsValue::from_str("cases"), &cases).unwrap();
+            Reflect::set(&obj, &JsValue::from_str("value"), &kernel_tm_to_js_tm(val)).unwrap();
             obj.into()
         }
     }
