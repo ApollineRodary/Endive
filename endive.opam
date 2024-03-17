@@ -13,7 +13,9 @@ depends: [
   "menhir"
   "ocaml"
   "ocamlformat" {with-test}
+  "ppx_compare"
   "ppx_inline_test" {with-test}
+  "ppx_sexp_conv"
   "sexplib"
   "odoc" {with-doc}
 ]
