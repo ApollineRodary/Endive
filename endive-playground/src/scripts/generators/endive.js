@@ -1,3 +1,5 @@
+import * as Blockly from "blockly/core";
+
 export const endiveGenerator = new Blockly.Generator("Endive");
 
 endiveGenerator.RESERVED_WORDS_ = "let,lemma,example,ohno";

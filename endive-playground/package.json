@@ -13,6 +13,7 @@
         "prettier": "^3.2.5"
     },
     "dependencies": {
+        "blockly": "^10.4.3",
         "endive-wasm": "file:../crates/endive-wasm/pkg",
         "lodash": "^4.17.21"
     }

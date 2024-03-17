@@ -1,12 +1,9 @@
 import intialize, * as endive from "endive-wasm";
+import * as _ from "lodash";
+
 import url from "url:endive-wasm/endive_wasm_bg.wasm";
 
-const _ = require("lodash");
-
-const prop = {
-  type: "universe",
-  level: {},
-};
+import { prop } from "./definitions";
 
 function makeFreshVariable(environment) {
   let len = environment.length;

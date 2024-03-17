@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as Blockly from "blockly/core";
+
+import { customTypes } from "./definitions";
+
 Blockly.defineBlocksWithJsonArray([
   // Theorems and lemmas
   {
