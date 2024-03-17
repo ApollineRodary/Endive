@@ -1,4 +1,4 @@
-window.saveFile = function(content) {
+window.saveFile = function (content) {
   // Create a Blob with the content
   const blob = new Blob([content], { type: "text/plain" });
 
@@ -15,8 +15,8 @@ window.saveFile = function(content) {
 
   // Clean up resources
   URL.revokeObjectURL(url);
-}
-window.loadFile = function() {
+};
+window.loadFile = function () {
   return new Promise((resolve, reject) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -44,12 +44,12 @@ window.loadFile = function() {
 
     input.click();
   });
-}
+};
 
-window.save = function() {
+window.save = function () {
   saveFile(globalThis.editor.state.doc.toString());
-}
-window.load = function() {
+};
+window.load = function () {
   loadFile()
     .then((content) => {
       const transaction = globalThis.editor.state.update({
@@ -68,4 +68,4 @@ window.load = function() {
     .catch((error) => {
       console.error("Error:", error);
     });
-}
+};

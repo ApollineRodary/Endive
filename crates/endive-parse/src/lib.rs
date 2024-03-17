@@ -1,12 +1,12 @@
 //! Parsing for lambda terms.
 
+use endive_lambda::{Binding, Tm};
 use chumsky::{
     primitive::just,
     recursive::recursive,
     text::{ident, whitespace},
     Parser,
 };
-use endive_lambda::{Binding, Tm};
 
 pub fn parser<'src>() -> impl Parser<'src, &'src str, Tm> {
     recursive(|tm| {

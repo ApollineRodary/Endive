@@ -4,7 +4,7 @@ window.onload = function (e) {
 
 globalThis.menu_open = false; //Keep track of the state of the menu
 
-window.toggleMenu = function() {
+window.toggleMenu = function () {
   //show/hide the menu
   var menu = document.getElementById("menu");
   globalThis.menu_open = menu.classList.toggle("menu-open");
@@ -13,7 +13,7 @@ window.toggleMenu = function() {
   } else {
     globalThis.editor.focus(); //get back to the editor if closing
   }
-}
+};
 
 document.onkeydown = function (evt) {
   //Handle key events,

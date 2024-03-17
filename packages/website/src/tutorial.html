@@ -15,7 +15,9 @@
       />
       <h1>Tutoriel Endive</h1>
       <div class="filler"></div>
-      <a class="Button" href="https://playground.endiveonline.fr/">À vous de jouer !</a>
+      <a class="Button" href="https://playground.endiveonline.fr/"
+        >À vous de jouer !</a
+      >
     </div>
     <div class="Menu">
       <div class="Submenu" id="intro" onclick="Show_Hide('intro')">
@@ -319,7 +321,7 @@
   </body>
 
   <script>
-    window.Show_Hide = function(param) {
+    window.Show_Hide = function (param) {
       let param_c = param + "_c";
 
       let to_show = document.getElementById(param_c);
@@ -337,6 +339,6 @@
       setTimeout(function () {
         window.scroll(0, 0);
       }, 50);
-    }
+    };
   </script>
 </html>

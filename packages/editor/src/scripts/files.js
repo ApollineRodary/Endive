@@ -2,18 +2,18 @@
 //They are asynchronous, and use asynchronous functions (hence the "await" keyword)
 //globalThis is a nice way to put variable in the global scope without polluting it.
 
-window.save = async function() {
+window.save = async function () {
   alert("Hmm");
-}
+};
 
-window.save_as = async function() {
+window.save_as = async function () {
   const content = globalThis.editor.state.doc.toString(); //Get the text from the editor
 
   const file_path = await window.electronAPI.fileSaveAs(content); //Send it to electron
   console.log("Saved successfully as" + file_path.toString()); //Get the name of the file it was saved it if successful
-}
+};
 
-window.load = async function() {
+window.load = async function () {
   const data = await window.electronAPI.fileOpen(); //Ask for a file opening
 
   const transaction = globalThis.editor.state.update({
@@ -21,4 +21,4 @@ window.load = async function() {
   }); // Put the received text in the editor
   const update = globalThis.editor.state.update(transaction);
   globalThis.editor.update([update]);
-}
+};

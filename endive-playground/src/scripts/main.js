@@ -1,9 +1,11 @@
-import * as Blockly from "blockly/core";
+/*import { endiveGenerator } from "./generators/endive.js";*/
+import { latexGenerator } from "./generators/latex.js";
+import { htmlGenerator } from "./generators/html.js";
+import { validate } from "./verify.js";
+import { examples } from "./examples.js";
 
-import { endiveGenerator } from "./generators/endive.js";
-import { verifyTheorems } from "./verify.js";
-
-import "./blocks.js";
+globalThis.automaticVerif = true;
+globalThis.compileLatex = true;
 
 const updateCodeEvents = new Set([
   Blockly.Events.BLOCK_CHANGE,
@@ -12,17 +14,33 @@ const updateCodeEvents = new Set([
   Blockly.Events.BLOCK_MOVE,
 ]);
 
+export function resize() {
+  Blockly.svgResize(workspace);
+}
+
+function updateMathDisplay() {
+  if (globalThis.compileLatex) {
+    const htmlCode = htmlGenerator.workspaceToCode(workspace);
+    const mathDisplayDiv = document.getElementById("mathDisplay");
+    mathDisplayDiv.innerHTML = htmlCode;
+    MathJax.typesetPromise([mathDisplayDiv]);
+  } else {
+    const latexCode = latexGenerator.workspaceToCode(workspace);
+    document.getElementById("mathDisplay").innerHTML = latexCode;
+  }
+}
+
 function updateCode(event) {
   if (workspace.isDragging()) return;
   if (!updateCodeEvents.has(event.type)) return;
 
-  const endiveCode = endiveGenerator.workspaceToCode(workspace);
-  document.getElementById("endivecodearea").value = endiveCode;
-  // document.getElementById('latexcodearea').value = latexCode;
+  updateMathDisplay();
+
+  if (globalThis.automaticVerif) verifyProofs();
 }
 
 const verifyProofs = function (button) {
-  console.log(verifyTheorems(workspace));
+  console.log(validate(workspace));
 };
 
 let toolbox = {
@@ -36,10 +54,6 @@ let toolbox = {
           kind: "block",
           type: "theorem",
         },
-        {
-          kind: "block",
-          type: "lemma",
-        },
       ],
     },
     {
@@ -49,18 +63,6 @@ let toolbox = {
         {
           kind: "block",
           type: "proposition_forall",
-        },
-        {
-          kind: "block",
-          type: "proposition_exists",
-        },
-        {
-          kind: "block",
-          type: "proposition_or",
-        },
-        {
-          kind: "block",
-          type: "proposition_and",
         },
         {
           kind: "block",
@@ -95,12 +97,48 @@ let toolbox = {
         },
       ],
     },
+    {
+      kind: "category",
+      name: "Définitions",
+      contents: [
+        {
+          kind: "block",
+          type: "definition_inductive_type",
+        },
+        {
+          kind: "block",
+          type: "definition_simple_constructor",
+        },
+        {
+          kind: "block",
+          type: "definition_arrow_constructor",
+        },
+        {
+          kind: "block",
+          type: "definition_arrow_param",
+        },
+        {
+          kind: "block",
+          type: "definition_arrow_end",
+        },
+      ],
+    },
   ],
 };
 
 let workspace = Blockly.inject("blocklyDiv", {
   toolbox: toolbox,
   scrollbars: false,
+  zoom: {
+    controls: true,
+    wheel: true,
+    startScale: 1.0,
+    maxScale: 3,
+    minScale: 0.3,
+    scaleSpeed: 1.05,
+    pinch: true,
+  },
+
   horizontalLayout: false,
   toolboxPosition: "start",
 });
@@ -110,9 +148,88 @@ workspace.userDefinedTypes = [["Prop"]];
 workspace.addChangeListener(updateCode);
 workspace.registerButtonCallback("verifyProofs", verifyProofs);
 
-let defaultVariableNames = ["x", "y", "z", "P", "Q"];
-defaultVariableNames.forEach(function (variableName) {
-  workspace.createVariable(variableName);
-});
+const defaultVariableNames = {
+  x: "MathObject",
+  y: "MathObject",
+  z: "MathObject",
+  P: "MathObject",
+  Q: "MathObject",
+};
+for (const [key, value] of Object.entries(defaultVariableNames)) {
+  workspace.createVariable(key, value);
+}
 
+function toggleMathDisplay() {
+  var x = document.getElementById("mathDisplayDiv");
+  if (x.style.display === "none") {
+    x.style.display = "flex";
+    document.getElementById("blocklyDiv").style.width = "70%";
+    document.getElementById("toggleMathDisplay").classList.add("pressed");
+    resize();
+  } else {
+    x.style.display = "none";
+    document.getElementById("blocklyDiv").style.width = "100%";
+    document.getElementById("toggleMathDisplay").classList.remove("pressed");
+    resize();
+  }
+}
+
+function toggleautomatic() {
+  if (globalThis.automaticVerif) {
+    document.getElementById("toggleAutomaticVerif").classList.remove("pressed");
+    document.getElementById("verifyProof").style.display = "block";
+  } else {
+    document.getElementById("toggleAutomaticVerif").classList.add("pressed");
+    document.getElementById("verifyProof").style.display = "none";
+  }
+  globalThis.automaticVerif = !globalThis.automaticVerif;
+}
+
+function toggleLatexCompil() {
+  if (globalThis.compileLatex) {
+    document.getElementById("toggleLatexCompil").classList.remove("pressed");
+  } else {
+    document.getElementById("toggleLatexCompil").classList.add("pressed");
+  }
+  globalThis.compileLatex = !globalThis.compileLatex;
+  updateMathDisplay();
+}
+
+function saveWorkspace() {
+  const state = Blockly.serialization.workspaces.save(workspace);
+  alert(JSON.stringify(state));
+}
+
+function load_example(name) {
+  Blockly.serialization.workspaces.load(JSON.parse(examples[name]), workspace);
+  console.log("Hey");
+}
+
+document
+  .getElementById("toggleMathDisplay")
+  .addEventListener("click", toggleMathDisplay);
+document.getElementById("verifyProof").addEventListener("click", verifyProofs);
+document
+  .getElementById("toggleAutomaticVerif")
+  .addEventListener("click", toggleautomatic);
+
+document
+  .getElementById("toggleLatexCompil")
+  .addEventListener("click", toggleLatexCompil);
+
+document
+  .getElementById("saveWorkspace")
+  .addEventListener("click", saveWorkspace);
+
+for (let name in examples) {
+  document
+    .getElementById("example-" + name)
+    .addEventListener("click", () => load_example(name));
+  console.log(name);
+}
+
+/*
 endiveGenerator.init(workspace);
+latexGenerator.init(workspace);
+*/
+htmlGenerator.init(workspace);
