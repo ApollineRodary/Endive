@@ -313,7 +313,7 @@ Blockly.defineBlocksWithJsonArray([
       },
       {
         type: "input_value",
-        name: "PROPOSITION",
+        name: "RULE",
       },
     ],
     previousStatement: null,

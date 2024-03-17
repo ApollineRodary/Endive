@@ -495,10 +495,17 @@ function registerInductiveTypeDefinition(block, types, constructors) {
   return fixpoint;
 }
 
-function registerPredicateDefinition(block, predicates, types, constructors) {
+function registerPredicateDefinition(
+  block,
+  predicates,
+  rules,
+  types,
+  constructors,
+) {
   let predicateName = block.getField("NAME").getText();
   if (
     predicateName in predicates ||
+    predicateName in rules ||
     predicateName in types ||
     predicateName in constructors
   ) {
@@ -506,20 +513,102 @@ function registerPredicateDefinition(block, predicates, types, constructors) {
     throw new Error("Unavailable name for custom predicate");
   }
 
+  // Set target of fixpoint
+  let targetBody = {
+    type: "universe",
+    level: {
+      0: 1,
+    },
+  };
+  let target = {};
+  if (block.type == "definition_unary_predicate") {
+    let targetTypeName = block.getField("TYPE").getText();
+    if (!(targetTypeName in types)) {
+      block.setWarningText(`${targetTypeName} n'est pas défini`);
+      throw new Error("Unbound type in predicate definition");
+    }
+    target = {
+      type: "pi",
+      variable: types[targetTypeName],
+      body: targetBody,
+    };
+  } else {
+    let targetTypeNameA = block.getField("TYPE").getText();
+    let targetTypeNameB = block.getField("OTHERTYPE").getText();
+    if (!(targetTypeNameA in types && targetTypeNameB in types)) {
+      block.setWarningText("L'un de ces deux types n'est pas défini");
+      throw new Error("Unbound type in predicate definition");
+    }
+    target = {
+      type: "pi",
+      variable: types[targetTypeNameA],
+      body: {
+        type: "pi",
+        variable: types[targetTypeNameB],
+        body: targetBody,
+      },
+    };
+  }
+
+  // Construct fixpoint
   let fixpoint = {
     type: "fixpoint",
-    target: {
-      type: "universe",
-      level: {
-        1: 0,
-      },
-    },
+    target: target,
     constructors: [],
   };
 
-  // Register this predicate under the provided name
-  predicates[predicateName] = fixpoint;
+  // Add constructors
+  let ruleBlock = block.getInput("RULES").connection.targetBlock();
+  while (ruleBlock !== null) {
+    if (ruleBlock.type !== "definition_predicate_rule") {
+      ruleBlock.setWarningText("Seules les règles sont autorisées ici.");
+      throw new Error(
+        "Non-rule statement used as rule for predicate definition",
+      );
+    }
+    let ruleName = ruleBlock.getField("NAME").getText();
 
+    if (
+      ruleName in predicates ||
+      ruleName in rules ||
+      ruleName in types ||
+      ruleName in constructors
+    ) {
+      ruleBlock.setWarningText(`${typeName} est déjà défini`);
+      throw new Error("Unavailable name for custom predicate rule");
+    }
+
+    let actualRuleBlock = ruleBlock.getInput("RULE").connection.targetBlock();
+    if (actualRuleBlock == null) {
+      ruleBlock.setWarningText("L'énoncé de cette règle est manquant.");
+      throw new Error("Missing rule statement");
+    }
+
+    // Placeholder: unary constructor that is true for all in the first input type
+    // Notably does not make sense for binary predicates
+    let constructor = {
+      type: "abstraction",
+      variable: target,
+      body: {
+        type: "pi",
+        variable: target.variable,
+        body: {
+          type: "application",
+          f: {
+            type: "variable",
+            index: 1,
+          },
+          argument: {
+            type: "variable",
+            index: 0,
+          },
+        },
+      },
+    };
+    fixpoint.constructors.push(constructor);
+  }
+
+  console.log(fixpoint);
   return fixpoint;
 }
 
@@ -586,10 +675,11 @@ export async function validate(workspace) {
   // Define predicates
   let unaryPredicates = {};
   let binaryPredicates = {};
+  let rules = {};
   for (let i = 0; i < blocks.length; ++i) {
     let block = blocks[i];
     if (block.type == "definition_unary_predicate") {
-      registerPredicateDefinition(block, predicates, types, constructors);
+      registerPredicateDefinition(block, unaryPredicates, rules, types, constructors);
     }
   }
 
