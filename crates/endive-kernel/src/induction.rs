@@ -1,7 +1,10 @@
 use std::{num::NonZeroUsize, rc::Rc};
 
 use crate::{
-    closure::Closure, univ_lvl, Binding, BindingClosure, Ctx, Error, GlobalEnv, Lvl, Tm, TyCtx, Val,
+    closure::Closure,
+    univ_lvl,
+    val::{Lvl, Val},
+    Binding, BindingClosure, Ctx, Error, GlobalEnv, Tm, TyCtx,
 };
 
 /// A sequence of types. For each type, an argument of that type is bound in every subsequent type.

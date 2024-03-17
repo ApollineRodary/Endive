@@ -1,6 +1,9 @@
 use std::rc::Rc;
 
-use crate::{Binding, Ctx, Error, GlobalEnv, Lvl, Tm, Val};
+use crate::{
+    val::{Lvl, Val},
+    Binding, Ctx, Error, GlobalEnv, Tm,
+};
 
 /// A lambda term accompanied by a local context.
 #[derive(Clone, Debug)]

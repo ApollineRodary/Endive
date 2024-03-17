@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{Ix, Val};
+use crate::{val::Val, Ix};
 
 /// Local context.
 ///
