@@ -108,3 +108,24 @@ main {
 .blockly-editor {
   left: 0;
 }
+
+.popup-back {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  background-color: rgba(128, 128, 128, 0.8);
+  z-index: 100;
+}
+.popup {
+  background-color: rgb(255, 255, 255);
+  padding: 25px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

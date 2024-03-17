@@ -2,6 +2,7 @@
 import { latexGenerator } from "./generators/latex.js";
 import { htmlGenerator } from "./generators/html.js";
 import { validate } from "./verify.js";
+import { examples } from "./examples.js";
 
 globalThis.automaticVerif = true;
 globalThis.compileLatex = true;
@@ -247,6 +248,16 @@ function toggleLatexCompil() {
   updateMathDisplay();
 }
 
+function saveWorkspace() {
+  const state = Blockly.serialization.workspaces.save(workspace);
+  alert(JSON.stringify(state));
+}
+
+function load_example(name) {
+  Blockly.serialization.workspaces.load(JSON.parse(examples[name]), workspace);
+  console.log("Hey");
+}
+
 document
   .getElementById("toggleMathDisplay")
   .addEventListener("click", toggleMathDisplay);
@@ -258,6 +269,17 @@ document
 document
   .getElementById("toggleLatexCompil")
   .addEventListener("click", toggleLatexCompil);
+
+document
+  .getElementById("saveWorkspace")
+  .addEventListener("click", saveWorkspace);
+
+for (let name in examples) {
+  document
+    .getElementById("example-" + name)
+    .addEventListener("click", () => load_example(name));
+  console.log(name);
+}
 
 /*
 endiveGenerator.init(workspace);
