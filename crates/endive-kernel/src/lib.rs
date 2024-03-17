@@ -60,57 +60,74 @@ mod tests {
 
     #[test]
     fn induction() {
-        let e = GlobalEnv::new();
+        let mut e = GlobalEnv::new();
 
-        // ℕ := μX.[X; X → X]
-        let n = Tm::OldFix {
-            ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
+        e.add_inductive(InductiveTypeFamily {
+            params: Telescope(vec![]),
+            indices: Telescope(vec![]),
+            univ_lvl: univ_lvl::Expr::default(),
+            univ_vars: 0,
             ctors: vec![
-                Tm::Abs(Box::new(Binding {
-                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Var(Ix(0)),
-                })),
-                Tm::Abs(Box::new(Binding {
-                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Pi(Box::new(Binding {
-                        bound_ty: Tm::Var(Ix(0)),
-                        body: Tm::Var(Ix(1)),
-                    })),
-                })),
+                // 0 : ℕ
+                Ctor {
+                    params: vec![],
+                    indices: vec![],
+                },
+                // S : ℕ → ℕ
+                Ctor {
+                    params: vec![CtorParam {
+                        tele: Telescope(vec![]),
+                        last: CtorParamLast::This { indices: vec![] },
+                    }],
+                    indices: vec![],
+                },
             ],
-        };
+        })
+        .unwrap();
 
         // 2 : ℕ
-        let two = Tm::OldCtor {
-            fix: Box::new(n.clone()),
-            i: 1,
-            args: vec![Tm::OldCtor {
-                fix: Box::new(n.clone()),
-                i: 1,
-                args: vec![Tm::OldCtor {
-                    fix: Box::new(n.clone()),
-                    i: 0,
-                    args: vec![],
+        let two = Tm::Ctor {
+            inductive_idx: 0,
+            inductive_args: vec![],
+            ctor_idx: 1,
+            ctor_args: vec![Tm::Ctor {
+                inductive_idx: 0,
+                inductive_args: vec![],
+                ctor_idx: 1,
+                ctor_args: vec![Tm::Ctor {
+                    inductive_idx: 0,
+                    inductive_args: vec![],
+                    ctor_idx: 0,
+                    ctor_args: vec![],
                 }],
             }],
         };
 
         // 3 : ℕ
-        let three = Tm::OldCtor {
-            fix: Box::new(n.clone()),
-            i: 1,
-            args: vec![two.clone()],
+        let three = Tm::Ctor {
+            inductive_idx: 0,
+            inductive_args: vec![],
+            ctor_idx: 1,
+            ctor_args: vec![two.clone()],
         };
 
         // 5 : ℕ
-        let five = Tm::OldCtor {
-            fix: Box::new(n.clone()),
-            i: 1,
-            args: vec![Tm::OldCtor {
-                fix: Box::new(n.clone()),
-                i: 1,
-                args: vec![three.clone()],
+        let five = Tm::Ctor {
+            inductive_idx: 0,
+            inductive_args: vec![],
+            ctor_idx: 1,
+            ctor_args: vec![Tm::Ctor {
+                inductive_idx: 0,
+                inductive_args: vec![],
+                ctor_idx: 1,
+                ctor_args: vec![three.clone()],
             }],
+        };
+
+        let n = Tm::Inductive {
+            idx: 0,
+            args: vec![],
+            indices: vec![],
         };
 
         // add : ℕ → ℕ → ℕ
@@ -118,24 +135,24 @@ mod tests {
             bound_ty: n.clone(),
             body: Tm::Abs(Box::new(Binding {
                 bound_ty: n.clone(),
-                body: Tm::OldInd {
-                    motive: Box::new(Tm::Abs(Box::new(Binding {
-                        bound_ty: n.clone(),
-                        body: n.clone(),
-                    }))),
+                body: Tm::Induction {
+                    inductive_idx: 0,
+                    inductive_args: vec![],
+                    motive: Box::new(n.clone()),
                     cases: vec![
-                        Tm::Var(Ix(1)),
-                        Tm::Abs(Box::new(Binding {
-                            bound_ty: n.clone(),
-                            body: Tm::Abs(Box::new(Binding {
-                                bound_ty: n.clone(),
-                                body: Tm::OldCtor {
-                                    fix: Box::new(n.clone()),
-                                    i: 1,
-                                    args: vec![Tm::Var(Ix(0))],
-                                },
-                            })),
-                        })),
+                        Case {
+                            param_count: 0,
+                            body: Tm::Var(Ix(1)),
+                        },
+                        Case {
+                            param_count: 2,
+                            body: Tm::Ctor {
+                                inductive_idx: 0,
+                                inductive_args: vec![],
+                                ctor_idx: 1,
+                                ctor_args: vec![Tm::Var(Ix(0))],
+                            },
+                        },
                     ],
                     val: Box::new(Tm::Var(Ix(0))),
                 },
@@ -189,37 +206,50 @@ mod tests {
 
     #[test]
     fn ty_fix() {
-        let e = GlobalEnv::new();
+        let mut e = GlobalEnv::new();
 
-        // ℕ := μX.[X; X → X]
-        let n = Tm::OldFix {
-            ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
+        e.add_inductive(InductiveTypeFamily {
+            params: Telescope(vec![]),
+            indices: Telescope(vec![]),
+            univ_lvl: univ_lvl::Expr::default(),
+            univ_vars: 0,
             ctors: vec![
-                Tm::Abs(Box::new(Binding {
-                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Var(Ix(0)),
-                })),
-                Tm::Abs(Box::new(Binding {
-                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Pi(Box::new(Binding {
-                        bound_ty: Tm::Var(Ix(0)),
-                        body: Tm::Var(Ix(1)),
-                    })),
-                })),
+                // 0 : ℕ
+                Ctor {
+                    params: vec![],
+                    indices: vec![],
+                },
+                // S : ℕ → ℕ
+                Ctor {
+                    params: vec![CtorParam {
+                        tele: Telescope(vec![]),
+                        last: CtorParamLast::This { indices: vec![] },
+                    }],
+                    indices: vec![],
+                },
             ],
+        })
+        .unwrap();
+
+        let n = Tm::Inductive {
+            idx: 0,
+            args: vec![],
+            indices: vec![],
         };
 
-        // ℕ : U 0
-        assert_eq!(n.ty(&e), Ok(Tm::U(univ_lvl::Var(0).into())));
+        // ℕ : U(0)
+        assert_eq!(n.ty(&e), Ok(Tm::U(univ_lvl::Expr::default())));
 
         // S 0 : ℕ
-        let one = Tm::OldCtor {
-            fix: Box::new(n.clone()),
-            i: 1,
-            args: vec![Tm::OldCtor {
-                fix: Box::new(n.clone()),
-                i: 0,
-                args: vec![],
+        let one = Tm::Ctor {
+            inductive_idx: 0,
+            inductive_args: vec![],
+            ctor_idx: 1,
+            ctor_args: vec![Tm::Ctor {
+                inductive_idx: 0,
+                inductive_args: vec![],
+                ctor_idx: 0,
+                ctor_args: vec![],
             }],
         };
         assert_eq!(one.ty(&e), Ok(n.clone()));
@@ -227,24 +257,35 @@ mod tests {
 
     #[test]
     fn ty_ind() {
-        let e = GlobalEnv::new();
+        let mut e = GlobalEnv::new();
 
-        // ℕ := μX.[X; X → X]
-        let n = Tm::OldFix {
-            ty: Box::new(Tm::U(univ_lvl::Var(0).into())),
+        e.add_inductive(InductiveTypeFamily {
+            params: Telescope(vec![]),
+            indices: Telescope(vec![]),
+            univ_lvl: univ_lvl::Expr::default(),
+            univ_vars: 0,
             ctors: vec![
-                Tm::Abs(Box::new(Binding {
-                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Var(Ix(0)),
-                })),
-                Tm::Abs(Box::new(Binding {
-                    bound_ty: Tm::U(univ_lvl::Var(0).into()),
-                    body: Tm::Pi(Box::new(Binding {
-                        bound_ty: Tm::Var(Ix(0)),
-                        body: Tm::Var(Ix(1)),
-                    })),
-                })),
+                // 0 : ℕ
+                Ctor {
+                    params: vec![],
+                    indices: vec![],
+                },
+                // S : ℕ → ℕ
+                Ctor {
+                    params: vec![CtorParam {
+                        tele: Telescope(vec![]),
+                        last: CtorParamLast::This { indices: vec![] },
+                    }],
+                    indices: vec![],
+                },
             ],
+        })
+        .unwrap();
+
+        let n = Tm::Inductive {
+            idx: 0,
+            args: vec![],
+            indices: vec![],
         };
 
         // add : ℕ → ℕ → ℕ
@@ -252,24 +293,24 @@ mod tests {
             bound_ty: n.clone(),
             body: Tm::Abs(Box::new(Binding {
                 bound_ty: n.clone(),
-                body: Tm::OldInd {
-                    motive: Box::new(Tm::Abs(Box::new(Binding {
-                        bound_ty: n.clone(),
-                        body: n.clone(),
-                    }))),
+                body: Tm::Induction {
+                    inductive_idx: 0,
+                    inductive_args: vec![],
+                    motive: Box::new(n.clone()),
                     cases: vec![
-                        Tm::Var(Ix(1)),
-                        Tm::Abs(Box::new(Binding {
-                            bound_ty: n.clone(),
-                            body: Tm::Abs(Box::new(Binding {
-                                bound_ty: n.clone(),
-                                body: Tm::OldCtor {
-                                    fix: Box::new(n.clone()),
-                                    i: 1,
-                                    args: vec![Tm::Var(Ix(0))],
-                                },
-                            })),
-                        })),
+                        Case {
+                            param_count: 0,
+                            body: Tm::Var(Ix(1)),
+                        },
+                        Case {
+                            param_count: 2,
+                            body: Tm::Ctor {
+                                inductive_idx: 0,
+                                inductive_args: vec![],
+                                ctor_idx: 1,
+                                ctor_args: vec![Tm::Var(Ix(0))],
+                            },
+                        },
                     ],
                     val: Box::new(Tm::Var(Ix(0))),
                 },
