@@ -584,6 +584,11 @@ function registerPredicateDefinition(
       throw new Error("Missing rule statement");
     }
 
+    if (!actualRuleBlock.type.startsWith("definition")) {
+      actualRuleBlock.setWarningText("Ce type de bloc n'est pas autorisé ici.");
+      throw new Error("Incorrect block type in predicate rule");
+    }
+
     // Placeholder: unary constructor that is true for all in the first input type
     // Notably does not make sense for binary predicates
     let constructor = {
