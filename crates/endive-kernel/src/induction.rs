@@ -287,6 +287,52 @@ pub struct Ctor {
 }
 
 impl Ctor {
+    pub(crate) fn add_case_telescope_to_ctx(
+        &self,
+        e: &GlobalEnv,
+        inductive_idx: usize,
+        inductive_args: &[Val],
+        inductive_indices: &Telescope,
+        inductive_c: &Rc<Ctx>,
+        motive: &Closure,
+        mut c: Rc<Ctx>,
+        mut tc: Rc<TyCtx>,
+    ) -> Result<(Rc<Ctx>, Rc<TyCtx>, usize), Error> {
+        let mut l = Lvl(c.len());
+        let mut param_count = 0;
+        for param in &self.params {
+            c = c.push(Val::Var(l));
+            tc = tc.push(param.eval(
+                e,
+                &c,
+                &tc,
+                inductive_args,
+                inductive_indices,
+                inductive_c,
+                inductive_idx,
+            )?);
+            l = Lvl(l.0 + 1);
+            param_count += 1;
+
+            if param.tele.0.is_empty() {
+                if let CtorParamLast::This { indices } = &param.last {
+                    let mut motive_c = motive.c.clone();
+
+                    for index in indices {
+                        index.ty_internal(e, &c, &tc)?;
+                        motive_c = motive_c.push(index.eval(e, &c)?);
+                    }
+
+                    c = c.push(Val::Var(l));
+                    tc = tc.push(motive.body.eval(e, &motive_c)?);
+                    l = Lvl(l.0 + 1);
+                    param_count += 1;
+                }
+            }
+        }
+        Ok((c, tc, param_count))
+    }
+
     /// Validates a constructor application and returns the indices of the returned inductive type.
     pub(crate) fn validate_apply(
         &self,

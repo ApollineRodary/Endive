@@ -398,6 +398,30 @@ impl Tm {
                     _ => return Err(Error::TyMismatch),
                 }
 
+                let motive_closure = Closure {
+                    body: (**motive).clone(),
+                    c: motive_c.clone(),
+                };
+
+                // Type check the cases.
+                for (case, ctor) in cases.iter().zip(inductive.ctors.iter()) {
+                    let (case_c, case_tc, param_count) = ctor.add_case_telescope_to_ctx(
+                        e,
+                        *inductive_idx,
+                        &inductive_args,
+                        &inductive.indices,
+                        &inductive_c,
+                        &motive_closure,
+                        c.clone(),
+                        tc.clone(),
+                    )?;
+                    if case.param_count != param_count {
+                        return Err(Error::TyMismatch);
+                    }
+                    let case_ty = case.body.ty_internal(e, &case_c, &case_tc)?;
+                    todo!()
+                }
+
                 let val_ty = val.ty_internal(e, c, tc)?;
 
                 // Construct the output type of the induction by applying the motive to the value.
