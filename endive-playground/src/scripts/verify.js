@@ -155,7 +155,7 @@ function convertTactics(block, environment, hypotheses, types) {
       );
       throw new Error("Missing hypothesis");
     }
-    
+
     let hypothesis = convertStatement(
       hypothesisBlock,
       environment,
@@ -606,9 +606,10 @@ function registerPredicateDefinition(
       },
     };
     fixpoint.constructors.push(constructor);
+    ruleBlock = ruleBlock.nextConnection.targetBlock();
   }
 
-  console.log(fixpoint);
+  console.log(JSON.stringify(fixpoint, null, 2));
   return fixpoint;
 }
 
